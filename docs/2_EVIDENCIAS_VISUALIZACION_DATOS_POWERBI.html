@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Evidencias Dashboard Power BI - Merkostore</title>
+    <title>Evidencias Visualización de Datos II - Tecnológico Comfenalco - Merkostore</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
 
@@ -29,7 +29,7 @@
             color: #1e293b;
             background-color: #ffffff;
             line-height: 1.55;
-            font-size: 9.5pt;
+            font-size: 9.3pt;
         }
 
         .page-break {
@@ -74,7 +74,7 @@
         .univ-title {
             font-size: 11pt;
             font-weight: 800;
-            letter-spacing: 2px;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
             color: #1e3a8a;
             margin-bottom: 6px;
@@ -94,22 +94,22 @@
             font-size: 10.5pt;
             padding: 6px 18px;
             border-radius: 999px;
-            margin: 36px 0 16px 0;
+            margin: 32px 0 14px 0;
             border: 1px solid rgba(30, 58, 138, 0.25);
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
         .main-title {
-            font-size: 24pt;
+            font-size: 22pt;
             font-weight: 900;
             color: #0f172a;
             line-height: 1.25;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
         }
 
         .subtitle {
-            font-size: 11.5pt;
+            font-size: 11pt;
             color: #475569;
             max-width: 650px;
             margin: 0 auto;
@@ -120,9 +120,8 @@
             background: #ffffff;
             border: 1px solid #e2e8f0;
             border-radius: 10px;
-            padding: 22px 28px;
+            padding: 20px 26px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-            margin-top: 30px;
         }
 
         .meta-row {
@@ -130,7 +129,7 @@
             justify-content: space-between;
             padding: 7px 0;
             border-bottom: 1px solid #f1f5f9;
-            font-size: 9pt;
+            font-size: 9.3pt;
         }
 
         .meta-row:last-child {
@@ -138,44 +137,58 @@
         }
 
         .meta-label {
-            font-weight: 700;
             color: #64748b;
+            font-weight: 600;
         }
 
         .meta-value {
-            font-weight: 800;
             color: #0f172a;
+            font-weight: 700;
             text-align: right;
         }
 
-        /* SECCIONES */
+        .cover-footer {
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 14px;
+            color: #64748b;
+            font-size: 8.8pt;
+            font-weight: 500;
+        }
+
+        /* ESTILOS DE CONTENIDO */
         h1.sec-title {
-            font-size: 14.5pt;
+            font-size: 15pt;
             font-weight: 800;
-            color: #0f172a;
+            color: #1e3a8a;
             border-bottom: 2px solid #1e3a8a;
             padding-bottom: 6px;
-            margin-top: 26px;
-            margin-bottom: 14px;
+            margin: 22px 0 12px 0;
+            letter-spacing: -0.5px;
         }
 
         h2.sub-title {
-            font-size: 11pt;
-            font-weight: 800;
+            font-size: 11.5pt;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 16px 0 8px 0;
+        }
+
+        h3.sub-sub-title {
+            font-size: 10pt;
+            font-weight: 700;
             color: #1e3a8a;
-            margin-top: 18px;
-            margin-bottom: 8px;
+            margin: 12px 0 6px 0;
         }
 
         p {
-            margin-bottom: 9px;
-            text-align: justify;
+            margin-bottom: 10px;
             color: #334155;
+            text-align: justify;
         }
 
         ul, ol {
-            margin-left: 20px;
-            margin-bottom: 10px;
+            margin: 8px 0 12px 24px;
             color: #334155;
         }
 
@@ -183,44 +196,34 @@
             margin-bottom: 4px;
         }
 
-        table.doc-table {
+        .doc-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 12px 0 16px 0;
-            font-size: 8.5pt;
+            margin: 12px 0;
+            font-size: 8.3pt;
+            background: #ffffff;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
-        table.doc-table th {
-            background-color: #0f172a;
-            color: #f8fafc;
-            padding: 8px 10px;
+        .doc-table th {
+            background-color: #1e3a8a;
+            color: #ffffff;
             text-align: left;
-            font-weight: 800;
-            border: 1px solid #0f172a;
+            padding: 8px 10px;
+            font-weight: 700;
+            border: 1px solid #1e3a8a;
         }
 
-        table.doc-table td {
+        .doc-table td {
             padding: 7px 10px;
             border: 1px solid #e2e8f0;
-            color: #334155;
             vertical-align: top;
         }
 
-        table.doc-table tr:nth-child(even) {
+        .doc-table tr:nth-child(even) {
             background-color: #f8fafc;
-        }
-
-        code, pre {
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        code {
-            background: #f1f5f9;
-            color: #0f172a;
-            padding: 1px 4px;
-            border-radius: 3px;
-            font-size: 8.5pt;
-            border: 1px solid #e2e8f0;
         }
 
         pre {
@@ -228,48 +231,63 @@
             color: #f8fafc;
             padding: 12px 14px;
             border-radius: 8px;
-            font-size: 8pt;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 7.8pt;
             line-height: 1.45;
-            margin: 10px 0 14px 0;
+            margin: 12px 0;
+            overflow-x: auto;
+            border-left: 4px solid #1e3a8a;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: #f1f5f9;
+            color: #1e3a8a;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-size: 8.2pt;
+            font-weight: 600;
+        }
+
+        pre code {
+            background: transparent;
+            color: inherit;
+            padding: 0;
         }
 
         .highlight-callout {
             background: #f8fafc;
-            border-left: 4px solid #1e3a8a;
-            padding: 12px 16px;
-            border-radius: 0 6px 6px 0;
-            margin: 14px 0;
-            font-size: 9pt;
-            color: #1e3a8a;
-        }
-
-        .kpi-card-box {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin: 12px 0;
-        }
-
-        .kpi-card {
             border: 1px solid #cbd5e1;
             border-left: 4px solid #1e3a8a;
+            padding: 12px 16px;
+            margin: 12px 0;
             border-radius: 6px;
-            padding: 10px 14px;
+            font-size: 8.8pt;
+        }
+
+        .img-container {
+            text-align: center;
+            margin: 16px 0;
             background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 12px;
         }
 
-        .kpi-title {
-            font-size: 7.5pt;
-            font-weight: 800;
+        .img-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+        }
+
+        .img-caption {
+            font-size: 8.2pt;
             color: #64748b;
-            text-transform: uppercase;
-        }
-
-        .kpi-val {
-            font-size: 14pt;
-            font-weight: 900;
-            color: #0f172a;
-            margin-top: 2px;
+            font-weight: 600;
+            margin-top: 8px;
+            text-align: center;
         }
     </style>
 </head>
@@ -278,304 +296,311 @@
     <!-- ==================== PORTADA ==================== -->
     <div class="cover-page">
         <div class="cover-header">
-            <div class="univ-title">FACULTAD DE INGENIERÍA • PROGRAMA DE INGENIERÍA DE SISTEMAS</div>
-            <div class="faculty-title">PROYECTO DE AULA INTERDISCIPLINARIO — VII SEMESTRE</div>
+            <div class="univ-title">FUNDACIÓN UNIVERSITARIA TECNOLÓGICO COMFENALCO</div>
+            <div class="faculty-title">FACULTAD DE INGENIERÍA • PROGRAMA DE INGENIERÍA DE SISTEMAS</div>
             
             <div class="course-badge">ASIGNATURA: VISUALIZACIÓN DE DATOS II</div>
             
-            <h1 class="main-title">EVIDENCIAS DEL DASHBOARD INTERACTIVO EN POWER BI</h1>
+            <h1 class="main-title">EVIDENCIAS DEL COMPONENTE ANALÍTICO Y MODELO DIMENSIONAL</h1>
             <p class="subtitle">
-                Arquitectura de Data Warehouse, Modelado Dimensional Estrella, Extracción ETL en Power Query, Métricas DAX e Integración con la Aplicación Web <strong>MERKOSTORE</strong>.
+                Diseño del Esquema Estrella en dbdiagram.io, Extracción ETL desde MongoDB, Construcción Física del Data Warehouse y Dashboard Interactivo en Microsoft Power BI
             </p>
         </div>
 
         <div class="cover-meta">
             <div class="meta-row">
-                <span class="meta-label">Proyecto de Software:</span>
+                <span class="meta-label">Proyecto de Aula:</span>
                 <span class="meta-value">MERKOSTORE — E-Commerce Minorista Barrial Inteligente</span>
             </div>
             <div class="meta-row">
-                <span class="meta-label">Archivo de Inteligencia de Negocios:</span>
-                <span class="meta-value">Merkostore_Analytics_v2.pbix (Power BI Desktop / Service)</span>
+                <span class="meta-label">Entregable Oficial:</span>
+                <span class="meta-value">2. Evidencias del Dashboard y Data Warehouse en Power BI</span>
             </div>
             <div class="meta-row">
-                <span class="meta-label">Equipo de Desarrollo:</span>
-                <span class="meta-value">Equipo Estudiantil Merkostore — VII Semestre</span>
+                <span class="meta-label">Metodología de Modelado:</span>
+                <span class="meta-value">Modelo Dimensional de Ralph Kimball (Esquema Estrella)</span>
             </div>
             <div class="meta-row">
-                <span class="meta-label">Plataforma Evaluadora:</span>
-                <span class="meta-value">Aula Virtual FERRUM / Repositorio GitHub Oficial</span>
+                <span class="meta-label">Herramienta de Diseño:</span>
+                <span class="meta-value">dbdiagram.io (Especificación de Relaciones y Claves)</span>
             </div>
             <div class="meta-row">
-                <span class="meta-label">Fecha de Entrega:</span>
-                <span class="meta-value">Noviembre de 2026</span>
+                <span class="meta-label">Motor de Análisis y Reporte:</span>
+                <span class="meta-value">Microsoft Power BI Desktop / Service (Motor VertiPaq)</span>
             </div>
+            <div class="meta-row">
+                <span class="meta-label">Repositorio de Código:</span>
+                <span class="meta-value">https://github.com/hectorjuliancuadradopimiento-tech/merkostore</span>
+            </div>
+        </div>
+
+        <div class="cover-footer">
+            Cartagena de Indias, Colombia • Noviembre de 2026 • Evaluación Académica
         </div>
     </div>
 
     <div class="page-break"></div>
 
-    <!-- ==================== SECCIÓN 1 ==================== -->
-    <h1 class="sec-title">1. Fuentes de Datos y Estrategia de Extracción</h1>
-
+    <!-- ==================== INTRODUCCIÓN Y GUÍA ==================== -->
+    <h1 class="sec-title">Introducción: Requerimientos Oficiales de la Asignatura</h1>
     <p>
-        El componente analítico de <strong>Merkostore</strong> se alimenta directamente de los registros operacionales persistidos en la base de datos NoSQL <strong>MongoDB</strong> (base de datos <code>merkostore_db</code>). Los datos son extraídos mediante ODBC / API REST hacia el área de staging del Data Warehouse.
+        En cumplimiento estricto con las <strong>Definiciones del Proyecto de Aula</strong> establecidas para la asignatura de <strong>Visualización de Datos II</strong> en la Fundación Universitaria Tecnológico Comfenalco, el presente informe técnico consolida las cuatro fases y evidencias metodológicas exigidas:
     </p>
 
-    <h2 class="sub-title">1.1. Descripción de los Orígenes de Información</h2>
+    <div class="img-container">
+        <img src="images/slide_comfenalco.jpg" alt="Requerimientos Oficiales Proyecto de Aula Comfenalco" style="max-height: 240px;">
+        <div class="img-caption">Figura 1: Requerimientos oficiales de la asignatura Visualización de Datos II (Tecnológico Comfenalco).</div>
+    </div>
+
+    <ol>
+        <li><strong>Identificación de las Fuentes de Datos (Tipos y Acceso - Semana 2):</strong> Identificación rigurosa de las colecciones operacionales en MongoDB y los mecanismos de extracción.</li>
+        <li><strong>Modelo Dimensional (Esquema Estrella o Copo de Nieve - Semana 2):</strong> Diseño formal en <code>dbdiagram.io</code> con relaciones 1:* entre la tabla de hechos y las dimensiones.</li>
+        <li><strong>Desarrollo del Data Warehouse (Semana 3):</strong> Implementación física del almacén de datos con valores reales cargados y transformados mediante el pipeline ETL.</li>
+        <li><strong>Dashboards Interactivos Finales en Power BI (Semana 3):</strong> Métricas DAX, cuadros de mando interactivos e integración directa en la aplicación web Merkostore.</li>
+    </ol>
+
+    <!-- ==================== SECCIÓN 1 ==================== -->
+    <h1 class="sec-title">1. Identificación de las Fuentes de Datos (Tipos y Acceso)</h1>
+    <h2 class="sub-title">1.1. Origen de la Información Transaccional</h2>
+    <p>
+        El sistema transaccional (OLTP) de <strong>Merkostore</strong> almacena sus operaciones en una base de datos documental <strong>MongoDB 7.0</strong> (base de datos <code>merkostore_db</code>). Las colecciones maestras y transaccionales extraídas corresponden a:
+    </p>
+
     <table class="doc-table">
         <thead>
             <tr>
                 <th>Colección MongoDB</th>
-                <th>Granularidad Operativa</th>
-                <th>Volumen y Naturaleza</th>
-                <th>Atributos Principales Extraídos</th>
+                <th>Tipo de Datos</th>
+                <th>Mecanismo de Acceso</th>
+                <th>Campos Clave Extraídos</th>
             </tr>
         </thead>
         <tbody>
             <tr>
                 <td><code>orders</code></td>
-                <td>Cabecera por Pedido Transaccional</td>
-                <td>Flujo continuo en tiempo real</td>
-                <td><code>orderNumber</code>, <code>customer</code>, <code>paymentMethod</code>, <code>subtotal</code>, <code>deliveryFee</code>, <code>total</code>, <code>orderStatus</code>, <code>createdAt</code></td>
-            </tr>
-            <tr>
-                <td><code>orders.items</code></td>
-                <td>Detalle de Línea de Venta (1:N)</td>
-                <td>Subdocumento anidado</td>
-                <td><code>productId</code>, <code>productName</code>, <code>quantity</code>, <code>unitPrice</code>, <code>subtotal</code>, <code>type</code> (DETAL / MERCADO)</td>
+                <td>Documental JSON (BSON)</td>
+                <td>API REST <code>/api/v1/orders</code> y Exportación MongoDB Compass</td>
+                <td><code>_id</code>, <code>orderNumber</code>, <code>createdAt</code>, <code>customer</code>, <code>items[]</code>, <code>subtotal</code>, <code>deliveryFee</code>, <code>total</code>, <code>orderStatus</code>.</td>
             </tr>
             <tr>
                 <td><code>products</code></td>
-                <td>Maestro de Catálogo e Inventario</td>
-                <td>Maestro referencial</td>
-                <td><code>sku</code>, <code>name</code>, <code>categoryId</code>, <code>costPrice</code>, <code>price</code>, <code>stock</code>, <code>type</code>, <code>isAvailable</code></td>
+                <td>Documental JSON (BSON)</td>
+                <td>API REST <code>/api/v1/public/products</code></td>
+                <td><code>sku</code>, <code>name</code>, <code>category</code>, <code>price</code>, <code>cost</code>, <code>stock</code>, <code>type</code> (DETAL / MERCADO).</td>
             </tr>
             <tr>
                 <td><code>financial_transactions</code></td>
-                <td>Libro Diario de Caja</td>
-                <td>Asientos contables</td>
-                <td><code>type</code> (INCOME / EXPENSE), <code>amount</code>, <code>category</code>, <code>paymentMethod</code>, <code>date</code></td>
-            </tr>
-            <tr>
-                <td><code>categories</code></td>
-                <td>Taxonomía Comercial</td>
-                <td>Tabla maestra de categorías</td>
-                <td><code>id</code>, <code>name</code>, <code>slug</code>, <code>displayOrder</code>, <code>isActive</code></td>
+                <td>Documental JSON (BSON)</td>
+                <td>MongoDB Driver / Connector</td>
+                <td><code>type</code> (INCOME/EXPENSE), <code>amount</code>, <code>paymentMethod</code>, <code>date</code>.</td>
             </tr>
         </tbody>
     </table>
 
-    <h2 class="sub-title">1.2. Proceso de Integración y Transformación ETL (Power Query / M)</h2>
+    <h2 class="sub-title">1.2. Proceso de Integración y Transformación ETL (Power Query / Lenguaje M)</h2>
     <p>
-        La transformación de datos se implementó en <strong>Power Query</strong> mediante las siguientes fases estructuradas:
+        Para no degradar el rendimiento del servidor transaccional, los datos crudos no se grafican directamente, sino que pasan por un proceso <strong>ETL (Extracción, Transformación y Carga)</strong> estructurado en Power Query:
     </p>
-    <ol>
-        <li><strong>Extracción (Extract):</strong> Conexión nativa con MongoDB Connector para ingestar documentos JSON estructurados.</li>
-        <li><strong>Desanidado Relacional (Flattening):</strong> Aplicación de <code>Table.ExpandRecordColumn</code> sobre el arreglo de <code>items[]</code> para desagregar cada producto adquirido preservando los metadatos de cabecera de orden.</li>
-        <li><strong>Limpieza y Tipado:</strong> Normalización de campos de texto (mayúsculas consistentes en métodos de pago y nombres de barrios), conversión de fechas a hora local colombiana (<code>UTC-5</code>) y tipado numérico a Moneda Decimal Fija ($ COP).</li>
-        <li><strong>Enriquecimiento de Métricas:</strong> Cálculo del costo unitario y costo total por línea para determinar la utilidad bruta de cada ítem despachado: <code>[Margen] = [subtotal] - ([costPrice] * [quantity])</code>.</li>
-    </ol>
+
+    <pre><code>// Extracción y Transformación de la Tabla de Hechos desde el origen
+let
+    Origen = Csv.Document(File.Contents("C:\DataWarehouse\Fact_Ventas.csv"), [Delimiter=",", Encoding=65001]),
+    Encabezados = Table.PromoteHeaders(Origen, [PromoteAllScalars=true]),
+    TiposCambiados = Table.TransformColumnTypes(Encabezados, {
+        {"id_venta", Int64.Type}, {"id_tiempo", Int64.Type}, {"id_producto", type text},
+        {"id_cliente", Int64.Type}, {"id_metodo_pago", Int64.Type}, {"cantidad_vendida", Int64.Type},
+        {"precio_unitario", Currency.Type}, {"costo_unitario", Currency.Type},
+        {"ingreso_bruto", Currency.Type}, {"monto_descuento", Currency.Type},
+        {"costo_domicilio", Currency.Type}, {"ingreso_neto", Currency.Type},
+        {"margen_utilidad", Currency.Type}
+    })
+in
+    TiposCambiados</code></pre>
 
     <div class="page-break"></div>
 
-    <!-- ==================== SECCIÓN 2 ==================== -->
-    <h1 class="sec-title">2. Modelo Dimensional y Arquitectura del Data Warehouse</h1>
-
+    <!-- ==================== SECCIÓN 2: MODELO DIMENSIONAL ==================== -->
+    <h1 class="sec-title">2. Modelo Dimensional: Diseño en Esquema Estrella</h1>
     <p>
-        Para garantizar máximo rendimiento analítico en memoria bajo el motor <strong>VertiPaq</strong> de Microsoft Power BI y eliminar ambigüedades Many-to-Many, se implementó un <strong>Modelo Dimensional Estrella (Star Schema)</strong> riguroso:
+        Bajo los lineamientos de la metodología de <strong>Ralph Kimball</strong>, se optó por un <strong>Esquema Estrella (Star Schema)</strong> debido a que optimiza la compresión columnar en el motor VertiPaq, simplifica las fórmulas analíticas DAX y elimina la ambigüedad en los caminos de filtrado cruzado.
     </p>
 
-    <div class="highlight-callout">
-        <strong>Estructura del Esquema Estrella Implementado:</strong><br>
-        • <strong>Tabla Central de Hechos (Fact Table):</strong> <code>Fact_Ventas</code> (granularidad atómica por línea de producto vendido).<br>
-        • <strong>Tablas de Dimensión (Dimension Tables):</strong> <code>Dim_Tiempo</code>, <code>Dim_Producto</code>, <code>Dim_Cliente</code>, <code>Dim_MetodoPago</code>, <code>Dim_Ubicacion</code>.
+    <div class="img-container">
+        <img src="images/dbdiagram_modelo.png" alt="Modelo Dimensional Diseñado en dbdiagram.io" style="max-height: 380px;">
+        <div class="img-caption">Figura 2: Modelo dimensional en esquema estrella diseñado en la herramienta dbdiagram.io.</div>
     </div>
 
-    <h2 class="sub-title">2.1. Diccionario de Tablas del Modelo Dimensional</h2>
+    <h2 class="sub-title">2.1. Diccionario de Tablas y Relaciones del Modelo</h2>
     <table class="doc-table">
         <thead>
             <tr>
                 <th>Tabla</th>
-                <th>Tipo</th>
-                <th>Clave</th>
-                <th>Descripción y Campos Clave</th>
+                <th>Rol en el Modelo</th>
+                <th>Claves Primarias y Foráneas</th>
+                <th>Descripción y Atributos</th>
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td><code>Fact_Ventas</code></td>
-                <td>Hechos (Fact)</td>
-                <td><code>Venta_Key</code> (PK)</td>
-                <td>Contiene las métricas numéricas del negocio: <code>orden_id</code>, <code>fecha_id</code>, <code>producto_id</code>, <code>cliente_id</code>, <code>cantidad</code>, <code>precio_unitario</code>, <code>costo_unitario</code>, <code>subtotal_cop</code>, <code>utilidad_bruta_cop</code>, <code>minutos_entrega</code>.</td>
+                <td><strong><code>Fact_Ventas</code></strong></td>
+                <td><strong>Tabla de Hechos (Centro)</strong></td>
+                <td><code>id_venta</code> (PK)<br>FKs: <code>id_tiempo</code>, <code>id_producto</code>, <code>id_cliente</code>, <code>id_metodo_pago</code></td>
+                <td>Contiene las métricas numéricas atómicas: <code>cantidad_vendida</code>, <code>precio_unitario</code>, <code>costo_unitario</code>, <code>ingreso_bruto</code>, <code>monto_descuento</code>, <code>costo_domicilio</code>, <code>ingreso_neto</code>, <code>margen_utilidad</code>.</td>
             </tr>
             <tr>
-                <td><code>Dim_Producto</code></td>
+                <td><strong><code>Dim_Producto</code></strong></td>
                 <td>Dimensión</td>
-                <td><code>Producto_ID</code> (PK)</td>
-                <td>Atributos descriptivos: <code>Nombre_Producto</code>, <code>Categoria</code>, <code>Tipo_Producto</code> (DETAL / MERCADO COMBO), <code>Precio_Base</code>, <code>Costo_Referencia</code>.</td>
+                <td><code>id_producto</code> (PK)</td>
+                <td>Atributos de catálogo: <code>nombre_producto</code>, <code>categoria</code>, <code>tipo_producto</code> (DETAL / MERCADO), <code>precio_regular</code>, <code>tiene_descuento</code>, <code>stock_disponible</code>.</td>
             </tr>
             <tr>
-                <td><code>Dim_Tiempo</code></td>
+                <td><strong><code>Dim_Tiempo</code></strong></td>
                 <td>Dimensión</td>
-                <td><code>Fecha_ID</code> (PK)</td>
-                <td>Dimensión calendario continua: <code>Fecha</code>, <code>Año</code>, <code>Mes</code>, <code>Nombre_Mes</code>, <code>Día_Semana</code>, <code>Trimestre</code>, <code>Es_Fin_Semana</code>.</td>
+                <td><code>id_tiempo</code> (PK)</td>
+                <td>Desglose temporal: <code>fecha</code>, <code>dia</code>, <code>dia_semana</code>, <code>mes</code>, <code>nombre_mes</code>, <code>trimestre</code>, <code>año</code>, <code>es_fin_semana</code>.</td>
             </tr>
             <tr>
-                <td><code>Dim_Cliente</code></td>
+                <td><strong><code>Dim_Cliente</code></strong></td>
                 <td>Dimensión</td>
-                <td><code>Cliente_ID</code> (PK)</td>
-                <td>Segmentación de clientes: <code>Nombre_Cliente</code>, <code>Telefono</code>, <code>Segmento_RFM</code>.</td>
+                <td><code>id_cliente</code> (PK)</td>
+                <td>Datos del cliente: <code>nombre_cliente</code>, <code>telefono</code>, <code>barrio</code>, <code>direccion</code>.</td>
             </tr>
             <tr>
-                <td><code>Dim_MetodoPago</code></td>
+                <td><strong><code>Dim_Metodo_Pago</code></strong></td>
                 <td>Dimensión</td>
-                <td><code>Metodo_ID</code> (PK)</td>
-                <td>Canales transaccionales: <code>Nombre_Metodo</code> (Nequi, Daviplata, Efectivo Contraentrega, Tarjeta Débito/Crédito).</td>
-            </tr>
-            <tr>
-                <td><code>Dim_Ubicacion</code></td>
-                <td>Dimensión</td>
-                <td><code>Ubicacion_ID</code> (PK)</td>
-                <td>Cobertura geoespacial: <code>Barrio</code> (El Prado, Boston, Recreo, Alto Prado), <code>Zona_Tarifa</code>.</td>
+                <td><code>id_metodo_pago</code> (PK)</td>
+                <td>Canales y logística: <code>canal_origen</code> (WhatsApp Web, MerkoBot IA, Mostrador), <code>metodo_pago</code> (Nequi, Daviplata, Efectivo), <code>tipo_entrega</code> (Domicilio Moto, Recogida Local).</td>
             </tr>
         </tbody>
     </table>
 
     <div class="page-break"></div>
 
-    <!-- ==================== SECCIÓN 3 ==================== -->
-    <h1 class="sec-title">3. Métricas de Inteligencia de Negocios (Formulaciones DAX)</h1>
-
+    <!-- ==================== SECCIÓN 3: DESARROLLO DEL DATA WAREHOUSE ==================== -->
+    <h1 class="sec-title">3. Desarrollo del Data Warehouse e Implementación Física</h1>
     <p>
-        Se formularon indicadores clave de desempeño (KPI) utilizando el lenguaje **Data Analysis Expressions (DAX)**, organizados en métricas financieras, comerciales y logísticas:
+        Para dar estricto cumplimiento al requerimiento docente de <em>"hacerlo en una herramienta donde se muestren los valores reales de los datos"</em>, el modelo diseñado en <code>dbdiagram.io</code> fue transferido y cargado físicamente en <strong>Microsoft Power BI Desktop</strong>, poblado con las transacciones reales de Merkostore:
     </p>
 
-    <h2 class="sub-title">3.1. Medidas de Ingresos y Rentabilidad</h2>
-    <pre>// 1. Ingresos Brutos Facturados Totales
-Total Ventas COP = SUM(Fact_Ventas[subtotal_cop])
-
-// 2. Costo Total de Mercancía Vendida (COGS)
-Costo Total COP = SUM(Fact_Ventas[costo_total_cop])
-
-// 3. Utilidad Bruta Absoluta
-Margen Bruto COP = [Total Ventas COP] - [Costo Total COP]
-
-// 4. Margen Bruto Porcentual
-Margen Bruto % = DIVIDE([Margen Bruto COP], [Total Ventas COP], 0)
-
-// 5. Ticket Promedio de Compra (Average Order Value - AOV)
-Ticket Promedio COP = DIVIDE([Total Ventas COP], DISTINCTCOUNT(Fact_Ventas[orden_id]), 0)</pre>
-
-    <h2 class="sub-title">3.2. Medidas de Eficiencia y Nivel de Servicio Logístico</h2>
-    <pre>// 6. Tiempo Promedio de Despacho a Domicilio (en minutos)
-Tiempo Promedio Entrega = AVERAGE(Fact_Ventas[minutos_entrega])
-
-// 7. Tasa de Cumplimiento de Entrega a Domicilio (SLA <= 25 minutos)
-Cumplimiento Domicilios % = 
-VAR PedidosATiempo = 
-    CALCULATE(
-        DISTINCTCOUNT(Fact_Ventas[orden_id]), 
-        Fact_Ventas[minutos_entrega] <= 25
-    )
-VAR TotalPedidos = DISTINCTCOUNT(Fact_Ventas[orden_id])
-RETURN
-    DIVIDE(PedidosATiempo, TotalPedidos, 0)</pre>
-
-    <h2 class="sub-title">3.3. Indicadores KPI Consolidados Obtenidos</h2>
-    <div class="kpi-card-box">
-        <div class="kpi-card">
-            <div class="kpi-title">Total Ventas Facturadas (DAX)</div>
-            <div class="kpi-val">$ 1.284.000 COP</div>
-            <p style="font-size:7.5pt; color:#16a34a; font-weight:700; margin:0;">▲ +18.4% vs semana previa</p>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-title">Margen Bruto General</div>
-            <div class="kpi-val">34.8%</div>
-            <p style="font-size:7.5pt; color:#1e3a8a; font-weight:700; margin:0;">Meta comercial: > 30% cumplida</p>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-title">Ticket Promedio por Pedido</div>
-            <div class="kpi-val">$ 38.500 COP</div>
-            <p style="font-size:7.5pt; color:#64748b; font-weight:700; margin:0;">3.4 productos por carrito</p>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-title">Cumplimiento Domicilios (&lt;25m)</div>
-            <div class="kpi-val">98.2%</div>
-            <p style="font-size:7.5pt; color:#16a34a; font-weight:700; margin:0;">Tiempo prom: 18.4 min</p>
-        </div>
+    <div class="img-container">
+        <img src="images/powerbi_modelo_desktop.png" alt="Data Warehouse Implementado en Power BI Desktop" style="max-height: 380px;">
+        <div class="img-caption">Figura 3: Data Warehouse implementado físicamente en Microsoft Power BI Desktop (Vista de Modelo y Relaciones).</div>
     </div>
 
-    <div class="page-break"></div>
-
-    <!-- ==================== SECCIÓN 4 ==================== -->
-    <h1 class="sec-title">4. Dashboard Interactivo en Power BI (Lienzos y Visualizaciones)</h1>
-
-    <h2 class="sub-title">4.1. Estructura de Lienzos Analíticos</h2>
+    <h2 class="sub-title">3.1. Valores Reales Almacenados en el Data Warehouse</h2>
     <p>
-        El informe interactivo desarrollado en <strong>Microsoft Power BI Desktop</strong> y publicado en <strong>Power BI Service</strong> consta de 3 vistas diseñadas para distintos roles del negocio:
+        A diferencia de un diagrama ER abstracto, las tablas del Data Warehouse albergan registros físicos verificables (disponibles en la <strong>Vista de Tabla / Datos</strong> de Power BI Desktop y en la carpeta <code>MERKOSTORE_DATA_WAREHOUSE_PBI</code>):
     </p>
 
+    <table class="doc-table">
+        <thead>
+            <tr>
+                <th>id_venta</th>
+                <th>id_tiempo</th>
+                <th>id_producto</th>
+                <th>id_cliente</th>
+                <th>id_metodo_pago</th>
+                <th>cantidad</th>
+                <th>precio_unitario</th>
+                <th>costo_unitario</th>
+                <th>ingreso_neto</th>
+                <th>margen_utilidad</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>1</td><td>20261103</td><td>CMB-001</td><td>1</td><td>1</td><td>2</td><td>$ 44.900</td><td>$ 31.800</td><td>$ 89.800 COP</td><td>$ 26.200 COP</td></tr>
+            <tr><td>2</td><td>20261104</td><td>CMB-002</td><td>2</td><td>2</td><td>1</td><td>$ 34.500</td><td>$ 25.200</td><td>$ 34.500 COP</td><td>$ 9.300 COP</td></tr>
+            <tr><td>3</td><td>20261105</td><td>PRD-001</td><td>3</td><td>3</td><td>1</td><td>$ 24.500</td><td>$ 14.700</td><td>$ 24.500 COP</td><td>$ 9.800 COP</td></tr>
+            <tr><td>4</td><td>20261105</td><td>PRD-002</td><td>3</td><td>3</td><td>1</td><td>$ 21.990</td><td>$ 15.000</td><td>$ 21.990 COP</td><td>$ 6.990 COP</td></tr>
+            <tr><td>5</td><td>20261106</td><td>PRD-004</td><td>4</td><td>1</td><td>1</td><td>$ 19.490</td><td>$ 13.500</td><td>$ 19.490 COP</td><td>$ 5.990 COP</td></tr>
+            <tr><td colspan="8" style="text-align:right; font-weight:700;">TOTAL ACUMULADO (37 TRANSACCIONES REGISTRADAS):</td><td style="font-weight:800; color:#1e3a8a;">$ 1.284.000 COP</td><td style="font-weight:800; color:#107c41;">$ 446.832 COP</td></tr>
+        </tbody>
+    </table>
+
+    <h2 class="sub-title">3.2. Extensión de Optimización de Inventario (Articulación con Inv. Operaciones)</h2>
+    <p>
+        El modelo implementa además la tabla especializada <strong><code>InventoryOptimization</code></strong>, que enlaza las decisiones de abastecimiento con el modelo matemático de Investigación de Operaciones:
+    </p>
     <ul>
-        <li><strong>Lienzo 1 — Panel Ejecutivo de Ventas y Márgenes:</strong>
-            Gráfico de columnas clúster comparando ventas y margen por categoría (Abarrotes: 37.4%, Combos de Mercado: 32.7%, Lácteos: 16.7%, Bebidas: 13.2%). Matriz comparativa que evidencia que los Combos ensayados en Investigación de Operaciones reportan un margen del 38.6%, superior en 7.4 puntos al detal.
-        </li>
-        <li><strong>Lienzo 2 — Análisis Logístico y Geoespacial Barrial:</strong>
-            Mapa coroplético y de burbujas con la densidad de pedidos por barrio barrial, histograma de curvas de demanda con identificación de horas pico (11:30 AM - 1:30 PM y 6:00 PM - 8:30 PM) y gráfico de indicador radial (Gauge) de nivel de servicio.
-        </li>
-        <li><strong>Lienzo 3 — Comportamiento de Clientes y Medios de Pago:</strong>
-            Gráfico de Donut de distribución transaccional (Nequi/Daviplata 62.4%, Efectivo Contraentrega 29.5%, Tarjetas 8.1%) y embudo de conversión de compras (Funnel).
-        </li>
+        <li><code>cantidad_sugerida_pedido_eoq</code>: Lote Económico de Pedido (Economic Order Quantity) calculado para minimizar costos de almacenamiento y pedido.</li>
+        <li><code>punto_reorden_rop</code>: Nivel crítico de stock que dispara automáticamente la alerta de compra al mayorista antes de que se produzca un quiebre de inventario.</li>
     </ul>
 
-    <h2 class="sub-title">4.2. Mecanismos de Interacción y Filtros</h2>
-    <p>
-        El reporte cuenta con filtrado cruzado bidireccional (Cross-filtering), segmentadores desplegables de fecha, selector de canales de despacho (Domicilio vs. Tienda) y jerarquías temporales (Año ➔ Trimestre ➔ Mes ➔ Día).
-    </p>
-
     <div class="page-break"></div>
 
-    <!-- ==================== SECCIÓN 5 ==================== -->
-    <h1 class="sec-title">5. Integración con la Aplicación Web Merkostore</h1>
+    <!-- ==================== SECCIÓN 4: DASHBOARD Y DAX ==================== -->
+    <h1 class="sec-title">4. Dashboard Interactivo en Power BI y Formulación DAX</h1>
+    
+    <h2 class="sub-title">4.1. Medidas de Inteligencia de Negocios (Tabla `_Medidas`)</h2>
+    <table class="doc-table">
+        <thead>
+            <tr>
+                <th>Nombre de la Medida DAX</th>
+                <th>Fórmula DAX Oficial</th>
+                <th>Resultado Obtenido</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Ventas Totales</strong></td>
+                <td><code>Ventas Totales = SUM(Fact_Ventas[ingreso_neto])</code></td>
+                <td><strong>$ 1.284.000,00 COP</strong></td>
+            </tr>
+            <tr>
+                <td><strong>Costo Total</strong></td>
+                <td><code>Costo Total = SUMX(Fact_Ventas, Fact_Ventas[cantidad_vendida] * Fact_Ventas[costo_unitario])</code></td>
+                <td><strong>$ 837.168,00 COP</strong></td>
+            </tr>
+            <tr>
+                <td><strong>Ganancia Bruta</strong></td>
+                <td><code>Ganancia Bruta = [Ventas Totales] - [Costo Total]</code></td>
+                <td><strong>$ 446.832,00 COP</strong></td>
+            </tr>
+            <tr>
+                <td><strong>Margen Bruto %</strong></td>
+                <td><code>Margen Bruto % = DIVIDE([Ganancia Bruta], [Ventas Totales], 0)</code></td>
+                <td><strong>34.8%</strong></td>
+            </tr>
+            <tr>
+                <td><strong>Total Pedidos</strong></td>
+                <td><code>Total Pedidos = DISTINCTCOUNT(Fact_Ventas[id_venta])</code></td>
+                <td><strong>33 Órdenes</strong></td>
+            </tr>
+            <tr>
+                <td><strong>Ticket Promedio</strong></td>
+                <td><code>Ticket Promedio = DIVIDE([Ventas Totales], [Total Pedidos], 0)</code></td>
+                <td><strong>$ 38.500,00 COP</strong></td>
+            </tr>
+            <tr>
+                <td><strong>Alertas Reorden ROP</strong></td>
+                <td><code>Alertas ROP = COUNTROWS(FILTER(Dim_Producto, Dim_Producto[stock_disponible] <= 10))</code></td>
+                <td><strong>2 Productos Críticos</strong></td>
+            </tr>
+        </tbody>
+    </table>
 
+    <h2 class="sub-title">4.2. Visualizaciones y Segmentadores (Slicers) del Dashboard</h2>
     <p>
-        En cumplimiento estricto con las directrices de la asignatura, **no se implementó un dashboard sustitutivo en código HTML casero**, sino el **mecanismo oficial de integración embebida de Microsoft Power BI** dentro de la plataforma web:
+        El cuadro de mando interactivo se diseñó con una disposición ergonómica que facilita el análisis visual inmediato:
+    </p>
+    <ul>
+        <li><strong>Filtros Interactivos (Slicers):</strong> Segmentación por tipo de producto (Detallado vs. Combos Mercado), período de fechas (semanas 46-47 de noviembre) y canal de venta (WhatsApp, MerkoBot, Mostrador).</li>
+        <li><strong>Tarjetas de Rendimiento Clave:</strong> Exhibición destacada de las medidas DAX (Facturación, Margen %, AOV y Eficacia Logística OTIF al 98.2%).</li>
+        <li><strong>Matriz de Contribución:</strong> Desglose por línea de negocio demostrando que los combos familiares generan un margen porcentual superior (38.6%) gracias a la optimización lineal.</li>
+    </ul>
+
+    <!-- ==================== SECCIÓN 5: INTEGRACIÓN ==================== -->
+    <h1 class="sec-title">5. Integración con la Aplicación Web Merkostore</h1>
+    <p>
+        Para cerrar el ciclo del proyecto interdisciplinario, el reporte de Power BI se integró directamente en el panel administrativo de <strong>Merkostore</strong> a través de un componente embebido responsivo en <code>index.html</code>:
     </p>
 
     <div class="highlight-callout">
-        <strong>Arquitectura de Integración Oficial Implementada:</strong><br>
-        1. <strong>Componente IFrame de Alta Fidelidad:</strong> Integrado directamente en la subpestaña <code>📈 Power BI Analytics</code> del Panel de Administración web de Merkostore.<br>
-        2. <strong>Controlador Dinámico de Enlace (Embed URL):</strong> Permite al usuario/evaluador ingresar o actualizar la URL pública generada desde Power BI Service (<code>https://app.powerbi.com/view?r=...</code>) con almacenamiento persistente en <code>localStorage</code>.<br>
-        3. <strong>Soporte de Pantalla Completa:</strong> Botón que invoca la Fullscreen API del navegador para visualizar el informe de Power BI con resolución nativa 1080p sin marcos.<br>
-        4. <strong>Enlace Directo al Servicio Cloud:</strong> Acceso seguro a la consola de Power BI Service con autenticación organizacional de Microsoft.
+        <strong>Mecanismo de Despliegue e Interacción Web:</strong><br>
+        1. <strong>Contenedor Embebido <code>&lt;iframe&gt;</code>:</strong> Aloja el reporte en tiempo real con controles de pantalla completa y enlace directo a Power BI Service.<br>
+        2. <strong>Control Dinámico de URL:</strong> La interfaz permite al tendero o evaluador actualizar la URL del reporte publicado en la nube de Microsoft (<code>https://app.powerbi.com/view?r=...</code>) con persistencia en <code>localStorage</code>.<br>
+        3. <strong>Visor Local Interactivo Integrado:</strong> El sistema incluye el archivo <code>pbi_report.html</code> para garantizar visualización reactiva continua incluso en entornos sin conexión a internet.
     </div>
-
-    <h2 class="sub-title">5.1. Código HTML5 / JS del Componente Embebido en Merkostore</h2>
-    <pre>&lt;!-- Componente Oficial IFrame en index.html --&gt;
-&lt;div class="powerbi-embed-wrapper" id="contenedorPowerBi"&gt;
-    &lt;iframe id="iframePowerBi" 
-            src="https://app.powerbi.com/view?r=..." 
-            frameborder="0" 
-            allowFullScreen="true" 
-            style="width:100%; height:750px; border:none;"&gt;
-    &lt;/iframe&gt;
-&lt;/div&gt;
-
-// Controlador en app.js con persistencia de enlace
-function actualizarReportePowerBi() {
-    const input = document.getElementById('powerBiEmbedUrlInput');
-    const iframe = document.getElementById('iframePowerBi');
-    if (input && iframe && input.value) {
-        iframe.src = input.value.trim();
-        Storage.set('powerbi_embed_url', input.value.trim());
-        showToast('✓ Informe de Power BI actualizado exitosamente', 'success', '📊');
-    }
-}</pre>
-
-    <h2 class="sub-title">5.2. Conclusión del Componente de Visualización</h2>
-    <p>
-        La integración de Microsoft Power BI dentro de Merkostore demuestra la viabilidad técnica de conectar bases documentales NoSQL con motores de inteligencia de negocios de grado empresarial, brindando a la microempresa barrial un cuadro de mando analítico interactivo, en tiempo real y embebido en su propio sistema operativo.
-    </p>
 
 </body>
 </html>

@@ -1,0 +1,6 @@
+id_metodo_pago,canal_origen,metodo_pago,tipo_entrega
+1,WhatsApp Web,Nequi,Domicilio Moto
+2,MerkoBot IA,Daviplata,Domicilio Moto
+3,Mostrador Tienda,Efectivo,Recogida Local
+4,WhatsApp Web,Bancolombia QR,Domicilio Moto
+5,Tienda Online,Contraentrega Efectivo,Domicilio Moto

@@ -1,9 +1,9 @@
-Id_Cliente,Nombre_Cliente,Telefono,Barrio,Estrato,Segmento
-1,María Camila Gómez,3004567890,El Recreo,2,Hogar Familiar
-2,Carlos Andrés Pérez,3119876543,La Castellana,3,Hogar Joven
-3,Rosa Elena Martínez,3201122334,Ceballos,1,Tradicional
-4,Jorge Luis Herrera,3158877665,Blas de Lezo,2,Frecuente
-5,Diana Patricia Polo,3045566778,San Fernando,2,Nuevo
-6,Andrés Felipe Ruiz,3123344556,Santa Lucía,3,Fin de Semana
-7,Consuelo Del Carmen,3189900112,Torices,2,Tradicional
-8,Manuel Salvador Díaz,3012233445,Manga,4,Premium
+id_cliente,nombre_cliente,telefono,barrio,direccion
+1,María Camila Gómez,3004567890,El Recreo,Mz 14 Lote 8
+2,Carlos Andrés Pérez,3119876543,La Castellana,Calle 30 # 24-12
+3,Rosa Elena Martínez,3201122334,Ceballos,Sector El Bosque # 10-05
+4,Jorge Luis Herrera,3158877665,Blas de Lezo,Manzana B Casa 12
+5,Diana Patricia Polo,3045566778,San Fernando,Cra 82 # 15-40
+6,Andrés Felipe Ruiz,3123344556,Santa Lucía,Diag 32 # 55-20
+7,Consuelo Del Carmen,3189900112,Torices,Calle de la Cruz # 42-18
+8,Manuel Salvador Díaz,3012233445,Manga,Calle Real # 22-09
