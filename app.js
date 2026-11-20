@@ -1354,13 +1354,10 @@ function initPowerBiEmbed() {
     const iframe = document.getElementById('iframePowerBi');
     const btnExterno = document.getElementById('btnAbrirPbiExterno');
 
-    if (savedUrl && input && iframe) {
-        input.value = savedUrl;
-        if (iframe.src !== savedUrl) {
-            iframe.src = savedUrl;
-        }
-        if (btnExterno) btnExterno.href = savedUrl;
-    }
+    const activeUrl = savedUrl || 'pbi_report.html';
+    if (input) input.value = activeUrl;
+    if (iframe) iframe.src = activeUrl;
+    if (btnExterno) btnExterno.href = activeUrl;
 }
 
 function actualizarReportePowerBi() {
@@ -1371,14 +1368,14 @@ function actualizarReportePowerBi() {
 
     let url = (input.value || '').trim();
     if (!url) {
-        showToast('⚠️ Ingresa una URL válida de Power BI Service', 'warning', '⚠️');
-        return;
+        url = 'pbi_report.html';
+        input.value = url;
     }
 
     iframe.src = url;
     if (btnExterno) btnExterno.href = url;
     Storage.set('powerbi_embed_url', url);
-    showToast('✓ Informe de Power BI actualizado exitosamente', 'success', '📊');
+    showToast('✓ Informe de Power BI sincronizado exitosamente', 'success', '📊');
 }
 
 function togglePowerBiFullscreen() {

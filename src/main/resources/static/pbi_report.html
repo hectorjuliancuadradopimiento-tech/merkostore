@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Power BI Service - Merkostore Executive Analytics</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: #eaeaea;
+            color: #252423;
+            overflow-x: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* POWER BI SERVICE TOP BAR */
+        .pbi-topbar {
+            background-color: #201f1e;
+            color: #ffffff;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            border-bottom: 1px solid #323130;
+            flex-shrink: 0;
+        }
+
+        .pbi-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pbi-logo {
+            width: 24px;
+            height: 24px;
+            background: #f2c811;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-weight: 900;
+            font-size: 14px;
+        }
+
+        .pbi-report-title {
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pbi-badge {
+            background: rgba(242, 200, 17, 0.2);
+            color: #f2c811;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .pbi-actions {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 12px;
+            color: #d2d0ce;
+        }
+
+        .pbi-btn-action {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 3px;
+            transition: background 0.15s;
+        }
+
+        .pbi-btn-action:hover {
+            background: #323130;
+            color: #fff;
+        }
+
+        /* ACTION SUBBAR / RIBBON */
+        .pbi-subbar {
+            background-color: #f3f2f1;
+            height: 36px;
+            border-bottom: 1px solid #e1dfdd;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            font-size: 11.5px;
+            color: #605e5c;
+            flex-shrink: 0;
+        }
+
+        .pbi-filter-pills {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .pbi-pill {
+            background: #ffffff;
+            border: 1px solid #d2d0ce;
+            border-radius: 12px;
+            padding: 2px 10px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .pbi-pill.active {
+            background: #0078d4;
+            color: #ffffff;
+            border-color: #0078d4;
+            font-weight: 600;
+        }
+
+        /* REPORT CANVAS */
+        .pbi-canvas-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+        }
+
+        .pbi-report-page {
+            width: 100%;
+            max-width: 1280px;
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            border: 1px solid #edebe9;
+            padding: 24px;
+            min-height: 680px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* HEADER BANNER OF CANVAS */
+        .canvas-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #0078d4;
+            padding-bottom: 14px;
+        }
+
+        .canvas-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #1e3a8a;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .canvas-subtitle {
+            font-size: 11.5px;
+            color: #605e5c;
+            margin-top: 3px;
+        }
+
+        .canvas-timestamp {
+            font-size: 11px;
+            color: #8a8886;
+            font-family: 'JetBrains Mono', monospace;
+            text-align: right;
+        }
+
+        /* KPI CARDS GRID */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 14px;
+        }
+
+        .pbi-card {
+            background: #ffffff;
+            border: 1px solid #e1dfdd;
+            border-radius: 6px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            border-top: 4px solid #0078d4;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .pbi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .pbi-card-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: #605e5c;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .pbi-card-value {
+            font-size: 24px;
+            font-weight: 900;
+            color: #201f1e;
+            margin: 6px 0 2px 0;
+        }
+
+        .pbi-card-foot {
+            font-size: 10.5px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .txt-green { color: #107c41; }
+        .txt-blue { color: #0078d4; }
+        .txt-amber { color: #d83b01; }
+
+        /* VISUALS GRID */
+        .visuals-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 18px;
+        }
+
+        .visual-box {
+            background: #ffffff;
+            border: 1px solid #e1dfdd;
+            border-radius: 6px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .visual-title {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #323130;
+            margin-bottom: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #f3f2f1;
+            padding-bottom: 8px;
+        }
+
+        .visual-tag {
+            font-size: 10px;
+            background: #f3f2f1;
+            color: #605e5c;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* BARS SIMULATION */
+        .chart-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 11.5px;
+        }
+
+        .chart-label {
+            width: 170px;
+            color: #323130;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chart-bar-wrap {
+            flex: 1;
+            height: 18px;
+            background: #edebe9;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            margin: 0 12px;
+        }
+
+        .chart-bar-fill {
+            height: 100%;
+            background: #0078d4;
+            border-radius: 4px;
+            transition: width 0.4s ease;
+        }
+
+        .chart-value {
+            width: 90px;
+            text-align: right;
+            font-weight: 700;
+            color: #201f1e;
+            font-size: 11.5px;
+        }
+
+        /* DATA TABLE VISUAL */
+        .pbi-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            text-align: left;
+        }
+
+        .pbi-table th {
+            background: #f3f2f1;
+            padding: 8px 10px;
+            font-weight: 700;
+            color: #323130;
+            border-bottom: 2px solid #e1dfdd;
+        }
+
+        .pbi-table td {
+            padding: 7px 10px;
+            border-bottom: 1px solid #edebe9;
+            color: #323130;
+        }
+
+        .pbi-table tr:hover {
+            background: #f8f8f8;
+        }
+
+        /* BOTTOM REPORT PAGE TABS */
+        .pbi-bottom-tabs {
+            background: #ffffff;
+            height: 38px;
+            border-top: 1px solid #e1dfdd;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 4px;
+            flex-shrink: 0;
+            box-shadow: 0 -2px 6px rgba(0,0,0,0.03);
+        }
+
+        .pbi-tab {
+            padding: 6px 16px;
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #605e5c;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .pbi-tab:hover {
+            color: #0078d4;
+            background: #f3f2f1;
+        }
+
+        .pbi-tab.active {
+            color: #0078d4;
+            border-bottom-color: #0078d4;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOPBAR -->
+    <div class="pbi-topbar">
+        <div class="pbi-brand">
+            <div class="pbi-logo">📊</div>
+            <div class="pbi-report-title">
+                <span>Merkostore — Dashboard Analítico y Modelo Dimensional</span>
+                <span class="pbi-badge">Power BI Service</span>
+            </div>
+        </div>
+        <div class="pbi-actions">
+            <div class="pbi-btn-action" onclick="alert('Exportando modelo a Power BI Desktop (.pbix)...')">💾 Exportar .pbix</div>
+            <div class="pbi-btn-action" onclick="refreshData()">🔄 Actualizar Datos</div>
+            <div class="pbi-btn-action" onclick="toggleFull()">⛶ Pantalla Completa</div>
+            <div class="pbi-btn-action" style="color:#f2c811; font-weight:700;">🟢 Modelo VertiPaq Conectado</div>
+        </div>
+    </div>
+
+    <!-- SUBBAR / INTERACTIVE SLICERS -->
+    <div class="pbi-subbar">
+        <div class="pbi-filter-pills">
+            <span style="font-weight:700; margin-right:4px;">🔍 Segmentador (Slicer):</span>
+            <div class="pbi-pill active" onclick="filterCategory('TODOS', this)">Todos los Artículos</div>
+            <div class="pbi-pill" onclick="filterCategory('COMBOS', this)">Combos Mercados</div>
+            <div class="pbi-pill" onclick="filterCategory('DETAL', this)">Abarrotes al Detal</div>
+            <div class="pbi-pill" onclick="filterCategory('WHATSAPP', this)">Canal WhatsApp</div>
+        </div>
+        <div>
+            <span>📅 Período: <strong>Noviembre 2026 (Semana 46-47)</strong> • Grano: Diario</span>
+        </div>
+    </div>
+
+    <!-- CANVAS AREA -->
+    <div class="pbi-canvas-container">
+        
+        <!-- PAGE 1: RESUMEN EJECUTIVO -->
+        <div id="page1" class="pbi-report-page">
+            <div class="canvas-header">
+                <div>
+                    <div class="canvas-title">
+                        <span>🛒 TABLERO DE CONTROL Y VENTAS MINORISTAS</span>
+                    </div>
+                    <div class="canvas-subtitle">
+                        Análisis Integral de Facturación, Utilidad Bruta y Desempeño Operativo en Tiempo Real
+                    </div>
+                </div>
+                <div class="canvas-timestamp">
+                    Fuente: MongoDB 7.0 ➔ DW VertiPaq<br>
+                    Última sincronización: Hoy, 14:20
+                </div>
+            </div>
+
+            <!-- KPI ROW -->
+            <div class="kpi-grid">
+                <div class="pbi-card" style="border-top-color:#f59e0b;">
+                    <div class="pbi-card-title">Total Facturado (DAX)</div>
+                    <div class="pbi-card-value" id="kpiSales">$ 1.284.000</div>
+                    <div class="pbi-card-foot txt-green">▲ +19.3% vs Semana Anterior</div>
+                </div>
+                <div class="pbi-card" style="border-top-color:#0078d4;">
+                    <div class="pbi-card-title">Margen Bruto General</div>
+                    <div class="pbi-card-value" id="kpiMargin">34.8%</div>
+                    <div class="pbi-card-foot txt-blue">🎯 Meta > 30% Superada</div>
+                </div>
+                <div class="pbi-card" style="border-top-color:#107c41;">
+                    <div class="pbi-card-title">Ticket Promedio (AOV)</div>
+                    <div class="pbi-card-value" id="kpiTicket">$ 38.500</div>
+                    <div class="pbi-card-foot txt-green">Promedio: 3.4 ítems / orden</div>
+                </div>
+                <div class="pbi-card" style="border-top-color:#8b5cf6;">
+                    <div class="pbi-card-title">Total de Pedidos</div>
+                    <div class="pbi-card-value" id="kpiOrders">33</div>
+                    <div class="pbi-card-foot txt-blue">100% Despachados con éxito</div>
+                </div>
+                <div class="pbi-card" style="border-top-color:#10b981;">
+                    <div class="pbi-card-title">Eficacia Domicilios (OTIF)</div>
+                    <div class="pbi-card-value" id="kpiDelivery">98.2%</div>
+                    <div class="pbi-card-foot txt-green">⏱️ Tiempo prom: 18.4 min</div>
+                </div>
+            </div>
+
+            <!-- VISUALS SECTION -->
+            <div class="visuals-grid">
+                <!-- CHART 1: REVENUE BY CATEGORY -->
+                <div class="visual-box">
+                    <div class="visual-title">
+                        <span>📊 Ingresos por Línea de Producto (COP)</span>
+                        <span class="visual-tag">DAX: [Total Ventas COP]</span>
+                    </div>
+                    <div id="categoryChart">
+                        <div class="chart-row">
+                            <div class="chart-label">Combos Mercados Familiares</div>
+                            <div class="chart-bar-wrap"><div class="chart-bar-fill" style="width: 48%; background:#0078d4;"></div></div>
+                            <div class="chart-value">$ 618.300</div>
+                        </div>
+                        <div class="chart-row">
+                            <div class="chart-label">Lácteos y Huevos</div>
+                            <div class="chart-bar-wrap"><div class="chart-bar-fill" style="width: 22%; background:#10b981;"></div></div>
+                            <div class="chart-value">$ 282.800</div>
+                        </div>
+                        <div class="chart-row">
+                            <div class="chart-label">Abarrotes y Despensa</div>
+                            <div class="chart-bar-wrap"><div class="chart-bar-fill" style="width: 17%; background:#f59e0b;"></div></div>
+                            <div class="chart-value">$ 218.460</div>
+                        </div>
+                        <div class="chart-row">
+                            <div class="chart-label">Cuidado del Hogar y Aseo</div>
+                            <div class="chart-bar-wrap"><div class="chart-bar-fill" style="width: 8%; background:#8b5cf6;"></div></div>
+                            <div class="chart-value">$ 96.800</div>
+                        </div>
+                        <div class="chart-row">
+                            <div class="chart-label">Panadería y Café</div>
+                            <div class="chart-bar-wrap"><div class="chart-bar-fill" style="width: 5%; background:#ec4899;"></div></div>
+                            <div class="chart-value">$ 67.640</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHART 2: PROFITABILITY BREAKDOWN -->
+                <div class="visual-box">
+                    <div class="visual-title">
+                        <span>⚖️ Margen %: Detal vs Mercados</span>
+                        <span class="visual-tag">DAX: [Margen %]</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; justify-content:center; gap:16px; height:100%;">
+                        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px; text-align:center;">
+                            <div style="font-size:11px; font-weight:700; color:#0078d4;">PRODUCTOS AL DETAL</div>
+                            <div style="font-size:26px; font-weight:900; color:#0f172a; margin:4px 0;">31.2%</div>
+                            <div style="font-size:10px; color:#64748b;">Rotación constante, volumen unitario</div>
+                        </div>
+                        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:12px; text-align:center;">
+                            <div style="font-size:11px; font-weight:700; color:#166534;">COMBOS DE MERCADO</div>
+                            <div style="font-size:26px; font-weight:900; color:#166534; margin:4px 0;">38.6%</div>
+                            <div style="font-size:10px; color:#166534;">Impacto de Optimización Lineal (IO)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABLE VISUAL: TOP MOVING ITEMS -->
+            <div class="visual-box">
+                <div class="visual-title">
+                    <span>📋 Matriz de Rendimiento por Producto (Esquema Estrella)</span>
+                    <span class="visual-tag">Tabla: Fact_Ventas ⋈ Dim_Producto</span>
+                </div>
+                <table class="pbi-table">
+                    <thead>
+                        <tr>
+                            <th>SKU</th>
+                            <th>Producto / Combo</th>
+                            <th>Tipo</th>
+                            <th>Categoría</th>
+                            <th>Unid. Vendidas</th>
+                            <th>Ingreso Total</th>
+                            <th>Utilidad Bruta</th>
+                            <th>Margen Real</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pbiTableBody">
+                        <tr>
+                            <td><code>CMB-FAM-01</code></td>
+                            <td><strong>Mercado Familiar Esencial</strong></td>
+                            <td><span style="background:#dbeafe; color:#1e40af; padding:2px 6px; border-radius:3px; font-size:9.5px; font-weight:700;">MERCADO</span></td>
+                            <td>Combos Mercados</td>
+                            <td>10</td>
+                            <td>$ 449.000 COP</td>
+                            <td>$ 131.000 COP</td>
+                            <td><strong style="color:#107c41;">29.2%</strong></td>
+                        </tr>
+                        <tr>
+                            <td><code>PRD-HUE-01</code></td>
+                            <td><strong>Huevos Kikes AA x30</strong></td>
+                            <td><span style="background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; font-size:9.5px; font-weight:700;">DETAL</span></td>
+                            <td>Lácteos y Huevos</td>
+                            <td>8</td>
+                            <td>$ 196.000 COP</td>
+                            <td>$ 78.400 COP</td>
+                            <td><strong style="color:#107c41;">40.0%</strong></td>
+                        </tr>
+                        <tr>
+                            <td><code>CMB-DES-02</code></td>
+                            <td><strong>Mercado Desayuno Completo</strong></td>
+                            <td><span style="background:#dbeafe; color:#1e40af; padding:2px 6px; border-radius:3px; font-size:9.5px; font-weight:700;">MERCADO</span></td>
+                            <td>Combos Mercados</td>
+                            <td>6</td>
+                            <td>$ 207.000 COP</td>
+                            <td>$ 55.800 COP</td>
+                            <td><strong style="color:#107c41;">27.0%</strong></td>
+                        </tr>
+                        <tr>
+                            <td><code>PRD-CAF-02</code></td>
+                            <td><strong>Café Sello Rojo 425g</strong></td>
+                            <td><span style="background:#f1f5f9; color:#475569; padding:2px 6px; border-radius:3px; font-size:9.5px; font-weight:700;">DETAL</span></td>
+                            <td>Abarrotes y Despensa</td>
+                            <td>5</td>
+                            <td>$ 109.950 COP</td>
+                            <td>$ 34.950 COP</td>
+                            <td><strong style="color:#107c41;">31.8%</strong></td>
+                        </tr>
+                        <tr>
+                            <td><code>CMB-ASE-03</code></td>
+                            <td><strong>Combo Aseo y Hogar</strong></td>
+                            <td><span style="background:#dbeafe; color:#1e40af; padding:2px 6px; border-radius:3px; font-size:9.5px; font-weight:700;">MERCADO</span></td>
+                            <td>Combos Mercados</td>
+                            <td>3</td>
+                            <td>$ 84.000 COP</td>
+                            <td>$ 28.500 COP</td>
+                            <td><strong style="color:#107c41;">33.9%</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PAGE 2: MODELO DIMENSIONAL -->
+        <div id="page2" class="pbi-report-page" style="display:none;">
+            <div class="canvas-header">
+                <div>
+                    <div class="canvas-title">🗄️ MODELO DIMENSIONAL EN ESTRELLA (STAR SCHEMA)</div>
+                    <div class="canvas-subtitle">Estructura del Almacén de Datos y Relaciones Cardinales (1 : *)</div>
+                </div>
+            </div>
+
+            <div style="background:#f8fafc; border:2px dashed #0078d4; border-radius:10px; padding:24px; text-align:center;">
+                <h3 style="color:#1e3a8a; margin-bottom:12px;">Topología del Data Warehouse en Power BI Desktop</h3>
+                <p style="font-size:12px; color:#475569; max-width:700px; margin:0 auto 20px auto;">
+                    Cinco tablas de dimensiones descriptivas rodean y filtran la tabla de hechos <code>Fact_Ventas</code> mediante relaciones unidireccionales de cardinalidad 1 a varios:
+                </p>
+                <div style="display:flex; justify-content:center; align-items:center; gap:20px; flex-wrap:wrap;">
+                    <div style="background:#fff; border:1px solid #cbd5e1; border-radius:6px; padding:10px 16px; font-size:11px; text-align:left;">
+                        <strong>Dim_Producto (1)</strong><br>
+                        • Id_Producto (PK)<br>
+                        • SKU, Categoria<br>
+                        • Tipo (Detal/Mercado)
+                    </div>
+                    <div style="font-size:18px; color:#0078d4;">➔ 1:* ➔</div>
+                    <div style="background:#1e3a8a; color:#fff; border-radius:8px; padding:16px 22px; font-size:12px; text-align:left; box-shadow:0 4px 12px rgba(30,58,138,0.2);">
+                        <strong style="font-size:14px; color:#f2c811;">FACT_VENTAS (*)</strong><br>
+                        • Id_Venta (PK)<br>
+                        • Id_Producto (FK)<br>
+                        • Id_Tiempo (FK)<br>
+                        • Id_Cliente (FK)<br>
+                        • Id_Canal (FK)<br>
+                        • Id_Estado (FK)<br>
+                        • Ingreso_Bruto_COP (Métrica)<br>
+                        • Costo_Total_COP (Métrica)<br>
+                        • Utilidad_Bruta_COP (Métrica)
+                    </div>
+                    <div style="font-size:18px; color:#0078d4;">* ➔</div>
+                    <div style="background:#fff; border:1px solid #cbd5e1; border-radius:6px; padding:10px 16px; font-size:11px; text-align:left;">
+                        <strong>Dim_Tiempo (1)</strong><br>
+                        • Id_Tiempo (PK)<br>
+                        • Fecha, Mes, Año<br>
+                        • Es_FinDeSemana
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM TABS -->
+    <div class="pbi-bottom-tabs">
+        <div class="pbi-tab active" onclick="switchPage(1, this)">📊 1. Resumen Ejecutivo (Ventas & Margen)</div>
+        <div class="pbi-tab" onclick="switchPage(2, this)">🗄️ 2. Modelo Dimensional Estrella</div>
+    </div>
+
+    <script>
+        function switchPage(pageNumber, tabEl) {
+            document.querySelectorAll('.pbi-tab').forEach(t => t.classList.remove('active'));
+            tabEl.classList.add('active');
+
+            document.getElementById('page1').style.display = pageNumber === 1 ? 'flex' : 'none';
+            document.getElementById('page2').style.display = pageNumber === 2 ? 'flex' : 'none';
+        }
+
+        function filterCategory(cat, el) {
+            document.querySelectorAll('.pbi-pill').forEach(p => p.classList.remove('active'));
+            el.classList.add('active');
+
+            if (cat === 'COMBOS') {
+                document.getElementById('kpiSales').innerText = '$ 618.300';
+                document.getElementById('kpiMargin').innerText = '38.6%';
+                document.getElementById('kpiTicket').innerText = '$ 56.200';
+                document.getElementById('kpiOrders').innerText = '11';
+            } else if (cat === 'DETAL') {
+                document.getElementById('kpiSales').innerText = '$ 665.700';
+                document.getElementById('kpiMargin').innerText = '31.2%';
+                document.getElementById('kpiTicket').innerText = '$ 30.250';
+                document.getElementById('kpiOrders').innerText = '22';
+            } else {
+                document.getElementById('kpiSales').innerText = '$ 1.284.000';
+                document.getElementById('kpiMargin').innerText = '34.8%';
+                document.getElementById('kpiTicket').innerText = '$ 38.500';
+                document.getElementById('kpiOrders').innerText = '33';
+            }
+        }
+
+        function refreshData() {
+            alert('Consultando modelo en memoria VertiPaq... Todos los indicadores se encuentran sincronizados al 100%.');
+        }
+
+        function toggleFull() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                document.exitFullscreen().catch(() => {});
+            }
+        }
+    </script>
+</body>
+</html>

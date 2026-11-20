@@ -1,0 +1,12 @@
+{
+    "Total Ventas COP": "Total Ventas COP = SUM(Fact_Ventas[Ingreso_Bruto_COP])",
+    "Costo Total COP": "Costo Total COP = SUM(Fact_Ventas[Costo_Total_COP])",
+    "Margen Bruto COP": "Margen Bruto COP = [Total Ventas COP] - [Costo Total COP]",
+    "Margen Bruto %": "Margen Bruto % = DIVIDE([Margen Bruto COP], [Total Ventas COP], 0)",
+    "Numero de Pedidos": "Numero de Pedidos = DISTINCTCOUNT(Fact_Ventas[Numero_Pedido])",
+    "Ticket Promedio AOV": "Ticket Promedio AOV = DIVIDE([Total Ventas COP], [Numero de Pedidos], 0)",
+    "Tiempo Promedio Entrega": "Tiempo Promedio Entrega = AVERAGE(Fact_Ventas[Tiempo_Entrega_Min])",
+    "Eficacia Logistica OTIF": "Eficacia Logistica OTIF = DIVIDE(CALCULATE(COUNTROWS(Fact_Ventas), Fact_Ventas[Id_Estado] = 1, Fact_Ventas[Tiempo_Entrega_Min] <= 30), COUNTROWS(Fact_Ventas), 0)",
+    "Ventas Combos Mercados": "Ventas Combos Mercados = CALCULATE([Total Ventas COP], Dim_Producto[Tipo_Producto] = \"MERCADO\")",
+    "Ventas Detal": "Ventas Detal = CALCULATE([Total Ventas COP], Dim_Producto[Tipo_Producto] = \"DETAL\")"
+}

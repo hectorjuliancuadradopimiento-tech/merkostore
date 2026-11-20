@@ -813,8 +813,8 @@
                                     🔗 Enlace Power BI Service (Embed / Publish to Web):
                                 </label>
                                 <input type="text" id="powerBiEmbedUrlInput" 
-                                       placeholder="Pega aquí el enlace de tu reporte: https://app.powerbi.com/view?r=..." 
-                                       value="https://app.powerbi.com/view?r=eyJrIjoiMDYxZmExYzAtMGFmNS00MWQ2LTg4M2QtZjM5YmMxN2IxZjQzIiwidCI6IjI4MWU3YjA5LWQ5OGMtNDg0OS1iNDAyLTMyYjEyNTg2Y2NjMyIsImMiOjR9"
+                                       placeholder="Pega aquí el enlace de tu reporte de Power BI Service o usa pbi_report.html" 
+                                       value="pbi_report.html"
                                        style="flex:1; padding:9px 14px; background:#0c0908; border:1px solid rgba(230,81,0,0.3); border-radius:8px; color:#fff; font-size:0.8rem; font-family:'JetBrains Mono', monospace;"
                                        onchange="actualizarReportePowerBi()">
                             </div>
@@ -826,11 +826,11 @@
                                     ⛶ Pantalla Completa
                                 </button>
                                 <a id="btnAbrirPbiExterno" 
-                                   href="https://app.powerbi.com/view?r=eyJrIjoiMDYxZmExYzAtMGFmNS00MWQ2LTg4M2QtZjM5YmMxN2IxZjQzIiwidCI6IjI4MWU3YjA5LWQ5OGMtNDg0OS1iNDAyLTMyYjEyNTg2Y2NjMyIsImMiOjR9" 
+                                   href="pbi_report.html" 
                                    target="_blank" 
                                    class="btn-merko-outline" 
                                    style="padding:9px 14px; font-size:0.8rem; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
-                                    ↗ Power BI Service
+                                    ↗ Abrir en Nueva Ventana
                                 </a>
                             </div>
                         </div>
@@ -841,7 +841,7 @@
                         <div style="background:#130e0d; padding:10px 18px; border-bottom:1px solid rgba(230,81,0,0.25); display:flex; justify-content:space-between; align-items:center;">
                             <div style="display:flex; align-items:center; gap:8px;">
                                 <span style="font-size:1rem;">📊</span>
-                                <span style="font-weight:800; font-size:0.82rem; color:#FF8F00;" id="lblPowerBiTitle">Microsoft Power BI Service • Merkostore_Analytics_v2.pbix</span>
+                                <span style="font-weight:800; font-size:0.82rem; color:#FF8F00;" id="lblPowerBiTitle">Microsoft Power BI Service • Merkostore_Analytics.pbix</span>
                             </div>
                             <div style="font-size:0.75rem; color:var(--admin-text-muted);">
                                 Componente de Integración: <code>&lt;iframe&gt;</code> HTML5 Embed Oficial
@@ -851,7 +851,7 @@
                         <!-- Real Embedded Frame -->
                         <div style="position:relative; width:100%; height:750px; background:#0f172a;">
                             <iframe id="iframePowerBi" 
-                                    src="https://app.powerbi.com/view?r=eyJrIjoiMDYxZmExYzAtMGFmNS00MWQ2LTg4M2QtZjM5YmMxN2IxZjQzIiwidCI6IjI4MWU3YjA5LWQ5OGMtNDg0OS1iNDAyLTMyYjEyNTg2Y2NjMyIsImMiOjR9" 
+                                    src="pbi_report.html" 
                                     frameborder="0" 
                                     allowFullScreen="true" 
                                     style="width:100%; height:100%; border:none; display:block;">

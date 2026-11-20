@@ -1,0 +1,5 @@
+Id_Estado,Codigo_Estado,Descripcion,Es_Venta_Efectiva
+1,ENTREGADO,Pedido entregado a satisfacción en domicilio,SI
+2,EN_CAMINO,Repartidor en ruta hacia el cliente,SI
+3,PREPARANDO,En empaque en bodega,SI
+4,CANCELADO,Cancelado por el cliente o sin cobertura,NO
