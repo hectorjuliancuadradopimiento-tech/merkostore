@@ -289,4 +289,31 @@ erDiagram
 ```
 
 ---
+
+## 7. REPOSITORIO OFICIAL DEL PROYECTO (ENTREGABLE 1.2)
+
+En cumplimiento con los requerimientos de la asignatura de Desarrollo Web Avanzado, el código fuente completo, actualizado y versionado se encuentra alojado y accesible públicamente para los docentes evaluadores en el siguiente enlace de GitHub:
+
+**Enlace Oficial:** [https://github.com/hectorjuliancuadradopimiento-tech/merkostore](https://github.com/hectorjuliancuadradopimiento-tech/merkostore)
+
+### 7.1. Contenido y Estructura del Repositorio
+- **Código fuente actualizado**: Implementación completa de Spring Boot 3 / Java 21 y Frontend SPA.
+- **Estructura por capas**: Modularización limpia en controladores, servicios, repositorios, DTOs y modelos.
+- **Archivo README.md**: Instrucciones de instalación, arquitectura, endpoints y credenciales de prueba (`admin` / `1212`).
+- **Seguridad**: Configuración parametrizada sin exposición de tokens ni contraseñas.
+
+### 7.2. Instrucciones de Ejecución
+```bash
+# Clonar repositorio
+git clone https://github.com/hectorjuliancuadradopimiento-tech/merkostore.git
+cd merkostore
+
+# Compilar con Maven
+mvn clean test-compile
+
+# Ejecutar aplicación
+mvn spring-boot:run
+```
+
+---
 *Fin del Documento Técnico.*

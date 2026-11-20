@@ -600,6 +600,16 @@
         <li><strong>Módulo de Optimización Lineal (Investigación de Operaciones):</strong> Solucionador Simplex interactivo para determinar la producción óptima de combos con sincronización al catálogo de un solo clic.</li>
     </ul>
 
+    <h2 class="sub-title">4.3. Explicación de la Interacción entre Interfaz y Servicios Backend</h2>
+    <p>
+        La comunicación entre el cliente web (SPA) y el servidor Spring Boot se realiza mediante llamadas asíncronas REST a través de la Fetch API nativa de JavaScript encapsulada en el objeto modular <code>API</code> en <code>app.js</code>:
+    </p>
+    <ul>
+        <li><strong>Inyección Automática de Credenciales:</strong> Cuando el tendero inicia sesión en el panel administrativo, el JWT emitido por <code>/api/v1/auth/login</code> se persiste en <code>localStorage</code> y se inyecta dinámicamente en la cabecera <code>Authorization: Bearer &lt;token&gt;</code> de cada petición hacia los endpoints de <code>/api/v1/admin/**</code>.</li>
+        <li><strong>Consumo Reactivo y Asíncrono del Catálogo:</strong> Al cargar la vista de la tienda, se invoca <code>GET /api/v1/public/products</code>. La respuesta JSON se almacena en el estado global reactivo <code>state.products</code> y se renderiza en el DOM mediante plantillas de componentes.</li>
+        <li><strong>Persistencia Desacoplada y Modo Offline-First:</strong> Ante una eventual caída o desconexión del servidor, el subsistema local <code>Storage</code> almacena en caché las operaciones, permitiendo continuar navegando y procesando órdenes de WhatsApp sin pérdida de disponibilidad.</li>
+    </ul>
+
     <div class="page-break"></div>
 
     <!-- ==================== SECCIÓN 5 ==================== -->
@@ -690,6 +700,45 @@
         Todas las capas, controladores, modelos y pruebas unitarias del proyecto fueron verificadas satisfactoriamente mediante el comando oficial de construcción de Maven:<br>
         <code>mvn clean test-compile</code> ➔ <strong>BUILD SUCCESS (37 clases principales, 3 clases de pruebas, 0 errores)</strong>.
     </div>
+
+    <div class="page-break"></div>
+
+    <!-- ==================== SECCIÓN 7: REPOSITORIO DEL PROYECTO ==================== -->
+    <h1 class="sec-title">7. Repositorio Oficial del Proyecto (Entregable 1.2)</h1>
+
+    <p>
+        En cumplimiento con los requerimientos de la asignatura de Desarrollo Web Avanzado, el código fuente completo, actualizado y versionado se encuentra alojado y accesible públicamente para los docentes evaluadores en el siguiente enlace de GitHub:
+    </p>
+
+    <div class="highlight-callout" style="background:#f8fafc; border-left-color:#1e3a8a; padding:16px 20px;">
+        <strong>Enlace Oficial al Repositorio de GitHub:</strong><br>
+        <span style="font-size:11pt; font-family:'JetBrains Mono', monospace; font-weight:800; color:#1e3a8a;">
+            https://github.com/hectorjuliancuadradopimiento-tech/merkostore
+        </span>
+    </div>
+
+    <h2 class="sub-title">7.1. Contenido y Estructura del Repositorio</h2>
+    <ul>
+        <li><strong>Código Fuente Actualizado:</strong> Implementación íntegra de la API en Spring Boot 3 / Java 21 y la aplicación cliente SPA sin librerías externas superfluas.</li>
+        <li><strong>Estructura por Capas:</strong> Organización modular clara en controladores, servicios, repositorios, modelos, DTOs y seguridad perimetral JWT.</li>
+        <li><strong>Archivo README.md Profesional:</strong> Documentación detallada en la raíz con descripción del sistema, insignias oficiales, requisitos del sistema, endpoints REST y guía de inicio rápido.</li>
+        <li><strong>Archivos de Configuración Protegidos:</strong> Configuración parametrizada en <code>application.properties</code> mediante variables de entorno (<code>${GROQ_API_KEY:}</code>) sin exponer credenciales privadas ni claves de producción.</li>
+    </ul>
+
+    <h2 class="sub-title">7.2. Instrucciones de Clonación y Ejecución Local</h2>
+    <pre># 1. Clonar el repositorio oficial desde GitHub
+git clone https://github.com/hectorjuliancuadradopimiento-tech/merkostore.git
+cd merkostore
+
+# 2. Compilar y verificar el código fuente con Maven
+mvn clean test-compile
+
+# 3. Iniciar el servidor Spring Boot en el puerto 8085
+mvn spring-boot:run
+
+# 4. Abrir la aplicación web en el navegador
+# Tienda Pública y Panel Administrativo: http://localhost:8085/
+# Credenciales Administrador por Defecto: Usuario: admin | Contraseña: 1212</pre>
 
 </body>
 </html>
