@@ -7,7 +7,6 @@ import com.merkostore.api.models.User;
 import com.merkostore.api.repositories.UserRepository;
 import com.merkostore.api.security.JwtTokenProvider;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -20,7 +19,6 @@ import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/v1/auth")
-@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class AuthController {
 
@@ -28,6 +26,17 @@ public class AuthController {
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
+    public AuthController(
+            AuthenticationManager authenticationManager,
+            JwtTokenProvider tokenProvider,
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder) {
+        this.authenticationManager = authenticationManager;
+        this.tokenProvider = tokenProvider;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponse>> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
@@ -61,11 +70,11 @@ public class AuthController {
     @PostMapping("/seed-admin")
     public ResponseEntity<ApiResponse<String>> seedAdmin() {
         boolean created = ensureAdminExists();
-        if (created) {
-            return ResponseEntity.ok(ApiResponse.ok("Usuario administrador creado con éxito (admin / 1212)", "CREATED"));
-        } else {
-            return ResponseEntity.ok(ApiResponse.ok("El usuario administrador ya existía", "EXISTS"));
-        }
+        String message = created 
+                ? "Usuario administrador creado con éxito (admin / 1212)" 
+                : "El usuario administrador ya existía";
+        String status = created ? "CREATED" : "EXISTS";
+        return ResponseEntity.ok(ApiResponse.ok(message, status));
     }
 
     private synchronized boolean ensureAdminExists() {

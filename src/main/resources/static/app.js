@@ -2,7 +2,7 @@
    MERKOSTORE 8.0 - PRODUCTOS & MERCADOS ENGINE & HISTORIAL UNIFICADO
    ========================================================================== */
 
-const API_BASE_URL = (window.location.port === '8080') ? '' : 'http://localhost:8080';
+const API_BASE_URL = (window.location.protocol.startsWith('http') && window.location.port !== '5500' && window.location.port !== '3000') ? '' : 'http://localhost:' + (window.location.port || '8085');
 
 const API = {
     getToken() {
@@ -63,6 +63,24 @@ const API = {
     put(endpoint, body) { return this.request(endpoint, { method: 'PUT', body: JSON.stringify(body) }); },
     patch(endpoint, body) { return this.request(endpoint, { method: 'PATCH', body: JSON.stringify(body) }); },
     delete(endpoint) { return this.request(endpoint, { method: 'DELETE' }); }
+};
+
+const Storage = {
+    get(key, defaultValue = null) {
+        try {
+            const raw = localStorage.getItem('merkostore_' + key);
+            return raw ? JSON.parse(raw) : defaultValue;
+        } catch (e) {
+            return defaultValue;
+        }
+    },
+    set(key, value) {
+        try {
+            localStorage.setItem('merkostore_' + key, JSON.stringify(value));
+        } catch (e) {
+            console.warn('Storage.set failed:', e);
+        }
+    }
 };
 
 const state = {
@@ -552,6 +570,28 @@ function quickEditStockFromDashboard(productId) {
 
 // INITIALIZATION
 document.addEventListener('DOMContentLoaded', () => {
+    // 1. Restore persistent state from localStorage
+    const savedProducts = Storage.get('products');
+    if (savedProducts && Array.isArray(savedProducts) && savedProducts.length > 0) {
+        state.products = savedProducts;
+    } else {
+        Storage.set('products', state.products);
+    }
+
+    const savedCategories = Storage.get('categories');
+    if (savedCategories && Array.isArray(savedCategories) && savedCategories.length > 0) {
+        state.categories = savedCategories;
+    } else {
+        Storage.set('categories', state.categories);
+    }
+
+    const savedOrders = Storage.get('orders');
+    if (savedOrders && Array.isArray(savedOrders) && savedOrders.length > 0) {
+        state.orders = savedOrders;
+    } else {
+        Storage.set('orders', state.orders);
+    }
+
     recalculateMercadoStocks();
     renderCategoryBadges();
     renderCategoryOptions();
@@ -802,7 +842,8 @@ function renderProducts() {
     const grid = document.getElementById('productsGrid');
     if (!grid) return;
 
-    let filtered = state.products;
+    // Filter ONLY active products for storefront (inactive products are hidden from customers)
+    let filtered = state.products.filter(p => p.isAvailable !== false);
 
     if (state.selectedCategory !== 'ALL') {
         filtered = filtered.filter(p => p.categoryId === state.selectedCategory);
@@ -833,14 +874,7 @@ function renderProducts() {
         return `
             <div class="product-card-bright ${isSoldOut ? 'sold-out' : ''}">
                 <div class="card-img-wrap">
-                    ${p.discountPercent ? `<span class="discount-tag">${p.discountPercent}</span>` : ''}
-                    <span class="card-type-badge ${isMercado ? 'mercado' : 'detal'}">
-                        ${isMercado ? '📦 MERCADO' : '🛍️ DETAL'}
-                    </span>
-                    <span class="stock-status-badge" style="${isSoldOut ? 'background:#ef4444; color:#fff;' : ''}">
-                        ${isSoldOut ? 'Agotado' : `${p.stock} dispon.`}
-                    </span>
-                    <button class="fav-heart-btn" title="Guardar en favoritos" onclick="toggleFavorite(this, '${p.name.replace(/'/g, "\\'")}')">♡</button>
+                    ${isSoldOut ? `<span class="stock-status-badge" style="background:#ef4444; color:#fff; top:10px; left:10px; position:absolute; border-radius:6px; padding:3px 8px; font-size:0.72rem; font-weight:800; z-index:2;">Agotado</span>` : ''}
                     <img src="${p.imageUrl}" alt="${p.name}" loading="lazy">
                 </div>
                 <div class="card-details">
@@ -854,9 +888,6 @@ function renderProducts() {
                             $ ${activePrice.toLocaleString('es-CO')}
                             ${hasDiscount ? `<span class="card-old-price">$ ${p.price.toLocaleString('es-CO')}</span>` : ''}
                         </div>
-                        ${hasDiscount ? `
-                            <span class="savings-badge">🏷️ AHORRAS $ ${savings.toLocaleString('es-CO')}</span>
-                        ` : ''}
                     </div>
                     
                     ${isSoldOut ? `
@@ -1289,9 +1320,9 @@ async function processWhatsAppCheckout() {
 function switchAdminSubTab(tab) {
     state.currentAdminSubTab = tab;
 
-    ['dashboard', 'products', 'productEditor', 'orders', 'categories', 'config', 'users', 'bi'].forEach(t => {
-        const btnId = 'tabMerko' + (t === 'bi' ? 'Bi' : t.charAt(0).toUpperCase() + t.slice(1));
-        const contentId = 'subtab' + (t === 'bi' ? 'Bi' : t.charAt(0).toUpperCase() + t.slice(1));
+    ['dashboard', 'products', 'productEditor', 'orders', 'categories', 'config', 'users', 'bi', 'io'].forEach(t => {
+        const btnId = 'tabMerko' + (t === 'bi' ? 'Bi' : (t === 'io' ? 'Io' : t.charAt(0).toUpperCase() + t.slice(1)));
+        const contentId = 'subtab' + (t === 'bi' ? 'Bi' : (t === 'io' ? 'Io' : t.charAt(0).toUpperCase() + t.slice(1)));
         const btn = document.getElementById(btnId);
         const content = document.getElementById(contentId);
         if (btn) btn.classList.toggle('active', t === tab);
@@ -1309,6 +1340,118 @@ function switchAdminSubTab(tab) {
     if (tab === 'categories') renderAdminCategoriesTable();
     if (tab === 'orders') renderHistorialUnificadoTable();
     if (tab === 'users') loadAdminUsersData();
+    if (tab === 'io') ejecutarOptimizacionLinealIO();
+}
+
+// ==========================================================================
+// INVESTIGACIÓN DE OPERACIONES - MOTOR DE OPTIMIZACIÓN LINEAL ENTERA (MILP)
+// ==========================================================================
+
+let ultimaSolucionIO = { x1: 5, x2: 3, y1: 27, y2: 9, y3: 34, y4: 9, y5: 23, z: 600520 };
+
+function ejecutarOptimizacionLinealIO() {
+    const bHuevos = parseInt(document.getElementById('ioStockHuevos')?.value) || 35;
+    const bCafe = parseInt(document.getElementById('ioStockCafe')?.value) || 20;
+    const bHarina = parseInt(document.getElementById('ioStockHarina')?.value) || 50;
+    const bAceite = parseInt(document.getElementById('ioStockAceite')?.value) || 14;
+    const bAzucar = parseInt(document.getElementById('ioStockAzucar')?.value) || 28;
+    const bTiempo = parseInt(document.getElementById('ioTiempoArmado')?.value) || 480;
+
+    const cX1 = 13100, cX2 = 9300;
+    const cY1 = 9800, cY2 = 6990, cY3 = 1600, cY4 = 5990, cY5 = 3100;
+
+    const lbX1 = 5, lbX2 = 3;
+    const lbY1 = 5, lbY2 = 2, lbY3 = 0, lbY4 = 2, lbY5 = 0;
+
+    let mejorZ = -1;
+    let mejorSol = null;
+
+    const maxX1 = Math.min(bHuevos, bCafe, Math.floor(bHarina / 2), bAceite, bAzucar, Math.floor(bTiempo / 12));
+    const maxX2 = Math.min(bHuevos, Math.floor(bCafe / 2), Math.floor(bHarina / 2), Math.floor(bTiempo / 8));
+
+    for (let x1 = lbX1; x1 <= maxX1; x1++) {
+        for (let x2 = lbX2; x2 <= maxX2; x2++) {
+            const tiempoUsado = 12 * x1 + 8 * x2;
+            if (tiempoUsado > bTiempo) continue;
+
+            const y1 = bHuevos - (x1 + x2);
+            const y2 = bCafe - (x1 + 2 * x2);
+            const y3 = bHarina - (2 * x1 + 2 * x2);
+            const y4 = bAceite - x1;
+            const y5 = bAzucar - x1;
+
+            if (y1 >= lbY1 && y2 >= lbY2 && y3 >= lbY3 && y4 >= lbY4 && y5 >= lbY5) {
+                const z = cX1 * x1 + cX2 * x2 + cY1 * y1 + cY2 * y2 + cY3 * y3 + cY4 * y4 + cY5 * y5;
+                if (z > mejorZ) {
+                    mejorZ = z;
+                    mejorSol = { x1, x2, y1, y2, y3, y4, y5, z };
+                }
+            }
+        }
+    }
+
+    if (!mejorSol) {
+        showToast('⚠️ No existe solución factible con los recursos ingresados', 'warning', '⚠️');
+        return;
+    }
+
+    ultimaSolucionIO = mejorSol;
+
+    const lblZ = document.getElementById('ioValorZOptimo');
+    if (lblZ) lblZ.textContent = `$ ${mejorSol.z.toLocaleString('es-CO')} COP`;
+
+    const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = `${val} unds`;
+    };
+
+    setVal('ioSolX1', mejorSol.x1);
+    setVal('ioSolX2', mejorSol.x2);
+    setVal('ioSolY1', mejorSol.y1);
+    setVal('ioSolY2', mejorSol.y2);
+    setVal('ioSolY3', mejorSol.y3);
+    setVal('ioSolY4', mejorSol.y4);
+    setVal('ioSolY5', mejorSol.y5);
+
+    showToast(`✓ Modelo MILP Resuelto: Z* = $ ${mejorSol.z.toLocaleString('es-CO')} COP`, 'success', '⚖️');
+}
+
+function aplicarSolucionIOAInventario() {
+    if (!ultimaSolucionIO) {
+        ejecutarOptimizacionLinealIO();
+    }
+
+    const sol = ultimaSolucionIO;
+
+    state.products.forEach(p => {
+        const name = (p.name || '').toLowerCase();
+        if (name.includes('familiar esencial')) {
+            p.stock = sol.x1;
+        } else if (name.includes('desayuno completo')) {
+            p.stock = sol.x2;
+        } else if (name.includes('huevo')) {
+            p.stock = sol.y1;
+        } else if (name.includes('cafe') || name.includes('café')) {
+            p.stock = sol.y2;
+        } else if (name.includes('harina')) {
+            p.stock = sol.y3;
+        } else if (name.includes('aceite')) {
+            p.stock = sol.y4;
+        } else if (name.includes('azucar') || name.includes('azúcar')) {
+            p.stock = sol.y5;
+        }
+    });
+
+    Storage.set('products', state.products);
+    renderProducts();
+    if (state.currentAdminSubTab === 'products') {
+        renderAdminProductsTable();
+    }
+    if (typeof updateDashboardKPIs === 'function') {
+        updateDashboardKPIs();
+    }
+
+    showToast('✓ Stock de la tienda sincronizado con la solución óptima de IO', 'success', '📦');
 }
 
 async function loadAdminUsersData() {
@@ -1355,11 +1498,12 @@ function renderAdminUsersTable() {
             <td style="padding:16px 20px; font-weight:700; color:#ffffff; font-size:0.95rem;">
                 <span style="display:inline-flex; align-items:center; gap:8px;">
                     <span style="color:#FF8F00; font-size:1rem;">👤</span> ${u.username}
+                    ${u.isActive === false ? '<span style="font-size:0.7rem; color:#f87171; background:rgba(239,68,68,0.15); padding:2px 8px; border-radius:4px;">Inactivo</span>' : '<span style="font-size:0.7rem; color:#4ade80; background:rgba(74,222,128,0.15); padding:2px 8px; border-radius:4px;">Activo</span>'}
                 </span>
             </td>
             <td style="padding:16px 20px; text-align:right;">
-                <button class="btn-delete-admin-pill" onclick="deleteAdminUser('${u.id}')" style="background:#7f1d1d; color:#fca5a5; border:1px solid rgba(239,68,68,0.3); padding:6px 18px; border-radius:8px; font-size:0.8rem; font-weight:800; cursor:pointer; transition:all 0.2s ease;">
-                    🗑️ Eliminar
+                <button class="btn-delete-admin-pill" onclick="deleteAdminUser('${u.id}')" style="background:${u.isActive === false ? 'rgba(74,222,128,0.2)' : '#7f1d1d'}; color:${u.isActive === false ? '#4ade80' : '#fca5a5'}; border:1px solid ${u.isActive === false ? 'rgba(74,222,128,0.4)' : 'rgba(239,68,68,0.3)'}; padding:6px 18px; border-radius:8px; font-size:0.8rem; font-weight:800; cursor:pointer; transition:all 0.2s ease;">
+                    ${u.isActive === false ? '✅ Activar' : '🚫 Inactivar'}
                 </button>
             </td>
         </tr>
@@ -1420,28 +1564,37 @@ async function handleCreateAdminUser(e) {
 async function deleteAdminUser(userId) {
     let usersList = state.users || [];
     if (usersList.length <= 1) {
-        showToast('🔒 Por seguridad, el último administrador no se puede eliminar.', 'warning', '🔒');
+        showToast('🔒 Por seguridad, el último administrador no se puede inactivar.', 'warning', '🔒');
         return;
     }
 
     const u = usersList.find(user => user.id === userId);
     const username = u ? u.username : 'seleccionado';
+    const isCurrentlyActive = u.isActive !== false;
+    const confirmMsg = isCurrentlyActive 
+        ? `¿Deseas inactivar la cuenta de "${username}"? El registro de usuario se preservará en el sistema.`
+        : `¿Deseas reactivar la cuenta de "${username}"?`;
 
-    if (!confirm(`¿Estás seguro de que deseas eliminar al usuario "${username}"?`)) {
+    if (!confirm(confirmMsg)) {
         return;
     }
+
+    u.isActive = !isCurrentlyActive;
 
     try {
         if (API.getToken()) {
             await API.delete(`/api/v1/admin/users/${userId}`).catch(() => {});
         }
     } catch (err) {
-        console.warn('API error deleting admin, local fallback active', err);
+        console.warn('API error inactivating admin, local fallback active', err);
     }
 
-    state.users = usersList.filter(user => user.id !== userId);
     renderAdminUsersTable();
-    showToast(`🗑️ Administrador "${username}" eliminado correctamente`, 'warning', '🗑️');
+    showToast(
+        u.isActive ? `✅ Administrador "${username}" activado correctamente` : `🚫 Administrador "${username}" inactivado (registro preservado)`,
+        u.isActive ? 'success' : 'warning',
+        u.isActive ? '✅' : '🚫'
+    );
 }
 
 function filterAdminInventoryStock(filter) {
@@ -1476,15 +1629,22 @@ async function toggleProductStockAvailability(productId) {
     const product = state.products.find(p => p.id === productId);
     if (!product) return;
 
-    const newStatus = !(product.isAvailable !== false);
-    product.isAvailable = newStatus;
+    const inStock = product.stock > 0;
+    if (inStock) {
+        product.previousStock = product.stock;
+        product.stock = 0;
+    } else {
+        product.stock = product.previousStock || 10;
+    }
+
+    Storage.set('products', state.products);
 
     try {
         if (API.getToken()) {
-            await API.put(`/api/v1/products/${productId}/availability`, { isAvailable: newStatus }).catch(() => {});
+            await API.patch(`/api/v1/admin/products/${productId}/toggle-availability`).catch(() => {});
         }
     } catch (err) {
-        console.warn('API error toggling availability, local fallback active', err);
+        console.warn('API error toggling stock availability, local fallback active', err);
     }
 
     renderAdminProductsTable();
@@ -1493,10 +1653,10 @@ async function toggleProductStockAvailability(productId) {
         updateDashboardKPIs();
     }
 
-    const statusText = newStatus ? '✓ En Stock' : '✕ Agotado';
-    const toastType = newStatus ? 'success' : 'warning';
-    const icon = newStatus ? '🟢' : '🔴';
-    showToast(`Estado de "${product.name}" actualizado a: ${statusText}`, toastType, icon);
+    const statusText = product.stock > 0 ? '✓ En Stock' : '✕ Agotado';
+    const toastType = product.stock > 0 ? 'success' : 'warning';
+    const icon = product.stock > 0 ? '🟢' : '🔴';
+    showToast(`Stock de "${product.name}" actualizado a: ${statusText}`, toastType, icon);
 }
 
 function renderAdminProductsTable() {
@@ -1541,10 +1701,11 @@ function renderAdminProductsTable() {
 
     tbody.innerHTML = list.map(p => {
         const isMercado = p.type === 'MERCADO';
-        const isAvailable = p.isAvailable !== false && p.stock > 0;
+        const isActive = p.isAvailable !== false;
+        const inStock = p.stock > 0;
 
         return `
-            <tr>
+            <tr style="${!isActive ? 'opacity:0.65; background:rgba(239, 68, 68, 0.04);' : ''}">
                 <td>
                     <img src="${p.imageUrl}" alt="${p.name}" style="width:42px; height:42px; border-radius:8px; object-fit:cover; border:1px solid rgba(255,255,255,0.1);">
                 </td>
@@ -1555,7 +1716,7 @@ function renderAdminProductsTable() {
                             <span class="card-type-badge ${isMercado ? 'mercado' : 'detal'}" style="position:static; font-size:0.65rem; padding:2px 6px;">
                                 ${isMercado ? 'Mercado' : 'Producto Detal'}
                             </span>
-                            <span style="font-size:0.65rem; color:#94a3b8; background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:4px;">Cloudinary</span>
+                            ${!isActive ? `<span style="font-size:0.65rem; color:#ef4444; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); padding:2px 6px; border-radius:4px; font-weight:700;">🚫 INACTIVO</span>` : ''}
                         </div>
                     </div>
                 </td>
@@ -1565,14 +1726,16 @@ function renderAdminProductsTable() {
                     ${p.stock} ${p.variantInfo ? `<span style="font-size:0.75rem; color:#94a3b8;">(${p.variantInfo})</span>` : ''}
                 </td>
                 <td>
-                    <button class="stock-toggle-pill-btn ${isAvailable ? 'en-stock' : 'agotado'}" onclick="toggleProductStockAvailability('${p.id}')">
-                        ${isAvailable ? '✓ En Stock' : '✕ Agotado'}
+                    <button class="stock-toggle-pill-btn ${inStock ? 'en-stock' : 'agotado'}" onclick="toggleProductStockAvailability('${p.id}')">
+                        ${inStock ? '✓ En Stock' : '✕ Agotado'}
                     </button>
                 </td>
                 <td style="text-align:right;">
                     <div style="display:flex; justify-content:flex-end; gap:6px;">
                         <button class="btn-merko-outline" style="padding:5px 12px; font-size:0.75rem; background:#332924;" onclick="editProduct('${p.id}')">✏️ Editar</button>
-                        <button class="btn-merko-outline" style="padding:5px 12px; font-size:0.75rem; color:#f87171; border-color:rgba(239, 68, 68, 0.4); background:rgba(239, 68, 68, 0.15);" onclick="deleteProduct('${p.id}')">🗑️ Eliminar</button>
+                        <button class="btn-merko-outline" style="padding:5px 12px; font-size:0.75rem; ${isActive ? 'color:#f87171; border-color:rgba(239, 68, 68, 0.4); background:rgba(239, 68, 68, 0.15);' : 'color:#4ade80; border-color:rgba(74, 222, 128, 0.4); background:rgba(74, 222, 128, 0.15);'}" onclick="toggleProductActivation('${p.id}')" title="${isActive ? 'Inactivar del catálogo (registro preservado)' : 'Activar en catálogo'}">
+                            ${isActive ? '🚫 Inactivar' : '✅ Activar'}
+                        </button>
                     </div>
                 </td>
             </tr>
@@ -1728,15 +1891,39 @@ function editProduct(productId) {
     switchAdminSubTab('productEditor');
 }
 
-function deleteProduct(productId) {
+async function toggleProductActivation(productId) {
     const p = state.products.find(prod => prod.id === productId);
-    if (confirm('¿Estás seguro de eliminar este ítem del catálogo?')) {
-        state.products = state.products.filter(prod => prod.id !== productId);
-        recalculateMercadoStocks();
-        renderProducts();
-        renderAdminProductsTable();
-        showToast(`🗑️ ${p ? p.name : 'Ítem'} eliminado del catálogo`, 'warning', '🗑️');
-    }
+    if (!p) return;
+    const currentlyActive = p.isAvailable !== false;
+    const confirmPrompt = currentlyActive 
+        ? `¿Deseas inactivar "${p.name}"? El producto no se eliminará de la base de datos, solo se ocultará a los clientes.`
+        : `¿Deseas reactivar "${p.name}" en la tienda?`;
+
+    if (!confirm(confirmPrompt)) return;
+
+    p.isAvailable = !currentlyActive;
+    Storage.set('products', state.products);
+
+    try {
+        if (API.getToken()) {
+            await API.patch(`/api/v1/admin/products/${productId}/toggle-availability`).catch(() => {});
+        }
+    } catch (e) {}
+
+    recalculateMercadoStocks();
+    renderProducts();
+    renderAdminProductsTable();
+    if (typeof updateDashboardKPIs === 'function') updateDashboardKPIs();
+
+    showToast(
+        p.isAvailable ? `✅ "${p.name}" activado correctamente` : `🚫 "${p.name}" inactivado (registro preservado)`,
+        p.isAvailable ? 'success' : 'warning',
+        p.isAvailable ? '✅' : '🚫'
+    );
+}
+
+function deleteProduct(productId) {
+    toggleProductActivation(productId);
 }
 
 function updateLivePreview() {
@@ -1844,6 +2031,7 @@ function saveProductFromEditor() {
         showToast(`✅ ¡${type === 'MERCADO' ? 'Mercado Combo' : 'Producto Detal'} guardado exitosamente!`, 'success', '💾');
     }
 
+    Storage.set('products', state.products);
     recalculateMercadoStocks();
     renderProducts();
     renderAdminProductsTable();
@@ -1865,7 +2053,11 @@ function renderAdminCategoriesTable() {
             <td>
                 <div style="display:flex; gap:6px;">
                     <button class="btn-merko-outline" style="padding:4px 10px; font-size:0.75rem;" onclick="editCategory('${c.id}')">✏️ Editar</button>
-                    <button class="btn-merko-outline" style="padding:4px 10px; font-size:0.75rem; color:#ef4444; border-color:#ef4444;" onclick="deleteCategory('${c.id}')">🗑️ Eliminar</button>
+                    ${c.id !== 'ALL' ? `
+                        <button class="btn-merko-outline" style="padding:4px 10px; font-size:0.75rem; color:#ef4444; border-color:#ef4444;" onclick="deleteCategory('${c.id}')" title="Eliminar categoría permanentemente">
+                            🗑️ Eliminar
+                        </button>
+                    ` : ''}
                 </div>
             </td>
         </tr>
@@ -1928,6 +2120,7 @@ function saveNewCategory() {
     };
 
     state.categories.push(newCat);
+    Storage.set('categories', state.categories);
     renderCategoryBadges();
     renderAdminCategoriesTable();
     renderCategoryOptions();
@@ -1971,6 +2164,7 @@ function handleSaveCategoryEdit(e) {
         cat.bgColor = color;
     }
 
+    Storage.set('categories', state.categories);
     renderCategoryBadges();
     renderAdminCategoriesTable();
     renderCategoryOptions();
@@ -1978,19 +2172,58 @@ function handleSaveCategoryEdit(e) {
     showToast(`✨ Categoría "${name}" actualizada con éxito`, 'success', '✨');
 }
 
-function deleteCategory(catId) {
-    if (state.categories.length <= 1) {
-        showToast('⚠️ Debes mantener al menos una categoría.', 'warning', '⚠️');
+async function toggleCategoryActivation(catId) {
+    const cat = state.categories.find(c => c.id === catId);
+    if (!cat) return;
+
+    const currentlyActive = cat.isActive !== false;
+    const confirmPrompt = currentlyActive
+        ? `¿Deseas inactivar la categoría "${cat.name}"? Los productos y el registro se preservarán.`
+        : `¿Deseas activar la categoría "${cat.name}"?`;
+
+    if (!confirm(confirmPrompt)) return;
+
+    cat.isActive = !currentlyActive;
+    Storage.set('categories', state.categories);
+
+    try {
+        if (API.getToken()) {
+            await API.delete(`/api/v1/admin/categories/${catId}`).catch(() => {});
+        }
+    } catch (e) {}
+
+    renderCategoryBadges();
+    renderAdminCategoriesTable();
+    renderCategoryOptions();
+    showToast(
+        cat.isActive ? `✅ Categoría "${cat.name}" activada` : `🚫 Categoría "${cat.name}" inactivada (registro preservado)`,
+        cat.isActive ? 'success' : 'warning',
+        cat.isActive ? '✅' : '🚫'
+    );
+}
+
+async function deleteCategory(catId) {
+    if (catId === 'ALL') {
+        showToast('⚠️ No se puede eliminar la categoría principal del sistema.', 'warning', '⚠️');
         return;
     }
     const cat = state.categories.find(c => c.id === catId);
     if (!cat) return;
+    if (!confirm(`¿Estás seguro de eliminar permanentemente la categoría "${cat.name}"? Esta acción no se puede deshacer.`)) return;
 
     state.categories = state.categories.filter(c => c.id !== catId);
+    Storage.set('categories', state.categories);
+
+    try {
+        if (API.getToken()) {
+            await API.delete(`/api/v1/admin/categories/${catId}`).catch(() => {});
+        }
+    } catch (e) {}
+
     renderCategoryBadges();
     renderAdminCategoriesTable();
     renderCategoryOptions();
-    showToast(`🗑️ Categoría "${cat.name}" eliminada`, 'warning', '🗑️');
+    showToast(`🗑️ Categoría "${cat.name}" eliminada permanentemente`, 'success', '🗑️');
 }
 
 // ==========================================================================
@@ -2122,7 +2355,7 @@ function renderHistorialUnificadoTable() {
                         <button class="btn-merko-outline" style="padding:6px 12px; font-size:0.75rem; border-color:#f59e0b; color:#f59e0b;" onclick="openOrderDetailModal('${o.id}')">
                             👁️ Detalle
                         </button>
-                        <button class="btn-merko-outline" style="padding:6px 12px; font-size:0.75rem; color:#ef4444; border-color:#ef4444;" onclick="deleteOrder('${o.id}')">
+                        <button class="btn-merko-outline" style="padding:6px 12px; font-size:0.75rem; color:#ef4444; border-color:#ef4444;" onclick="deleteOrder('${o.id}')" title="Eliminar permanentemente del historial">
                             🗑️ Eliminar
                         </button>
                     </div>
@@ -2304,13 +2537,25 @@ function contactCustomerWhatsApp(phone, orderCode) {
     window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
-function deleteOrder(orderId) {
+async function deleteOrder(orderId) {
     const o = state.orders.find(ord => ord.id === orderId);
-    if (confirm('¿Deseas eliminar permanentemente este registro del historial?')) {
-        state.orders = state.orders.filter(ord => ord.id !== orderId);
-        renderHistorialUnificadoTable();
-        showToast(`🗑️ Pedido ${o ? o.orderNumber : ''} eliminado del historial`, 'warning', '🗑️');
+    if (!o) return;
+    if (!confirm(`¿Estás seguro de eliminar permanentemente el pedido ${o.orderNumber || ''} del historial? Esta acción no se puede deshacer.`)) {
+        return;
     }
+
+    state.orders = state.orders.filter(ord => ord.id !== orderId);
+    Storage.set('orders', state.orders);
+
+    try {
+        if (API.getToken()) {
+            await API.delete(`/api/v1/admin/orders/${orderId}`).catch(() => {});
+        }
+    } catch (e) {}
+
+    renderHistorialUnificadoTable();
+    updateDashboardKPIs();
+    showToast(`🗑️ Pedido ${o.orderNumber || ''} eliminado permanentemente del historial`, 'success', '🗑️');
 }
 
 async function saveStoreConfig() {
@@ -2377,26 +2622,27 @@ async function loadPublicBackendData() {
                 { id: 'ALL', name: '✨ Todos los Productos', icon: '🛒', bgColor: '#fee2e2' },
                 ...fetchedCats
             ];
+            Storage.set('categories', state.categories);
             renderCategoryBadges();
+            renderAdminCategoriesTable();
         }
 
         const prodRes = await API.get('/api/v1/public/products');
         if (prodRes && prodRes.data && Array.isArray(prodRes.data) && prodRes.data.length > 0) {
-            state.products = prodRes.data.map(p => ({
-                id: p.id,
-                type: 'DETAL',
-                categoryId: p.categoryId || 'cat1',
-                sku: p.sku || 'SKU-001',
-                name: p.name,
-                unitCalc: p.unit ? `Unidad por ${p.unit}` : 'Unidad',
-                costPrice: p.costPrice || 0,
-                price: p.price || 0,
-                discountPrice: p.discountPrice || null,
-                discountPercent: p.discountPrice && p.price ? `-${Math.round((1 - p.discountPrice / p.price) * 100)}%` : null,
-                stock: p.stock !== undefined ? p.stock : 10,
-                imageUrl: p.imageUrl || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500',
-                isAvailable: p.isAvailable !== false
-            }));
+            const backendMap = new Map(prodRes.data.map(p => [p.id, p]));
+            state.products = state.products.map(localP => {
+                const remote = backendMap.get(localP.id);
+                if (remote) {
+                    return {
+                        ...localP,
+                        price: remote.price || localP.price,
+                        discountPrice: remote.discountPrice !== undefined ? remote.discountPrice : localP.discountPrice,
+                        stock: remote.stock !== undefined ? remote.stock : localP.stock
+                    };
+                }
+                return localP;
+            });
+            Storage.set('products', state.products);
             renderProducts();
             renderAdminProductsTable();
         }
@@ -2421,7 +2667,47 @@ async function loadPublicBackendData() {
 
 async function loadAdminBackendData() {
     try {
-        const metricsRes = await API.get('/api/v1/admin/dashboard/metrics');
+        const adminCatsRes = await API.get('/api/v1/admin/categories').catch(() => null);
+        if (adminCatsRes && adminCatsRes.data && Array.isArray(adminCatsRes.data) && adminCatsRes.data.length > 0) {
+            const fetched = adminCatsRes.data.map(c => ({
+                id: c.id,
+                name: c.name,
+                icon: c.icon || '🏷️',
+                bgColor: '#f1f5f9'
+            }));
+            state.categories = [
+                { id: 'ALL', name: '✨ Todos los Productos', icon: '🛒', bgColor: '#fee2e2' },
+                ...fetched
+            ];
+            Storage.set('categories', state.categories);
+            renderCategoryBadges();
+            renderAdminCategoriesTable();
+        }
+
+        const adminProdsRes = await API.get('/api/v1/admin/products').catch(() => null);
+        if (adminProdsRes && adminProdsRes.data && Array.isArray(adminProdsRes.data) && adminProdsRes.data.length > 0) {
+            state.products = adminProdsRes.data.map(p => ({
+                id: p.id,
+                type: p.bundleItems && p.bundleItems.length > 0 ? 'MERCADO' : 'DETAL',
+                categoryId: p.categoryId || 'cat1',
+                sku: p.sku || 'SKU-001',
+                name: p.name,
+                unitCalc: p.unit ? `Unidad por ${p.unit}` : 'Unidad',
+                costPrice: p.costPrice || 0,
+                price: p.price || 0,
+                discountPrice: p.discountPrice || null,
+                discountPercent: p.discountPrice && p.price ? `-${Math.round((1 - p.discountPrice / p.price) * 100)}%` : null,
+                stock: p.stock !== undefined ? p.stock : 10,
+                imageUrl: p.imageUrl || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500',
+                isAvailable: p.isAvailable !== false,
+                bundleItems: p.bundleItems || []
+            }));
+            Storage.set('products', state.products);
+            renderProducts();
+            renderAdminProductsTable();
+        }
+
+        const metricsRes = await API.get('/api/v1/admin/dashboard/metrics').catch(() => null);
         if (metricsRes && metricsRes.data && metricsRes.data.recentOrders) {
             state.orders = metricsRes.data.recentOrders.map(o => ({
                 id: o.id,
@@ -2439,6 +2725,7 @@ async function loadAdminBackendData() {
                 status: o.orderStatus || 'RECEIVED',
                 createdAt: o.createdAt ? o.createdAt.toString().slice(0, 16).replace('T', ' ') : ''
             }));
+            Storage.set('orders', state.orders);
             renderHistorialUnificadoTable();
         }
 
@@ -2460,6 +2747,7 @@ async function loadAdminBackendData() {
                 status: o.orderStatus || 'RECEIVED',
                 createdAt: o.createdAt ? o.createdAt.toString().slice(0, 16).replace('T', ' ') : ''
             }));
+            Storage.set('orders', state.orders);
             renderHistorialUnificadoTable();
         }
     } catch (e) {

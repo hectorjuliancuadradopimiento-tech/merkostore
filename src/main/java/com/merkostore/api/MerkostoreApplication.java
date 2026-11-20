@@ -11,7 +11,7 @@ public class MerkostoreApplication {
     public static void main(String[] args) {
         SpringApplication.run(MerkostoreApplication.class, args);
         System.out.println("\n=======================================================");
-        System.out.println("🚀 MERKOSTORE BACKEND INICIADO CON ÉXITO EN PUERTO 8080");
+        System.out.println("🚀 MERKOSTORE BACKEND INICIADO CON ÉXITO EN PUERTO 8085");
         System.out.println("=======================================================\n");
     }
 }

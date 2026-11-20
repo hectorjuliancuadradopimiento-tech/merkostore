@@ -18,7 +18,6 @@ import com.merkostore.api.services.OrderService;
 import jakarta.validation.Valid;
 import lombok.Builder;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
@@ -38,7 +37,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/admin")
-@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class AdminDashboardController {
 
@@ -51,6 +49,27 @@ public class AdminDashboardController {
     private final PasswordEncoder passwordEncoder;
     private final OrderService orderService;
     private final MongoTemplate mongoTemplate;
+
+    public AdminDashboardController(
+            ProductRepository productRepository,
+            CategoryRepository categoryRepository,
+            OrderRepository orderRepository,
+            FinancialTransactionRepository financialRepository,
+            StoreConfigRepository storeConfigRepository,
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            OrderService orderService,
+            MongoTemplate mongoTemplate) {
+        this.productRepository = productRepository;
+        this.categoryRepository = categoryRepository;
+        this.orderRepository = orderRepository;
+        this.financialRepository = financialRepository;
+        this.storeConfigRepository = storeConfigRepository;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.orderService = orderService;
+        this.mongoTemplate = mongoTemplate;
+    }
 
     // ==========================================
     // 1. DASHBOARD METRICS & CONFIG
@@ -188,12 +207,23 @@ public class AdminDashboardController {
     }
 
     @DeleteMapping("/products/{productId}")
-    public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable String productId) {
-        if (!productRepository.existsById(productId)) {
-            throw new ResourceNotFoundException("Producto no encontrado con ID: " + productId);
-        }
-        productRepository.deleteById(productId);
-        return ResponseEntity.ok(ApiResponse.ok("Producto eliminado correctamente", null));
+    public ResponseEntity<ApiResponse<Product>> deleteProduct(@PathVariable String productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + productId));
+        product.setIsAvailable(false);
+        Product saved = productRepository.save(product);
+        return ResponseEntity.ok(ApiResponse.ok("Producto inactivado correctamente (registro preservado)", saved));
+    }
+
+    @PatchMapping("/products/{productId}/toggle-status")
+    public ResponseEntity<ApiResponse<Product>> toggleProductStatus(@PathVariable String productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + productId));
+        boolean current = product.getIsAvailable() != null ? product.getIsAvailable() : true;
+        product.setIsAvailable(!current);
+        Product saved = productRepository.save(product);
+        String msg = Boolean.TRUE.equals(saved.getIsAvailable()) ? "Producto activado correctamente" : "Producto inactivado correctamente";
+        return ResponseEntity.ok(ApiResponse.ok(msg, saved));
     }
 
     // ==========================================
@@ -238,7 +268,18 @@ public class AdminDashboardController {
             throw new ResourceNotFoundException("Categoría no encontrada con ID: " + categoryId);
         }
         categoryRepository.deleteById(categoryId);
-        return ResponseEntity.ok(ApiResponse.ok("Categoría eliminada con éxito", null));
+        return ResponseEntity.ok(ApiResponse.ok("Categoría eliminada con éxito"));
+    }
+
+    @PatchMapping("/categories/{categoryId}/toggle-status")
+    public ResponseEntity<ApiResponse<Category>> toggleCategoryStatus(@PathVariable String categoryId) {
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada con ID: " + categoryId));
+        boolean current = category.getIsActive() != null ? category.getIsActive() : true;
+        category.setIsActive(!current);
+        Category saved = categoryRepository.save(category);
+        String msg = Boolean.TRUE.equals(saved.getIsActive()) ? "Categoría activada con éxito" : "Categoría inactivada con éxito";
+        return ResponseEntity.ok(ApiResponse.ok(msg, saved));
     }
 
     // ==========================================
@@ -279,6 +320,15 @@ public class AdminDashboardController {
                     return ResponseEntity.ok(ApiResponse.ok("Estado de pago actualizado a " + newPaymentStatus, saved));
                 })
                 .orElseThrow(() -> new ResourceNotFoundException("Pedido no encontrado con ID: " + orderId));
+    }
+
+    @DeleteMapping("/orders/{orderId}")
+    public ResponseEntity<ApiResponse<Void>> deleteOrder(@PathVariable String orderId) {
+        if (!orderRepository.existsById(orderId)) {
+            throw new ResourceNotFoundException("Pedido no encontrado con ID: " + orderId);
+        }
+        orderRepository.deleteById(orderId);
+        return ResponseEntity.ok(ApiResponse.ok("Pedido eliminado del historial con éxito"));
     }
 
     // ==========================================
@@ -331,7 +381,7 @@ public class AdminDashboardController {
         User userToDelete = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        if (authentication != null && authentication.getName().equalsIgnoreCase(userToDelete.getUsername())) {
+        if (authentication != null && authentication.getName() != null && authentication.getName().equalsIgnoreCase(userToDelete.getUsername())) {
             throw new IllegalArgumentException("No puedes eliminar tu propia cuenta mientras tienes la sesión activa");
         }
 
@@ -339,8 +389,9 @@ public class AdminDashboardController {
             throw new IllegalArgumentException("No puedes eliminar el único administrador existente en el sistema");
         }
 
-        userRepository.deleteById(userId);
-        return ResponseEntity.ok(ApiResponse.ok("Administrador eliminado correctamente", null));
+        userToDelete.setIsActive(false);
+        userRepository.save(userToDelete);
+        return ResponseEntity.ok(ApiResponse.ok("Administrador inactivado correctamente (registro preservado)"));
     }
 
     @Data

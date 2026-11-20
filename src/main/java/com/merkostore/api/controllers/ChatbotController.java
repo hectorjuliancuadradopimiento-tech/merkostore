@@ -5,7 +5,6 @@ import com.merkostore.api.dtos.ChatRequest;
 import com.merkostore.api.dtos.ChatResponse;
 import com.merkostore.api.services.ChatbotService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,11 +12,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/public/chat")
-@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class ChatbotController {
 
     private final ChatbotService chatbotService;
+
+    public ChatbotController(ChatbotService chatbotService) {
+        this.chatbotService = chatbotService;
+    }
 
     /**
      * Endpoint para procesar mensajes del usuario con el Agente Inteligente / LLM

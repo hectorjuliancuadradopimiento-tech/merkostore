@@ -227,6 +227,12 @@
                     <button class="merko-pill-btn" id="tabMerkoUsers" onclick="switchAdminSubTab('users')">
                         👥 Administradores
                     </button>
+                    <button class="merko-pill-btn" id="tabMerkoBi" onclick="switchAdminSubTab('bi')">
+                        📈 Power BI Analytics
+                    </button>
+                    <button class="merko-pill-btn" id="tabMerkoIo" onclick="switchAdminSubTab('io')">
+                        ⚖️ Optimización IO (Simplex)
+                    </button>
                     <button class="merko-pill-btn" id="tabMerkoConfig" onclick="switchAdminSubTab('config')">
                         🏪 Configuración Negocio
                     </button>
@@ -772,6 +778,332 @@
                             Por seguridad, el último administrador no se puede eliminar.
                         </p>
 
+                    </div>
+                </div>
+
+                <!-- SUBTAB 8: POWER BI ANALYTICS DASHBOARD -->
+                <div id="subtabBi" style="display:none;">
+                    <div class="admin-card-glass" style="margin-bottom:24px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+                            <div>
+                                <span class="merko-brand-badge" style="background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);">VISUALIZACIÓN DE DATOS II • PROYECTO DE AULA</span>
+                                <h2 style="font-size:1.45rem; font-weight:900; color:#fff; margin-top:8px; margin-bottom:4px;">
+                                    📊 Dashboard Analítico Ejecutivo Merkostore (Power BI)
+                                </h2>
+                                <p style="font-size:0.85rem; color:var(--admin-text-muted); margin:0;">
+                                    Integración en tiempo real del almacén de datos (MongoDB → Modelo Estrella → DAX) para inteligencia de negocios y toma de decisiones.
+                                </p>
+                            </div>
+                            <div style="display:flex; gap:10px;">
+                                <button class="btn-merko-outline" onclick="showToast('Sincronizando modelo dimensional con MongoDB...', 'info', '🔄')">
+                                    🔄 Refrescar ETL
+                                </button>
+                                <a href="docs/2_EVIDENCIAS_VISUALIZACION_DATOS_POWERBI.md" target="_blank" class="btn-merko-primary" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                                    📑 Ver Evidencias Power BI ➔
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- POWER BI KPI SUMMARY BANNER -->
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:16px; margin-bottom:24px;">
+                        <div class="admin-card-glass" style="border-left:4px solid #f59e0b;">
+                            <div style="font-size:0.75rem; color:var(--admin-text-muted); text-transform:uppercase; font-weight:800;">Total Facturado (DAX)</div>
+                            <div style="font-size:1.6rem; font-weight:900; color:#fff; margin-top:4px;" id="biKpiTotalSales">$ 1.284.000 COP</div>
+                            <div style="font-size:0.72rem; color:#10b981; font-weight:700; margin-top:4px;">▲ +18.4% vs semana anterior</div>
+                        </div>
+                        <div class="admin-card-glass" style="border-left:4px solid #3b82f6;">
+                            <div style="font-size:0.75rem; color:var(--admin-text-muted); text-transform:uppercase; font-weight:800;">Margen Bruto General</div>
+                            <div style="font-size:1.6rem; font-weight:900; color:#fff; margin-top:4px;">34.8%</div>
+                            <div style="font-size:0.72rem; color:#10b981; font-weight:700; margin-top:4px;">Objetivo: > 30% cumplido</div>
+                        </div>
+                        <div class="admin-card-glass" style="border-left:4px solid #10b981;">
+                            <div style="font-size:0.75rem; color:var(--admin-text-muted); text-transform:uppercase; font-weight:800;">Ticket Promedio (AOV)</div>
+                            <div style="font-size:1.6rem; font-weight:900; color:#fff; margin-top:4px;">$ 38.500 COP</div>
+                            <div style="font-size:0.72rem; color:#94a3b8; font-weight:700; margin-top:4px;">3.4 ítems por pedido</div>
+                        </div>
+                        <div class="admin-card-glass" style="border-left:4px solid #8b5cf6;">
+                            <div style="font-size:0.75rem; color:var(--admin-text-muted); text-transform:uppercase; font-weight:800;">Eficacia Domicilios</div>
+                            <div style="font-size:1.6rem; font-weight:900; color:#fff; margin-top:4px;">98.2%</div>
+                            <div style="font-size:0.72rem; color:#10b981; font-weight:700; margin-top:4px;">Tiempo prom: 18.4 min</div>
+                        </div>
+                    </div>
+
+                    <!-- POWER BI INTERACTIVE REPORT EMBED CONTAINER -->
+                    <div class="admin-card-glass" style="padding:0; overflow:hidden; border:1px solid rgba(245,158,11,0.25);">
+                        <div style="background:#130e0d; padding:12px 20px; border-bottom:1px solid rgba(245,158,11,0.2); display:flex; justify-content:space-between; align-items:center;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="font-size:1.1rem;">📊</span>
+                                <span style="font-weight:800; font-size:0.88rem; color:#f59e0b;">Power BI Service / Embedded Report View (Merkostore_Analytics_v2.pbix)</span>
+                            </div>
+                            <div style="font-size:0.75rem; color:var(--admin-text-muted);">
+                                Modo: DirectQuery & Import Híbrido • Auto-refresh: 15 min
+                            </div>
+                        </div>
+
+                        <div style="position:relative; width:100%; min-height:540px; background:#0b0807; display:flex; flex-direction:column;">
+                            <!-- Top Filter Ribbon inside Report -->
+                            <div style="display:flex; gap:12px; padding:14px 20px; background:rgba(255,255,255,0.02); border-bottom:1px solid rgba(255,255,255,0.05); flex-wrap:wrap; align-items:center;">
+                                <span style="font-size:0.78rem; font-weight:800; color:#94a3b8;">FILTROS ACTIVOS:</span>
+                                <span class="tag-badge" style="background:#f59e0b22; color:#f59e0b; border:1px solid #f59e0b44; padding:3px 10px; border-radius:999px; font-size:0.72rem; font-weight:700;">Período: Noviembre 2026</span>
+                                <span class="tag-badge" style="background:#3b82f622; color:#3b82f6; border:1px solid #3b82f644; padding:3px 10px; border-radius:999px; font-size:0.72rem; font-weight:700;">Canal: Web Storefront + WhatsApp</span>
+                                <span class="tag-badge" style="background:#10b98122; color:#10b981; border:1px solid #10b98144; padding:3px 10px; border-radius:999px; font-size:0.72rem; font-weight:700;">Estado: Entregado / Pagado</span>
+                            </div>
+
+                            <!-- 4 Report Visual Cards Grid -->
+                            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px; padding:20px; flex:1;">
+                                <div style="background:#130e0d; border-radius:10px; padding:18px; border:1px solid rgba(255,255,255,0.06);">
+                                    <div style="font-weight:800; font-size:0.85rem; color:#fff; margin-bottom:12px; display:flex; justify-content:space-between;">
+                                        <span>📊 Ventas y Margen por Categoría</span>
+                                        <span style="font-size:0.72rem; color:#f59e0b;">DAX: [Total Ventas]</span>
+                                    </div>
+                                    <div style="display:flex; flex-direction:column; gap:10px;">
+                                        <div>
+                                            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#cbd5e1; margin-bottom:3px;">
+                                                <span>Abarrotes & Despensa</span>
+                                                <span style="font-weight:800;">$ 480.000 (37.4%)</span>
+                                            </div>
+                                            <div style="height:8px; background:#261d19; border-radius:4px; overflow:hidden;">
+                                                <div style="width:75%; height:100%; background:linear-gradient(90deg, #f59e0b, #ef4444);"></div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#cbd5e1; margin-bottom:3px;">
+                                                <span>Combos Mercados Familiares</span>
+                                                <span style="font-weight:800;">$ 420.000 (32.7%)</span>
+                                            </div>
+                                            <div style="height:8px; background:#261d19; border-radius:4px; overflow:hidden;">
+                                                <div style="width:65%; height:100%; background:linear-gradient(90deg, #3b82f6, #8b5cf6);"></div>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#cbd5e1; margin-bottom:3px;">
+                                                <span>Lácteos & Huevos</span>
+                                                <span style="font-weight:800;">$ 214.000 (16.7%)</span>
+                                            </div>
+                                            <div style="height:8px; background:#261d19; border-radius:4px; overflow:hidden;">
+                                                <div style="width:33%; height:100%; background:linear-gradient(90deg, #10b981, #06b6d4);"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="background:#130e0d; border-radius:10px; padding:18px; border:1px solid rgba(255,255,255,0.06);">
+                                    <div style="font-weight:800; font-size:0.85rem; color:#fff; margin-bottom:12px; display:flex; justify-content:space-between;">
+                                        <span>⚖️ Comparativa: Detal vs Mercados</span>
+                                        <span style="font-size:0.72rem; color:#10b981;">DAX: [Margen %]</span>
+                                    </div>
+                                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; height:120px; align-items:end;">
+                                        <div style="background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.25); border-radius:8px; padding:12px; text-align:center;">
+                                            <div style="font-size:0.72rem; color:#f59e0b; font-weight:800;">PRODUCTOS DETAL</div>
+                                            <div style="font-size:1.3rem; font-weight:900; color:#fff; margin:4px 0;">31.2%</div>
+                                            <div style="font-size:0.68rem; color:var(--admin-text-muted);">Rotación alta, ticket menor</div>
+                                        </div>
+                                        <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:8px; padding:12px; text-align:center;">
+                                            <div style="font-size:0.72rem; color:#10b981; font-weight:800;">COMBOS MERCADOS</div>
+                                            <div style="font-size:1.3rem; font-weight:900; color:#fff; margin:4px 0;">38.6%</div>
+                                            <div style="font-size:0.68rem; color:var(--admin-text-muted);">Mayor margen y volumen</div>
+                                        </div>
+                                    </div>
+                                    <p style="font-size:0.72rem; color:var(--admin-text-muted); margin-top:12px; margin-bottom:0;">
+                                        💡 <strong>Insight Analítico:</strong> Los combos generan un margen 7.4 puntos porcentuales superior debido a la optimización lineal de inventario.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUBTAB 9: OPTIMIZACIÓN LINEAL (INVESTIGACIÓN DE OPERACIONES) -->
+                <div id="subtabIo" style="display:none;">
+                    <div class="admin-card-glass" style="margin-bottom:24px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+                            <div>
+                                <span class="merko-brand-badge" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3);">INVESTIGACIÓN DE OPERACIONES • PROYECTO DE AULA</span>
+                                <h2 style="font-size:1.45rem; font-weight:900; color:#fff; margin-top:8px; margin-bottom:4px;">
+                                    ⚖️ Solucionador de Optimización Lineal Entera (MILP)
+                                </h2>
+                                <p style="font-size:0.85rem; color:var(--admin-text-muted); margin:0;">
+                                    Modelo matemático que maximiza la utilidad diaria decidiendo la mezcla óptima entre combos de mercado y venta individual al detal.
+                                </p>
+                            </div>
+                            <div style="display:flex; gap:10px;">
+                                <button class="btn-merko-primary" onclick="ejecutarOptimizacionLinealIO()" style="display:inline-flex; align-items:center; gap:8px;">
+                                    🚀 Ejecutar Solver en Vivo (Simplex)
+                                </button>
+                                <a href="docs/3_INVESTIGACION_DE_OPERACIONES_MODELO.md" target="_blank" class="btn-merko-outline" style="text-decoration:none;">
+                                    📑 Ver Formulación Matemática ➔
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MODEL PARAMETERS & INPUT STOCK -->
+                    <div class="admin-card-glass" style="margin-bottom:24px;">
+                        <h3 style="font-size:1.05rem; font-weight:800; color:#FF8F00; margin-bottom:14px;">
+                            📦 1. Parámetros de Inventario y Disponibilidad de Bodega (Restricciones del Modelo)
+                        </h3>
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:14px;">
+                            <div class="merko-form-group">
+                                <label style="font-size:0.75rem;">Huevos AA x30 (disp.)</label>
+                                <input type="number" id="ioStockHuevos" value="35" min="10" style="padding:8px 12px; font-weight:800;">
+                            </div>
+                            <div class="merko-form-group">
+                                <label style="font-size:0.75rem;">Café 425g (disp.)</label>
+                                <input type="number" id="ioStockCafe" value="20" min="5" style="padding:8px 12px; font-weight:800;">
+                            </div>
+                            <div class="merko-form-group">
+                                <label style="font-size:0.75rem;">Harina Pan 1Kg (disp.)</label>
+                                <input type="number" id="ioStockHarina" value="50" min="10" style="padding:8px 12px; font-weight:800;">
+                            </div>
+                            <div class="merko-form-group">
+                                <label style="font-size:0.75rem;">Aceite 3Lt (disp.)</label>
+                                <input type="number" id="ioStockAceite" value="14" min="5" style="padding:8px 12px; font-weight:800;">
+                            </div>
+                            <div class="merko-form-group">
+                                <label style="font-size:0.75rem;">Azúcar 2.5Kg (disp.)</label>
+                                <input type="number" id="ioStockAzucar" value="28" min="5" style="padding:8px 12px; font-weight:800;">
+                            </div>
+                            <div class="merko-form-group">
+                                <label style="font-size:0.75rem;">Tiempo Armado (Min)</label>
+                                <input type="number" id="ioTiempoArmado" value="480" min="60" style="padding:8px 12px; font-weight:800;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RESULTS DISPLAY -->
+                    <div id="ioResultContainer" style="display:block;">
+                        <!-- Optimal Z banner -->
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px; margin-bottom:24px;">
+                            <div class="admin-card-glass" style="border-left:4px solid #10b981; background:linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.02));">
+                                <div style="font-size:0.75rem; color:#10b981; text-transform:uppercase; font-weight:900;">Función Objetivo Óptima (Z*)</div>
+                                <div style="font-size:2rem; font-weight:900; color:#fff; margin-top:4px;" id="ioValorZOptimo">$ 600.520 COP</div>
+                                <div style="font-size:0.75rem; color:#cbd5e1; margin-top:4px;">
+                                    Utilidad neta máxima diaria asegurada matemáticamente
+                                </div>
+                            </div>
+                            <div class="admin-card-glass" style="border-left:4px solid #f59e0b; display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <div style="font-size:0.75rem; color:var(--admin-text-muted); text-transform:uppercase; font-weight:800;">Sincronización Web</div>
+                                    <div style="font-size:0.85rem; color:#fff; font-weight:700; margin-top:4px;">Aplica esta solución al catálogo de la tienda</div>
+                                </div>
+                                <button class="btn-merko-primary" onclick="aplicarSolucionIOAInventario()" style="font-size:0.85rem; padding:10px 18px;">
+                                    💾 Sincronizar Tienda ➔
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Decision Variables Table -->
+                        <div class="admin-card-glass" style="margin-bottom:24px; padding:0; overflow:hidden;">
+                            <div style="background:#130e0d; padding:14px 20px; border-bottom:1px solid rgba(230,81,0,0.25);">
+                                <h3 style="font-size:0.95rem; font-weight:900; color:#FF8F00; margin:0;">
+                                    📊 2. Variables de Decisión Óptimas Calculadas por el Modelo
+                                </h3>
+                            </div>
+                            <table style="width:100%; border-collapse:collapse;" id="ioDecisionTable">
+                                <thead>
+                                    <tr style="background:#0c0908; border-bottom:1px solid rgba(230,81,0,0.3);">
+                                        <th style="padding:12px 18px; color:#FF8F00; font-size:0.78rem; text-align:left;">Variable</th>
+                                        <th style="padding:12px 18px; color:#FF8F00; font-size:0.78rem; text-align:left;">Producto / Combo</th>
+                                        <th style="padding:12px 18px; color:#FF8F00; font-size:0.78rem; text-align:center;">Tipo</th>
+                                        <th style="padding:12px 18px; color:#FF8F00; font-size:0.78rem; text-align:right;">Margen Unitario</th>
+                                        <th style="padding:12px 18px; color:#FF8F00; font-size:0.78rem; text-align:right;">Cantidad Óptima</th>
+                                        <th style="padding:12px 18px; color:#FF8F00; font-size:0.78rem; text-align:right;">Subtotal Ganancia</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ioDecisionTableBody">
+                                    <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                                        <td style="padding:12px 18px; font-weight:800; color:#3b82f6;">x₁</td>
+                                        <td style="padding:12px 18px; color:#fff; font-weight:700;">Combo Mercado Familiar Esencial</td>
+                                        <td style="padding:12px 18px; text-align:center;"><span style="background:#3b82f622; color:#3b82f6; padding:2px 8px; border-radius:4px; font-size:0.72rem; font-weight:800;">COMBO</span></td>
+                                        <td style="padding:12px 18px; text-align:right; color:#10b981; font-weight:800;">$ 13.100</td>
+                                        <td style="padding:12px 18px; text-align:right; color:#fff; font-weight:900; font-size:1.1rem;" id="ioSolX1">5 unds</td>
+                                        <td style="padding:12px 18px; text-align:right; color:#fff; font-weight:800;">$ 65.500</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                                        <td style="padding:12px 18px; font-weight:800; color:#3b82f6;">x₂</td>
+                                        <td style="padding:12px 18px; color:#fff; font-weight:700;">Combo Mercado Desayuno Completo</td>
+                                        <td style="padding:12px 18px; text-align:center;"><span style="background:#3b82f622; color:#3b82f6; padding:2px 8px; border-radius:4px; font-size:0.72rem; font-weight:800;">COMBO</span></td>
+                                        <td style="padding:12px 18px; text-align:right; color:#10b981; font-weight:800;">$ 9.300</td>
+                                        <td style="padding:12px 18px; text-align:right; color:#fff; font-weight:900; font-size:1.1rem;" id="ioSolX2">3 unds</td>
+                                        <td style="padding:12px 18px; text-align:right; color:#fff; font-weight:800;">$ 27.900</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                                        <td style="padding:12px 18px; font-weight:800; color:#f59e0b;">y₁</td>
+                                        <td style="padding:12px 18px; color:#cbd5e1;">Huevo Kikes Rojo AA X30 (Detal)</td>
+                                        <td style="padding:12px 18px; text-align:center;"><span style="background:#f59e0b22; color:#f59e0b; padding:2px 8px; border-radius:4px; font-size:0.72rem; font-weight:800;">DETAL</span></td>
+                                        <td style="padding:12px 18px; text-align:right; color:#10b981; font-weight:800;">$ 9.800</td>
+                                        <td style="padding:12px 18px; text-align:right; color:#fff; font-weight:900;" id="ioSolY1">27 unds</td>
+                                        <td style="padding:12px 18px; text-align:right; color:#fff; font-weight:800;">$ 264.600</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                                        <td style="padding:12px 18px; font-weight:800; color:#f59e0b;">y₂</td>
+                                        <td style="padding:12px 18px; color:#cbd5e1;">Café Sello Rojo 425g (Detal)</td>
+                                        <td style="padding:12px 18px; text-align:center;"><span style="background:#f59e0b22; color:#f59e0b; padding:2px 8px; border-radius:4px; font-size:0.72rem; font-weight:800;">DETAL</span></td>
+                                        <td style="padding:12px 18px; text-align:right; color:#10b981; font-weight:800;">$ 6.990</td>
+                                        <td style="padding:12px 18px; text-align:right; color:#fff; font-weight:900;" id="ioSolY2">9 unds</td>
+                                        <td style="padding:12px 18px; text-align:right; color:#fff; font-weight:800;">$ 62.910</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                                        <td style="padding:12px 18px; font-weight:800; color:#f59e0b;">y₃</td>
+                                        <td style="padding:12px 18px; color:#cbd5e1;">Harina Pan De Maíz Blanco 1 Kg (Detal)</td>
+                                        <td style="padding:12px 18px; text-align:center;"><span style="background:#f59e0b22; color:#f59e0b; padding:2px 8px; border-radius:4px; font-size:0.72rem; font-weight:800;">DETAL</span></td>
+                                        <td style="padding:12px 18px; text-align:right; color:#10b981; font-weight:800;">$ 1.600</td>
+                                        <td style="padding:12px 18px; text-align:right; color:#fff; font-weight:900;" id="ioSolY3">34 unds</td>
+                                        <td style="padding:12px 18px; text-align:right; color:#fff; font-weight:800;">$ 54.400</td>
+                                    </tr>
+                                    <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                                        <td style="padding:12px 18px; font-weight:800; color:#f59e0b;">y₄</td>
+                                        <td style="padding:12px 18px; color:#cbd5e1;">Aceite Medalla De Oro Mezcla 3 Lt (Detal)</td>
+                                        <td style="padding:12px 18px; text-align:center;"><span style="background:#f59e0b22; color:#f59e0b; padding:2px 8px; border-radius:4px; font-size:0.72rem; font-weight:800;">DETAL</span></td>
+                                        <td style="padding:12px 18px; text-align:right; color:#10b981; font-weight:800;">$ 5.990</td>
+                                        <td style="padding:12px 18px; text-align:right; color:#fff; font-weight:900;" id="ioSolY4">9 unds</td>
+                                        <td style="padding:12px 18px; text-align:right; color:#fff; font-weight:800;">$ 53.910</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding:12px 18px; font-weight:800; color:#f59e0b;">y₅</td>
+                                        <td style="padding:12px 18px; color:#cbd5e1;">Azúcar Blanca 2.5 Kg (Detal)</td>
+                                        <td style="padding:12px 18px; text-align:center;"><span style="background:#f59e0b22; color:#f59e0b; padding:2px 8px; border-radius:4px; font-size:0.72rem; font-weight:800;">DETAL</span></td>
+                                        <td style="padding:12px 18px; text-align:right; color:#10b981; font-weight:800;">$ 3.100</td>
+                                        <td style="padding:12px 18px; text-align:right; color:#fff; font-weight:900;" id="ioSolY5">23 unds</td>
+                                        <td style="padding:12px 18px; text-align:right; color:#fff; font-weight:800;">$ 71.300</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Bottlenecks & Resource Usage -->
+                        <div class="admin-card-glass">
+                            <h3 style="font-size:0.95rem; font-weight:900; color:#FF8F00; margin-bottom:14px;">
+                                ⚙️ 3. Diagnóstico de Recursos, Holguras y Cuellos de Botella
+                            </h3>
+                            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+                                <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:8px; padding:12px;">
+                                    <div style="font-size:0.75rem; color:#ef4444; font-weight:900;">🔴 HUEVOS (35/35)</div>
+                                    <div style="font-size:0.8rem; color:#fff; margin-top:2px;">Uso: 100% • Cuello de Botella</div>
+                                </div>
+                                <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:8px; padding:12px;">
+                                    <div style="font-size:0.75rem; color:#ef4444; font-weight:900;">🔴 CAFÉ (20/20)</div>
+                                    <div style="font-size:0.8rem; color:#fff; margin-top:2px;">Uso: 100% • Cuello de Botella</div>
+                                </div>
+                                <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:8px; padding:12px;">
+                                    <div style="font-size:0.75rem; color:#ef4444; font-weight:900;">🔴 HARINA PAN (50/50)</div>
+                                    <div style="font-size:0.8rem; color:#fff; margin-top:2px;">Uso: 100% • Cuello de Botella</div>
+                                </div>
+                                <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:8px; padding:12px;">
+                                    <div style="font-size:0.75rem; color:#ef4444; font-weight:900;">🔴 ACEITE (14/14)</div>
+                                    <div style="font-size:0.8rem; color:#fff; margin-top:2px;">Uso: 100% • Cuello de Botella</div>
+                                </div>
+                                <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:8px; padding:12px;">
+                                    <div style="font-size:0.75rem; color:#ef4444; font-weight:900;">🔴 AZÚCAR (28/28)</div>
+                                    <div style="font-size:0.8rem; color:#fff; margin-top:2px;">Uso: 100% • Cuello de Botella</div>
+                                </div>
+                                <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:8px; padding:12px;">
+                                    <div style="font-size:0.75rem; color:#10b981; font-weight:900;">🟢 TIEMPO OPERARIO (84/480 min)</div>
+                                    <div style="font-size:0.8rem; color:#fff; margin-top:2px;">Holgura: 396 min libres (82.5%)</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

@@ -20,6 +20,14 @@ public class ApiResponse<T> {
     @Builder.Default
     private LocalDateTime timestamp = LocalDateTime.now();
 
+    public static ApiResponse<Void> ok(String message) {
+        return ApiResponse.<Void>builder()
+                .success(true)
+                .message(message)
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
     public static <T> ApiResponse<T> ok(String message, T data) {
         return ApiResponse.<T>builder()
                 .success(true)

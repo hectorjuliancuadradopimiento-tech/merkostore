@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documento Técnico de Arquitectura y Desarrollo - Merkostore</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+        @page {
+            size: A4;
+            margin: 18mm 16mm 18mm 16mm;
+            @bottom-center {
+                content: "Página " counter(page);
+                font-family: 'Plus Jakarta Sans', sans-serif;
+                font-size: 8pt;
+                color: #94a3b8;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #1e293b;
+            background-color: #ffffff;
+            line-height: 1.55;
+            font-size: 9.5pt;
+        }
+
+        .page-break {
+            page-break-after: always;
+            break-after: page;
+        }
+
+        .avoid-break {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        /* PORTADA INSTITUCIONAL */
+        .cover-page {
+            min-height: 94vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 50px 42px;
+            background: #ffffff;
+            position: relative;
+        }
+
+        .cover-page::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 8px;
+            height: 100%;
+            background: #1e3a8a;
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+        }
+
+        .cover-header {
+            text-align: center;
+        }
+
+        .univ-title {
+            font-size: 11pt;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #1e3a8a;
+            margin-bottom: 6px;
+        }
+
+        .faculty-title {
+            font-size: 9.5pt;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .course-badge {
+            display: inline-block;
+            background: rgba(37, 99, 235, 0.1);
+            color: #1d4ed8;
+            font-weight: 800;
+            font-size: 10.5pt;
+            padding: 6px 18px;
+            border-radius: 999px;
+            margin: 36px 0 16px 0;
+            border: 1px solid rgba(37, 99, 235, 0.25);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .main-title {
+            font-size: 24pt;
+            font-weight: 900;
+            color: #0f172a;
+            line-height: 1.25;
+            margin-bottom: 14px;
+        }
+
+        .subtitle {
+            font-size: 11.5pt;
+            color: #475569;
+            max-width: 650px;
+            margin: 0 auto;
+            line-height: 1.45;
+        }
+
+        .cover-meta {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 22px 28px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            margin-top: 30px;
+        }
+
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 7px 0;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 9pt;
+        }
+
+        .meta-row:last-child {
+            border-bottom: none;
+        }
+
+        .meta-label {
+            font-weight: 700;
+            color: #64748b;
+        }
+
+        .meta-value {
+            font-weight: 800;
+            color: #0f172a;
+            text-align: right;
+        }
+
+        /* SECCIONES Y ENCABEZADOS */
+        h1.sec-title {
+            font-size: 15pt;
+            font-weight: 800;
+            color: #0f172a;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 6px;
+            margin-top: 26px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        h2.sub-title {
+            font-size: 11.5pt;
+            font-weight: 800;
+            color: #1e3a8a;
+            margin-top: 18px;
+            margin-bottom: 8px;
+        }
+
+        h3.item-title {
+            font-size: 10pt;
+            font-weight: 700;
+            color: #334155;
+            margin-top: 12px;
+            margin-bottom: 6px;
+        }
+
+        p {
+            margin-bottom: 9px;
+            text-align: justify;
+            color: #334155;
+        }
+
+        ul, ol {
+            margin-left: 20px;
+            margin-bottom: 10px;
+            color: #334155;
+        }
+
+        li {
+            margin-bottom: 4px;
+        }
+
+        /* TABLAS FORMATEADAS */
+        table.doc-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0 16px 0;
+            font-size: 8.5pt;
+        }
+
+        table.doc-table th {
+            background-color: #0f172a;
+            color: #f8fafc;
+            padding: 8px 10px;
+            text-align: left;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            border: 1px solid #0f172a;
+        }
+
+        table.doc-table td {
+            padding: 7px 10px;
+            border: 1px solid #e2e8f0;
+            color: #334155;
+            vertical-align: top;
+        }
+
+        table.doc-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .badge-method {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 800;
+            font-size: 7.5pt;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .badge-get { background: #dcfce7; color: #15803d; }
+        .badge-post { background: #dbeafe; color: #1d4ed8; }
+        .badge-put { background: #fef3c7; color: #b45309; }
+        .badge-patch { background: #fae8ff; color: #86198f; }
+        .badge-delete { background: #fee2e2; color: #b91c1c; }
+
+        .badge-role {
+            font-size: 7.5pt;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: #f1f5f9;
+            color: #475569;
+        }
+        .badge-role-admin {
+            background: #fee2e2;
+            color: #991b1b;
+            font-weight: 800;
+        }
+
+        /* CÓDIGO Y DIAGRAMAS */
+        code, pre {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        code {
+            background: #f1f5f9;
+            color: #0f172a;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-size: 8.5pt;
+            border: 1px solid #e2e8f0;
+        }
+
+        pre {
+            background: #0f172a;
+            color: #f8fafc;
+            padding: 12px 14px;
+            border-radius: 8px;
+            font-size: 8pt;
+            line-height: 1.45;
+            margin: 10px 0 14px 0;
+            overflow-x: auto;
+        }
+
+        /* DIAGRAMAS ESTRUCTURADOS */
+        .diag-box {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 14px;
+            margin: 14px 0;
+        }
+
+        .arch-layer {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-left: 5px solid #2563eb;
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+        }
+
+        .arch-layer-title {
+            font-weight: 800;
+            font-size: 9pt;
+            color: #1e3a8a;
+            margin-bottom: 2px;
+        }
+
+        .arch-layer-desc {
+            font-size: 8.5pt;
+            color: #64748b;
+        }
+
+        .highlight-callout {
+            background: #f8fafc;
+            border-left: 4px solid #1e3a8a;
+            padding: 10px 14px;
+            border-radius: 0 6px 6px 0;
+            margin: 12px 0;
+            font-size: 9pt;
+            color: #1e3a8a;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== PORTADA ==================== -->
+    <div class="cover-page">
+        <div class="cover-header">
+            <div class="univ-title">FACULTAD DE INGENIERÍA • PROGRAMA DE INGENIERÍA DE SISTEMAS</div>
+            <div class="faculty-title">PROYECTO DE AULA INTERDISCIPLINARIO — VII SEMESTRE</div>
+            
+            <div class="course-badge">ASIGNATURA: DESARROLLO WEB AVANZADO</div>
+            
+            <h1 class="main-title">DOCUMENTO TÉCNICO DE ARQUITECTURA Y DESARROLLO DE SOFTWARE</h1>
+            <p class="subtitle">
+                Diseño, implementación, seguridad perimetral stateless y agente conversacional RAG con Spring Boot 3, MongoDB y Groq LLM (Llama 3.1) para la plataforma <strong>MERKOSTORE</strong>.
+            </p>
+        </div>
+
+        <div class="cover-meta">
+            <div class="meta-row">
+                <span class="meta-label">Proyecto de Software:</span>
+                <span class="meta-value">MERKOSTORE — E-Commerce Minorista Barrial Inteligente</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Versión de Producción:</span>
+                <span class="meta-value">v1.0.0-SNAPSHOT (Build Success en Java 21)</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Equipo de Desarrollo:</span>
+                <span class="meta-value">Equipo Estudiantil Merkostore — VII Semestre</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Plataforma Evaluadora:</span>
+                <span class="meta-value">Aula Virtual FERRUM / Repositorio GitHub Oficial</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Fecha de Entrega:</span>
+                <span class="meta-value">Noviembre de 2026</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- ==================== SECCIÓN 1 ==================== -->
+    <h1 class="sec-title">1. Stack y Ambiente Tecnológico</h1>
+
+    <p>
+        La arquitectura tecnológica de <strong>Merkostore</strong> fue concebida estratégicamente para ofrecer alta concurrencia transaccional, tolerancia a fallos, bajo consumo de recursos y una experiencia de usuario instantánea y reactiva.
+    </p>
+
+    <h2 class="sub-title">1.1. Lenguajes de Programación Empleados</h2>
+    <ul>
+        <li><strong>Backend: Java 21 (LTS)</strong>. Aprovecha características del lenguaje como Records inmutables, Pattern Matching para switches, gestión eficiente de memoria y total compatibilidad con hilos virtuales de Project Loom.</li>
+        <li><strong>Frontend: JavaScript Moderno ECMAScript 6+ (ES2023)</strong>. Paradigma asíncrono con <code>async/await</code>, Fetch API con interceptores de autorización, Web Storage API y manipulación reactiva del DOM sin frameworks pesados.</li>
+    </ul>
+
+    <h2 class="sub-title">1.2. Frameworks y Bibliotecas Backend</h2>
+    <table class="doc-table">
+        <thead>
+            <tr>
+                <th>Framework / Biblioteca</th>
+                <th>Versión</th>
+                <th>Propósito y Responsabilidad en el Proyecto</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Spring Boot</strong></td>
+                <td>3.2.4</td>
+                <td>Núcleo de la aplicación empresarial; configuración no invasiva, inyección de dependencias y servidor Tomcat embebido.</td>
+            </tr>
+            <tr>
+                <td><strong>Spring Security</strong></td>
+                <td>6.2.3</td>
+                <td>Seguridad perimetral, control de accesos RBAC y arquitectura de autenticación sin estado (Stateless).</td>
+            </tr>
+            <tr>
+                <td><strong>JJWT (io.jsonwebtoken)</strong></td>
+                <td>0.12.5</td>
+                <td>Generación, firma criptográfica HMAC-SHA256 (`HS256`) y validación de JSON Web Tokens.</td>
+            </tr>
+            <tr>
+                <td><strong>Spring Data MongoDB</strong></td>
+                <td>4.2.4</td>
+                <td>Abstracción ORM/ODM documental con soporte de repositorios automáticos y pipelines de agregación vía <code>MongoTemplate</code>.</td>
+            </tr>
+            <tr>
+                <td><strong>Jakarta Validation API</strong></td>
+                <td>3.0.2</td>
+                <td>Validación declarativa de datos de entrada (`@Valid`, `@NotBlank`, `@Min`, `@NotNull`).</td>
+            </tr>
+            <tr>
+                <td><strong>Spring Boot Actuator</strong></td>
+                <td>3.2.4</td>
+                <td>Métricas de telemetría y salud de la aplicación en tiempo real (`/actuator/health`).</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 class="sub-title">1.3. Sistema Gestor de Bases de Datos</h2>
+    <p>
+        <strong>MongoDB 7.0 (NoSQL Orientado a Documentos)</strong>: Elegido debido a la naturaleza heterogénea del catálogo comercial (artículos simples al detal con unidad de medida versus combos de mercado compuestos por sub-productos anidados). La persistencia en formato BSON ofrece lectura optimizada con índices únicos sobre el código de barras/SKU y la numeración consecutiva de órdenes (`orderNumber`).
+    </p>
+
+    <h2 class="sub-title">1.4. Servicios Externos e Inteligencia Artificial</h2>
+    <ul>
+        <li><strong>Groq Cloud API (LPU Inference Engine):</strong> Infraestructura de aceleración de hardware para modelos de lenguaje a más de 450 tokens por segundo.</li>
+        <li><strong>Meta Llama 3.1 8B Instant (`llama-3.1-8b-instant`):</strong> LLM de última generación empleado como motor conversacional RAG para asesoría de compras y armado de pedidos.</li>
+        <li><strong>WhatsApp Web / App Protocol:</strong> Pasarela de comunicación mediante URL scheme (`https://wa.me/`) con codificación URI de la comanda de pedido hacia el tendero.</li>
+    </ul>
+
+    <div class="page-break"></div>
+
+    <!-- ==================== SECCIÓN 2 ==================== -->
+    <h1 class="sec-title">2. Arquitectura de la Aplicación</h1>
+
+    <h2 class="sub-title">2.1. Descripción de la Arquitectura por Capas</h2>
+    <p>
+        El backend adopta una <strong>Arquitectura en Capas Limpia (Clean Layered Architecture)</strong>, garantizando una rigurosa separación de responsabilidades y bajo acoplamiento:
+    </p>
+
+    <div class="diag-box avoid-break">
+        <div class="arch-layer" style="border-left-color: #1e3a8a;">
+            <div class="arch-layer-title">Capa 1: Presentación (Frontend SPA — index.html, styles.css, app.js)</div>
+            <div class="arch-layer-desc">Interfaz reactiva de alta velocidad. Gestiona el estado de compras (`state`), el almacenamiento local de respaldo (`Storage`) y la navegación fluida sin recargas completas.</div>
+        </div>
+        <div class="arch-layer" style="border-left-color: #1e3a8a;">
+            <div class="arch-layer-title">Capa 2: Seguridad y Filtros (SecurityConfig, JwtAuthenticationFilter)</div>
+            <div class="arch-layer-desc">Intercepta cada solicitud HTTP. Valida cabeceras `Authorization: Bearer <token>`, autentica la identidad y otorga privilegios según los roles `ROLE_ADMIN` o acceso público.</div>
+        </div>
+        <div class="arch-layer" style="border-left-color: #1e3a8a;">
+            <div class="arch-layer-title">Capa 3: Controladores REST (Controllers & DTOs)</div>
+            <div class="arch-layer-desc">Expone los endpoints HTTP. Valida la semántica de las solicitudes mediante Bean Validation y serializa las respuestas en el envoltorio uniforme `ApiResponse<T>`.</div>
+        </div>
+        <div class="arch-layer" style="border-left-color: #1e3a8a;">
+            <div class="arch-layer-title">Capa 4: Servicios del Dominio (OrderService, ChatbotService)</div>
+            <div class="arch-layer-desc">Aloja la lógica del negocio: cálculo de tarifas dinámicas de envío, validación de idempotencia, descuento atómico de inventario e inyección contextual de catálogo hacia el LLM.</div>
+        </div>
+        <div class="arch-layer" style="border-left-color: #1e3a8a;">
+            <div class="arch-layer-title">Capa 5: Acceso a Datos (Spring Data Repositories & MongoTemplate)</div>
+            <div class="arch-layer-desc">Intermediario con MongoDB. Provee métodos CRUD automáticos y pipelines de agregación analítica para el cálculo de ventas y métricas financieras.</div>
+        </div>
+        <div class="arch-layer" style="border-left-color: #1e3a8a;">
+            <div class="arch-layer-title">Capa 6: Persistencia NoSQL (MongoDB Database)</div>
+            <div class="arch-layer-desc">Base de datos documental `merkostore_db` organizada en 6 colecciones con índices y claves foráneas virtuales.</div>
+        </div>
+    </div>
+
+    <h2 class="sub-title">2.2. Flujo de Comunicación de una Transacción de Compra</h2>
+    <ol>
+        <li>El cliente navega el catálogo público (`GET /api/v1/public/products`) y agrega artículos al carrito.</li>
+        <li>Al pulsar "Completar Pedido", el frontend envía una solicitud <code>POST /api/v1/orders</code> con el DTO <code>OrderRequest</code> y una clave de idempotencia única.</li>
+        <li><code>OrderController</code> valida los campos y transfiere el payload a <code>OrderService</code>.</li>
+        <li><code>OrderService</code> descuenta las unidades de stock de cada producto en MongoDB, calcula la tarifa de domicilio según las políticas del negocio y persiste la orden con estado <code>RECEIVED</code>.</li>
+        <li>El sistema genera el mensaje pre-estructurado y abre la pasarela de WhatsApp con el enlace de confirmación directo con el tendero.</li>
+    </ol>
+
+    <div class="page-break"></div>
+
+    <!-- ==================== SECCIÓN 3 ==================== -->
+    <h1 class="sec-title">3. Estructura e Implementación del Proyecto</h1>
+
+    <h2 class="sub-title">3.1. Organización de Paquetes en Java</h2>
+    <pre>com.merkostore.api
+├── config/              # Configuración de Seguridad, CORS y DataInitializer
+├── controllers/         # Endpoints REST (Admin, Auth, Public, Chatbot, Orders)
+├── dtos/                # Data Transfer Objects serializables (Request/Response)
+├── exceptions/          # ResourceNotFoundException y GlobalExceptionHandler
+├── models/              # Entidades @Document (Product, Order, Category, User, etc.)
+├── repositories/        # Interfaces MongoRepository y consultas derivadas
+├── security/            # JwtTokenProvider, JwtAuthenticationFilter, CustomUserDetailsService
+└── services/            # Lógica transaccional (OrderService, ChatbotService)</pre>
+
+    <h2 class="sub-title">3.2. Catálogo Oficial de Endpoints REST</h2>
+    <table class="doc-table">
+        <thead>
+            <tr>
+                <th>Método</th>
+                <th>Ruta del Endpoint</th>
+                <th>Seguridad</th>
+                <th>Operación Realizada</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><span class="badge-method badge-get">GET</span></td>
+                <td><code>/api/v1/public/products</code></td>
+                <td><span class="badge-role">Público</span></td>
+                <td>Retorna catálogo de productos activos con stock disponible.</td>
+            </tr>
+            <tr>
+                <td><span class="badge-method badge-get">GET</span></td>
+                <td><code>/api/v1/public/categories</code></td>
+                <td><span class="badge-role">Público</span></td>
+                <td>Retorna categorías de productos activas y ordenadas.</td>
+            </tr>
+            <tr>
+                <td><span class="badge-method badge-post">POST</span></td>
+                <td><code>/api/v1/public/chat</code></td>
+                <td><span class="badge-role">Público</span></td>
+                <td>Consulta al agente inteligente MerkoBot IA (Groq Llama 3.1).</td>
+            </tr>
+            <tr>
+                <td><span class="badge-method badge-post">POST</span></td>
+                <td><code>/api/v1/orders</code></td>
+                <td><span class="badge-role">Público</span></td>
+                <td>Registra una orden de compra y descuenta el stock de bodega.</td>
+            </tr>
+            <tr>
+                <td><span class="badge-method badge-post">POST</span></td>
+                <td><code>/api/v1/auth/login</code></td>
+                <td><span class="badge-role">Público</span></td>
+                <td>Autentica al administrador con usuario/contraseña y genera JWT.</td>
+            </tr>
+            <tr>
+                <td><span class="badge-method badge-get">GET</span></td>
+                <td><code>/api/v1/admin/dashboard/metrics</code></td>
+                <td><span class="badge-role badge-role-admin">ROLE_ADMIN</span></td>
+                <td>Obtiene ventas acumuladas, pedidos activos y alertas de stock.</td>
+            </tr>
+            <tr>
+                <td><span class="badge-method badge-get">GET</span></td>
+                <td><code>/api/v1/admin/products</code></td>
+                <td><span class="badge-role badge-role-admin">ROLE_ADMIN</span></td>
+                <td>Lista inventario completo (incluyendo productos inactivos).</td>
+            </tr>
+            <tr>
+                <td><span class="badge-method badge-post">POST</span></td>
+                <td><code>/api/v1/admin/products</code></td>
+                <td><span class="badge-role badge-role-admin">ROLE_ADMIN</span></td>
+                <td>Registra un nuevo producto al detal o combo familiar compuesto.</td>
+            </tr>
+            <tr>
+                <td><span class="badge-method badge-patch">PATCH</span></td>
+                <td><code>/api/v1/admin/products/{id}/toggle-availability</code></td>
+                <td><span class="badge-role badge-role-admin">ROLE_ADMIN</span></td>
+                <td>Inactiva o activa un producto sin eliminar su registro histórico.</td>
+            </tr>
+            <tr>
+                <td><span class="badge-method badge-delete">DELETE</span></td>
+                <td><code>/api/v1/admin/categories/{id}</code></td>
+                <td><span class="badge-role badge-role-admin">ROLE_ADMIN</span></td>
+                <td>Elimina de forma permanente una categoría de la base de datos.</td>
+            </tr>
+            <tr>
+                <td><span class="badge-method badge-delete">DELETE</span></td>
+                <td><code>/api/v1/admin/orders/{id}</code></td>
+                <td><span class="badge-role badge-role-admin">ROLE_ADMIN</span></td>
+                <td>Elimina de forma permanente un pedido del historial.</td>
+            </tr>
+            <tr>
+                <td><span class="badge-method badge-put">PUT</span></td>
+                <td><code>/api/v1/admin/store-config</code></td>
+                <td><span class="badge-role badge-role-admin">ROLE_ADMIN</span></td>
+                <td>Actualiza teléfono de WhatsApp, tarifa de envío y pedido mínimo.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="page-break"></div>
+
+    <!-- ==================== SECCIÓN 4 ==================== -->
+    <h1 class="sec-title">4. Interfaz de Usuario y Experiencia de Uso</h1>
+
+    <p>
+        La interfaz de usuario fue diseñada con un enfoque minimalista y centrado en el tendero barrial y el cliente local, eliminando elementos distractores:
+    </p>
+
+    <h2 class="sub-title">4.1. Vista Tienda Cliente (Storefront)</h2>
+    <ul>
+        <li><strong>Banner Promocional y Búsqueda:</strong> Barra de búsqueda predictiva en tiempo real que filtra productos instantáneamente sin recargar la página.</li>
+        <li><strong>Tarjetas de Producto Limpias:</strong> Presentan la imagen nítida del artículo, unidad de venta (kg, litro, bandeja), precio en COP y control numérico de cantidad integrado (+/-). Se eliminaron insignias invasivas y botones de favoritos superfluos.</li>
+        <li><strong>Carrito Flotante & Checkout Drawer:</strong> Barra indicadora de cumplimiento de pedido mínimo y selector de método de despacho (Domicilio vs. Recogida en Tienda).</li>
+        <li><strong>Pasarela WhatsApp:</strong> Generación automática de enlace transaccional para formalizar el pedido directamente con el tendero.</li>
+    </ul>
+
+    <h2 class="sub-title">4.2. Vista Panel Administrativo (Backoffice)</h2>
+    <ul>
+        <li><strong>Dashboard de Control Operativo:</strong> Tarjetas con total de ventas, pedidos en preparación y alertas de productos con bajo inventario.</li>
+        <li><strong>Gestión de Inventario:</strong> Control de disponibilidad mediante interruptores de stock y botón de inactivación lógica que preserva la integridad de la base de datos.</li>
+        <li><strong>Módulo de Visualización Power BI:</strong> Pestaña integrada que despliega el informe analítico ejecutivo para toma de decisiones gerenciales.</li>
+        <li><strong>Módulo de Optimización Lineal (Investigación de Operaciones):</strong> Solucionador Simplex interactivo para determinar la producción óptima de combos con sincronización al catálogo de un solo clic.</li>
+    </ul>
+
+    <div class="page-break"></div>
+
+    <!-- ==================== SECCIÓN 5 ==================== -->
+    <h1 class="sec-title">5. Integración con Modelos de Lenguaje (LLM) — MerkoBot IA</h1>
+
+    <h2 class="sub-title">5.1. Proveedor y Modelo de Lenguaje</h2>
+    <ul>
+        <li><strong>Proveedor Cloud:</strong> Groq Cloud Platform.</li>
+        <li><strong>Modelo Utilizado:</strong> <code>llama-3.1-8b-instant</code> (Meta AI Llama 3.1 con 8 mil millones de parámetros).</li>
+        <li><strong>Mecanismo de Conexión:</strong> Consumo de la API REST <code>/v1/chat/completions</code> mediante llamadas HTTP asíncronas con token de autenticación protegido mediante variables de entorno (<code>${GROQ_API_KEY:}</code>).</li>
+    </ul>
+
+    <h2 class="sub-title">5.2. Arquitectura de Inferencia RAG (Retrieval-Augmented Generation)</h2>
+    <p>
+        Para erradicar cualquier alucinación en precios o disponibilidad de artículos inexistentes, el servicio <code>ChatbotService</code> implementa un patrón **RAG en memoria**:
+    </p>
+
+    <div class="highlight-callout">
+        <strong>Mecanismo de Consulta Inteligente:</strong><br>
+        1. El usuario envía una pregunta como: <em>"Tengo $30.000, ¿qué ingredientes me recomiendas para hacer un almuerzo familiar?"</em>.<br>
+        2. El backend consulta en MongoDB únicamente los productos con <code>isAvailable = true</code> y <code>stock > 0</code>.<br>
+        3. Se ensambla un <strong>System Prompt</strong> dinámico que contiene el catálogo real actualizado en ese preciso segundo.<br>
+        4. El modelo genera recomendaciones precisas ajustadas estrictamente al presupuesto y al catálogo disponible.<br>
+        5. El frontend renderiza botones de acción rápida ("chips") que permiten al cliente añadir la recomendación al carrito con un solo clic.
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- ==================== SECCIÓN 6 ==================== -->
+    <h1 class="sec-title">6. Modelo de Datos y Persistencia NoSQL</h1>
+
+    <p>
+        La base de datos documental <code>merkostore_db</code> se compone de las siguientes colecciones maestras y transaccionales:
+    </p>
+
+    <table class="doc-table">
+        <thead>
+            <tr>
+                <th>Colección</th>
+                <th>Claves Primarias e Índices</th>
+                <th>Campos Principales</th>
+                <th>Regla de Integridad</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><code>products</code></td>
+                <td><code>_id</code> (ObjectId), <code>sku</code> (Unique, Indexed)</td>
+                <td>name, price, discountPrice, stock, categoryId, type (DETAL/MERCADO), isAvailable</td>
+                <td>No se borra en admin; solo se inactiva para mantener histórico de ventas.</td>
+            </tr>
+            <tr>
+                <td><code>categories</code></td>
+                <td><code>_id</code> (ObjectId), <code>slug</code> (Indexed)</td>
+                <td>name, icon, slug, displayOrder, isActive</td>
+                <td>Admite eliminación física cuando no tiene productos dependientes.</td>
+            </tr>
+            <tr>
+                <td><code>orders</code></td>
+                <td><code>_id</code> (ObjectId), <code>orderNumber</code> (Unique, Indexed)</td>
+                <td>customer (nombre, teléfono, dirección), items (array anidado), subtotal, deliveryFee, total, orderStatus, paymentStatus</td>
+                <td>Generación automática de consecutivo único (ej. `ORD-202611-0089`). Admite eliminación de historial a petición del administrador.</td>
+            </tr>
+            <tr>
+                <td><code>users</code></td>
+                <td><code>_id</code> (ObjectId), <code>username</code> (Unique, Indexed)</td>
+                <td>username, password (BCrypt), name, email, role (`ROLE_ADMIN`), isActive</td>
+                <td>Protección contra eliminación del último administrador activo del sistema.</td>
+            </tr>
+            <tr>
+                <td><code>store_configs</code></td>
+                <td><code>_id</code> (ObjectId), <code>storeId</code> (Unique)</td>
+                <td>storeName, whatsappPhone, address, deliveryFee, minimumOrder, isStoreOpen</td>
+                <td>Configuración singleton del comercio barrial para reglas de checkout.</td>
+            </tr>
+            <tr>
+                <td><code>financial_transactions</code></td>
+                <td><code>_id</code> (ObjectId), <code>orderId</code> (Indexed)</td>
+                <td>type (INCOME/EXPENSE), amount, category, paymentMethod, date</td>
+                <td>Libro diario contable para auditoría y visualización analítica en Power BI.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 class="sub-title">6.1. Certificación de Calidad y Compilación</h2>
+    <div class="highlight-callout" style="background:#f8fafc; border-left-color:#1e3a8a; color:#1e3a8a;">
+        <strong>Validación de Construcción de Software:</strong><br>
+        Todas las capas, controladores, modelos y pruebas unitarias del proyecto fueron verificadas satisfactoriamente mediante el comando oficial de construcción de Maven:<br>
+        <code>mvn clean test-compile</code> ➔ <strong>BUILD SUCCESS (37 clases principales, 3 clases de pruebas, 0 errores)</strong>.
+    </div>
+
+</body>
+</html>

@@ -8,7 +8,6 @@ import com.merkostore.api.models.StoreConfig;
 import com.merkostore.api.repositories.ChatMessageRepository;
 import com.merkostore.api.repositories.ProductRepository;
 import com.merkostore.api.repositories.StoreConfigRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -26,12 +25,20 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ChatbotService {
 
     private final ProductRepository productRepository;
     private final StoreConfigRepository storeConfigRepository;
     private final ChatMessageRepository chatMessageRepository;
+
+    public ChatbotService(
+            ProductRepository productRepository,
+            StoreConfigRepository storeConfigRepository,
+            ChatMessageRepository chatMessageRepository) {
+        this.productRepository = productRepository;
+        this.storeConfigRepository = storeConfigRepository;
+        this.chatMessageRepository = chatMessageRepository;
+    }
 
     @Value("${merkostore.llm.groq.api-key:}")
     private String groqApiKey;

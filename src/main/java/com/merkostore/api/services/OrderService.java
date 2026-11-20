@@ -10,7 +10,6 @@ import com.merkostore.api.models.StoreConfig;
 import com.merkostore.api.repositories.OrderRepository;
 import com.merkostore.api.repositories.ProductRepository;
 import com.merkostore.api.repositories.StoreConfigRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -25,13 +24,23 @@ import java.util.Optional;
 import java.util.Random;
 
 @Service
-@RequiredArgsConstructor
 public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final StoreConfigRepository storeConfigRepository;
     private final MongoTemplate mongoTemplate;
+
+    public OrderService(
+            OrderRepository orderRepository,
+            ProductRepository productRepository,
+            StoreConfigRepository storeConfigRepository,
+            MongoTemplate mongoTemplate) {
+        this.orderRepository = orderRepository;
+        this.productRepository = productRepository;
+        this.storeConfigRepository = storeConfigRepository;
+        this.mongoTemplate = mongoTemplate;
+    }
 
     private final Random random = new Random();
 

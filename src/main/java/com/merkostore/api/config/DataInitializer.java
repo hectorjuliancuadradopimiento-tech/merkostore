@@ -10,7 +10,6 @@ import com.merkostore.api.repositories.OrderRepository;
 import com.merkostore.api.repositories.ProductRepository;
 import com.merkostore.api.repositories.StoreConfigRepository;
 import com.merkostore.api.repositories.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -22,7 +21,6 @@ import java.util.List;
 import java.util.Random;
 
 @Component
-@RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;
@@ -31,6 +29,21 @@ public class DataInitializer implements CommandLineRunner {
     private final StoreConfigRepository storeConfigRepository;
     private final OrderRepository orderRepository;
     private final PasswordEncoder passwordEncoder;
+
+    public DataInitializer(
+            UserRepository userRepository,
+            CategoryRepository categoryRepository,
+            ProductRepository productRepository,
+            StoreConfigRepository storeConfigRepository,
+            OrderRepository orderRepository,
+            PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.categoryRepository = categoryRepository;
+        this.productRepository = productRepository;
+        this.storeConfigRepository = storeConfigRepository;
+        this.orderRepository = orderRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @Override
     public void run(String... args) throws Exception {

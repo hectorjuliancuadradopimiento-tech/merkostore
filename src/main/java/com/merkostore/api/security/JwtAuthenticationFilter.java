@@ -4,7 +4,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,11 +15,15 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
-@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
+
+    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, CustomUserDetailsService customUserDetailsService) {
+        this.tokenProvider = tokenProvider;
+        this.customUserDetailsService = customUserDetailsService;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -33,12 +36,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String username = tokenProvider.getUsernameFromToken(jwt);
                 UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
 
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities()
                 );
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         } catch (Exception ex) {
             logger.error("No se pudo establecer la autenticación del usuario en el contexto de seguridad", ex);

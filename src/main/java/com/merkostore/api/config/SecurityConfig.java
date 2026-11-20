@@ -1,8 +1,9 @@
 package com.merkostore.api.config;
 
 import com.merkostore.api.security.JwtAuthenticationFilter;
-import lombok.RequiredArgsConstructor;
+import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -27,10 +28,13 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
 
     @Value("${merkostore.cors.allowed-origins:*}")
     private String allowedOrigins;
@@ -52,8 +56,14 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Assets estáticos del frontend
-                .requestMatchers("/", "/index.html", "/styles.css", "/app.js", "/logo.png", "/*.html", "/*.css", "/*.js", "/*.png", "/error", "/favicon.ico").permitAll()
+                // Dispatchers internos de Spring Boot (Forward para index.html y Error)
+                .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.ERROR).permitAll()
+                // Recursos estáticos estándar de Spring Boot
+                .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
+                // Assets estáticos del frontend en raíz y subcarpetas
+                .requestMatchers("/", "/index.html", "/styles.css", "/app.js", "/logo.png", "/*.html", "/*.css", "/*.js", "/*.png", "/*.ico", "/error", "/favicon.ico").permitAll()
+                // Endpoints de Actuator (Health & Metrics)
+                .requestMatchers("/actuator/**").permitAll()
                 // API Pública de catálogo, auth y pedidos
                 .requestMatchers("/api/v1/public/**").permitAll()
                 .requestMatchers("/api/v1/auth/**").permitAll()
