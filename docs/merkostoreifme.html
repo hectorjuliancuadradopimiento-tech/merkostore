@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informe Metodológico Final - Merkostore - Tecnológico Comfenalco</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+        @page {
+            size: letter;
+            margin: 28mm 20mm 28mm 20mm;
+            @top-center {
+                content: element(pageHeader);
+            }
+            @bottom-center {
+                content: element(pageFooter);
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            color: #1a1a1a;
+            background-color: #ffffff;
+            line-height: 1.5;
+            font-size: 11pt;
+        }
+
+        /* HEADER Y FOOTER FIJOS POR PÁGINA (ESTILO OFICIAL COMFENALCO) */
+        .header-fixed {
+            position: fixed;
+            top: -22mm;
+            left: 0;
+            right: 0;
+            height: 20mm;
+            text-align: center;
+            z-index: 1000;
+        }
+
+        .header-fixed img {
+            width: 100%;
+            max-height: 18mm;
+            object-fit: contain;
+        }
+
+        .footer-fixed {
+            position: fixed;
+            bottom: -24mm;
+            left: 0;
+            right: 0;
+            height: 20mm;
+            text-align: center;
+            z-index: 1000;
+        }
+
+        .footer-fixed img {
+            width: 100%;
+            max-height: 18mm;
+            object-fit: contain;
+        }
+
+        .page-break {
+            page-break-after: always;
+            break-after: page;
+        }
+
+        .avoid-break {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        /* PORTADA */
+        .cover-container {
+            min-height: 86vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            text-align: center;
+            padding: 10px 0;
+        }
+
+        .cover-title {
+            font-size: 17pt;
+            font-weight: bold;
+            color: #0f172a;
+            margin-top: 50px;
+            margin-bottom: 25px;
+            line-height: 1.35;
+        }
+
+        .cover-authors {
+            font-size: 11.5pt;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .cover-program {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #334155;
+            margin-bottom: 35px;
+            line-height: 1.4;
+        }
+
+        .cover-professors {
+            font-size: 10.5pt;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 50px;
+            line-height: 1.6;
+            max-width: 650px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cover-date {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #0f172a;
+            margin-bottom: 20px;
+        }
+
+        /* TEXTO Y TIPOGRAFÍA */
+        h1.chap-title {
+            font-size: 14pt;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0 15px 0;
+            color: #0f172a;
+        }
+
+        h2.sec-heading {
+            font-size: 12pt;
+            font-weight: bold;
+            margin: 18px 0 8px 0;
+            color: #0f172a;
+        }
+
+        h3.sub-heading {
+            font-size: 11pt;
+            font-weight: bold;
+            margin: 14px 0 6px 0;
+            color: #1e293b;
+        }
+
+        p {
+            text-align: justify;
+            margin-bottom: 12px;
+            text-indent: 0;
+        }
+
+        ul, ol {
+            margin: 8px 0 14px 28px;
+            text-align: justify;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        .toc-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 10.5pt;
+        }
+
+        .toc-dots {
+            flex: 1;
+            border-bottom: 1px dotted #94a3b8;
+            margin: 0 8px 4px 8px;
+        }
+
+        .doc-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 14px 0;
+            font-size: 9pt;
+            font-family: 'Times New Roman', Times, serif;
+        }
+
+        .doc-table th, .doc-table td {
+            border: 1px solid #000000;
+            padding: 6px 8px;
+            vertical-align: top;
+            text-align: left;
+        }
+
+        .doc-table th {
+            background-color: #f1f5f9;
+            font-weight: bold;
+        }
+
+        .img-block {
+            text-align: center;
+            margin: 16px 0;
+        }
+
+        .img-block img {
+            max-width: 90%;
+            height: auto;
+        }
+
+        .img-caption {
+            font-size: 9pt;
+            font-style: italic;
+            color: #475569;
+            margin-top: 6px;
+            text-align: center;
+        }
+
+        pre {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 10px 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 8pt;
+            line-height: 1.4;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 8.5pt;
+            background: #f1f5f9;
+            padding: 1px 4px;
+            border-radius: 3px;
+        }
+
+        .reference-entry {
+            padding-left: 28px;
+            text-indent: -28px;
+            margin-bottom: 10px;
+            text-align: justify;
+            font-size: 10pt;
+            line-height: 1.45;
+        }
+
+        .callout-box {
+            background: #f8fafc;
+            border: 1px solid #94a3b8;
+            border-left: 4px solid #1e3a8a;
+            padding: 12px 14px;
+            margin: 14px 0;
+            font-size: 10pt;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ENCABEZADO Y PIE DE PÁGINA FIJOS INSTITUCIONALES -->
+    <div class="header-fixed">
+        <img src="images/comfenalco_header.png" alt="Encabezado Tecnológico Comfenalco">
+    </div>
+    <div class="footer-fixed">
+        <img src="images/comfenalco_footer.png" alt="Pie de Página Tecnológico Comfenalco">
+    </div>
+
+    <!-- ==================== PÁGINA 1: PORTADA ==================== -->
+    <div class="cover-container">
+        <div></div> <!-- Spacer -->
+
+        <div>
+            <h1 class="cover-title">
+                Merkostore: sistema web para la gestión de ventas, pedidos e inventario<br>
+                de una tienda de barrio
+            </h1>
+
+            <p class="cover-authors">
+                Julián David Cuadrado Martínez, Cristian Andrés Barrios Gómez, Santiago Argüello Castro e Ian Pabuena Caro.
+            </p>
+
+            <p class="cover-program">
+                Facultad de Ingeniería, Tecnología en Desarrollo de Software,<br>
+                Semestre VII
+            </p>
+
+            <p class="cover-professors">
+                Walter Alberto Aspriella Castellar, Estefanía Burgos Alarcón, María José Rodríguez Rodríguez, Fabio García Ramírez, Javier Mendoza Beltrán, Lucía Margarita Mestre Tapia y Xavier José del Río Acosta.
+            </p>
+        </div>
+
+        <p class="cover-date">
+            Noviembre de 2026
+        </p>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- ==================== PÁGINA 2: TABLA DE CONTENIDO ==================== -->
+    <h1 class="chap-title">Tabla de contenido</h1>
+
+    <div class="toc-row"><strong>Capítulo I: El Problema de Investigación</strong><div class="toc-dots"></div><strong>4</strong></div>
+    <div class="toc-row" style="padding-left:14px;">1. Problema<div class="toc-dots"></div>4</div>
+    <div class="toc-row" style="padding-left:28px;">1.1 Descripción del problema<div class="toc-dots"></div>4</div>
+    <div class="toc-row" style="padding-left:28px;">1.2 Pregunta problema<div class="toc-dots"></div>5</div>
+    <div class="toc-row" style="padding-left:28px;">1.3 Árbol del problema<div class="toc-dots"></div>6</div>
+    <div class="toc-row" style="padding-left:28px;">1.4 Justificación<div class="toc-dots"></div>7</div>
+    <div class="toc-row" style="padding-left:28px;">1.5 Objetivos<div class="toc-dots"></div>8</div>
+    <div class="toc-row" style="padding-left:42px;">1.5.1 Objetivo general<div class="toc-dots"></div>8</div>
+    <div class="toc-row" style="padding-left:42px;">1.5.2 Objetivos específicos<div class="toc-dots"></div>8</div>
+
+    <div class="toc-row" style="margin-top:10px;"><strong>Capítulo II: Estado del Arte y Marco Referencial</strong><div class="toc-dots"></div><strong>9</strong></div>
+    <div class="toc-row" style="padding-left:14px;">2. Estado del arte<div class="toc-dots"></div>9</div>
+    <div class="toc-row" style="padding-left:28px;">2.1 Antecedentes internacionales<div class="toc-dots"></div>9</div>
+    <div class="toc-row" style="padding-left:28px;">2.2 Antecedentes nacionales<div class="toc-dots"></div>10</div>
+    <div class="toc-row" style="padding-left:28px;">2.3 Antecedentes regionales y/o locales<div class="toc-dots"></div>11</div>
+    <div class="toc-row" style="padding-left:28px;">2.4 Marco teórico y tecnológico<div class="toc-dots"></div>13</div>
+    <div class="toc-row" style="padding-left:42px;">2.4.1 Java 21 y Spring Boot 3<div class="toc-dots"></div>13</div>
+    <div class="toc-row" style="padding-left:42px;">2.4.2 Bases de datos documentales NoSQL (MongoDB 7.0)<div class="toc-dots"></div>13</div>
+    <div class="toc-row" style="padding-left:42px;">2.4.3 Comercio electrónico y seguridad perimetral JWT<div class="toc-dots"></div>14</div>
+    <div class="toc-row" style="padding-left:42px;">2.4.4 Modelos de Lenguaje (LLM) y Chatbots RAG (Llama-3.1)<div class="toc-dots"></div>14</div>
+    <div class="toc-row" style="padding-left:42px;">2.4.5 Programación Lineal Entera (PLE / MILP)<div class="toc-dots"></div>15</div>
+    <div class="toc-row" style="padding-left:42px;">2.4.6 Almacenes de Datos (Data Warehouse) y Esquema Estrella<div class="toc-dots"></div>15</div>
+    <div class="toc-row" style="padding-left:28px;">2.5 Marco contextual<div class="toc-dots"></div>16</div>
+    <div class="toc-row" style="padding-left:28px;">2.6 Marco legal y normativo<div class="toc-dots"></div>16</div>
+
+    <div class="toc-row" style="margin-top:10px;"><strong>Capítulo III: Metodología de Investigación</strong><div class="toc-dots"></div><strong>18</strong></div>
+    <div class="toc-row" style="padding-left:14px;">3. Metodología<div class="toc-dots"></div>18</div>
+    <div class="toc-row" style="padding-left:28px;">3.1 Tipo y enfoque de investigación<div class="toc-dots"></div>18</div>
+    <div class="toc-row" style="padding-left:28px;">3.2 Diseño metodológico y fases Scrum<div class="toc-dots"></div>19</div>
+    <div class="toc-row" style="padding-left:28px;">3.3 Técnicas e instrumentos de recolección<div class="toc-dots"></div>20</div>
+    <div class="toc-row" style="padding-left:28px;">3.4 Población y muestra<div class="toc-dots"></div>20</div>
+    <div class="toc-row" style="padding-left:28px;">3.5 Cronograma de ejecución de Sprints<div class="toc-dots"></div>21</div>
+
+    <div class="toc-row" style="margin-top:10px;"><strong>Capítulo IV: Resultados y Discusión</strong><div class="toc-dots"></div><strong>22</strong></div>
+    <div class="toc-row" style="padding-left:14px;">4. Resultados de investigación y desarrollo<div class="toc-dots"></div>22</div>
+    <div class="toc-row" style="padding-left:28px;">4.1 Resultado 1: Arquitectura Web por Capas y Seguridad JWT<div class="toc-dots"></div>22</div>
+    <div class="toc-row" style="padding-left:28px;">4.2 Resultado 2: Asistente IA (MerkoBot) y Canal WhatsApp<div class="toc-dots"></div>23</div>
+    <div class="toc-row" style="padding-left:28px;">4.3 Resultado 3: Modelo de Optimización Lineal de Inventario (IO)<div class="toc-dots"></div>24</div>
+    <div class="toc-row" style="padding-left:28px;">4.4 Resultado 4: Data Warehouse y Dashboard en Power BI<div class="toc-dots"></div>25</div>
+    <div class="toc-row" style="padding-left:28px;">4.5 Declaración de Uso Ético de Inteligencia Artificial<div class="toc-dots"></div>26</div>
+    <div class="toc-row" style="padding-left:28px;">4.6 Conclusiones del proyecto<div class="toc-dots"></div>27</div>
+
+    <div class="toc-row" style="margin-top:10px;"><strong>Referencias Bibliográficas (Normas APA 7ma Edición)</strong><div class="toc-dots"></div><strong>28</strong></div>
+
+    <div class="page-break"></div>
+
+    <!-- ==================== CAPÍTULO I ==================== -->
+    <h1 class="chap-title">Capítulo I</h1>
+    <h2 class="sec-heading">1. Problema</h2>
+
+    <h3 class="sub-heading">1.1 Descripción del problema</h3>
+    <p>
+        Las tiendas de barrio cumplen una función fundamental en el abastecimiento cotidiano de las comunidades urbanas, ofreciendo alimentos, bebidas, artículos de aseo y bienes de consumo masivo con un alto nivel de proximidad física. Sin embargo, en la actualidad estos micronegocios enfrentan una severa pérdida de competitividad provocada por dos factores concurrentes: la rápida expansión de las cadenas de descuento duro (*hard discount*) y las plataformas corporativas de entrega a domicilio, sumado a la gestión empírica y manual de sus operaciones internas.
+    </p>
+    <p>
+        Tradicionalmente, el tendero administra su catálogo, compras, ventas y existencias de memoria o mediante anotaciones en cuadernos físicos. Esta fragmentación de la información ocasiona constantes inconsistencias en el inventario disponible, demoras significativas en la preparación y despacho de pedidos, errores en el cobro de productos y una incapacidad casi total para medir con rigor la rentabilidad real de sus líneas de negocio. Asimismo, los clientes demandan cada vez más canales digitales ágiles, catálogo interactivo y atención continua vía mensajería instantánea como WhatsApp.
+    </p>
+    <p>
+        <strong>Merkostore</strong> surge como una plataforma web integral diseñada para digitalizar, estructurar y optimizar las operaciones comerciales de una tienda de barrio. El sistema desacopla la interacción en dos entornos coordinados: una tienda pública reactiva para que los clientes exploren productos, reciban asesoría mediante inteligencia artificial y procesen órdenes con confirmación automática a WhatsApp, y un panel administrativo seguro para que el comerciante controle inventarios atómicos, sincronice precios, supervise pedidos en tiempo real y tome decisiones informadas mediante modelos de optimización matemática e inteligencia de negocios.
+    </p>
+
+    <h3 class="sub-heading">1.2 Pregunta problema</h3>
+    <p style="font-style: italic; background:#f8fafc; padding:10px 14px; border-left:3px solid #1e3a8a;">
+        ¿De qué manera una plataforma web Full-Stack integrada con inteligencia artificial conversacional, un modelo matemático de optimización de inventarios y un cuadro de mando analítico en Power BI permite fortalecer la gestión comercial, operativa y logística de una tienda de barrio en Cartagena?
+    </p>
+
+    <div class="page-break"></div>
+
+    <h3 class="sub-heading">1.3 Árbol del problema</h3>
+    <p>
+        A continuación se ilustra la estructura de causas raíz, problema central y efectos negativos identificados en el comercio minorista barrial:
+    </p>
+
+    <div class="img-block">
+        <img src="images/arbol_problema.jpg" alt="Árbol del Problema de Merkostore" style="max-height: 480px;">
+        <div class="img-caption">Figura 1: Árbol del problema: causas y efectos de la gestión poco integrada en tiendas de barrio.</div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <h3 class="sub-heading">1.4 Justificación</h3>
+    <p>
+        El desarrollo del proyecto Merkostore se justifica plenamente en la necesidad de democratizar el acceso a herramientas de alta tecnología para el sector minorista tradicional de barrio, el cual representa cerca del 65% del comercio de la canasta familiar en Colombia pero exhibe los mayores índices de obsolescencia digital. La falta de centralización operativa genera pérdidas financieras silenciosas por mercancía vencida, quiebres de stock en artículos de alta rotación y fuga de clientes hacia almacenes de grandes superficies.
+    </p>
+    <p>
+        Una solución web moderna permite unificar en una única fuente de verdad los procesos de consulta de catálogo, toma de pedidos, control de caja y seguimiento de entregas. La plataforma Merkostore no solo reduce las tareas manuales y repetitivas del tendero, sino que transforma los datos operacionales capturados en valor estratégico. A través de la incorporación de un modelo de <strong>Programación Lineal Entera</strong> en Investigación de Operaciones y un <strong>Data Warehouse con dashboards en Power BI</strong>, el comerciante deja de decidir con base en la intuición y pasa a saber con certeza matemática qué productos ensamblar en combos promocionales, cuántas unidades reservar para la venta al detal y cuáles son sus márgenes reales de rentabilidad diaria.
+    </p>
+
+    <h3 class="sub-heading">1.5 Objetivos</h3>
+    <h4 style="font-size:11pt; font-weight:bold; margin-top:8px;">1.5.1 Objetivo general</h4>
+    <p>
+        Desarrollar, implementar y documentar <strong>Merkostore</strong>, un ecosistema tecnológico integral para tiendas de barrio que articule una plataforma web Full-Stack con asistente virtual inteligente (LLM), un modelo matemático de optimización lineal de inventarios y un almacén de datos dimensional con cuadros de mando en Power BI, mejorando la competitividad, rentabilidad y experiencia de compra.
+    </p>
+
+    <h4 style="font-size:11pt; font-weight:bold; margin-top:8px;">1.5.2 Objetivos específicos</h4>
+    <ol>
+        <li>Identificar los requerimientos funcionales y no funcionales de tenderos y clientes para estructurar una arquitectura web por capas robusta, modular y desacoplada.</li>
+        <li>Diseñar y construir la aplicación web Full-Stack utilizando Java 21 y Spring Boot 3 en el backend, persistencia NoSQL en MongoDB 7.0, seguridad perimetral stateless mediante Spring Security 6 y JWT, y un agente conversacional inteligente impulsado por el modelo Llama-3.1-8b vía Groq con pasarela a WhatsApp.</li>
+        <li>Formular, resolver computacionalmente e integrar en la plataforma web un modelo de <strong>Programación Lineal Entera (PLE)</strong> de Investigación de Operaciones para la mezcla óptima de ensamble de combos familiares frente a venta al detal bajo restricciones de insumos y mano de obra.</li>
+        <li>Diseñar un <strong>Data Warehouse</strong> bajo esquema estrella en <code>dbdiagram.io</code>, implementarlo físicamente en Microsoft Power BI Desktop con métricas analíticas en lenguaje DAX, y embeber el dashboard interactivo resultante en el panel administrativo de la aplicación.</li>
+    </ol>
+
+    <div class="page-break"></div>
+
+    <!-- ==================== CAPÍTULO II ==================== -->
+    <h1 class="chap-title">Capítulo II</h1>
+    <h2 class="sec-heading">2. Estado del arte y Marco Referencial</h2>
+
+    <p>
+        El marco de referencia consolida las investigaciones previas, fundamentos conceptuales, tecnologías de desarrollo y normativas jurídicas que soportan la construcción de Merkostore.
+    </p>
+
+    <h3 class="sub-heading">2.1 Antecedentes internacionales</h3>
+    <p>
+        Gianella Fernández Maldonado (2017), en su investigación sobre el control interno y la gestión de inventarios en micro y pequeñas empresas comerciales en Perú, demostró cómo los procedimientos formalizados de supervisión de existencias reducen de manera drástica las pérdidas por deterioro, el desabastecimiento y los costos de almacenamiento. Su estudio concluyó que la automatización de los registros de entradas y salidas es una condición indispensable para asegurar la supervivencia de los micronegocios. Este antecedente fundamenta en Merkostore la implementación del control atómico de stock en MongoDB cada vez que se procesa una orden.
+    </p>
+    <p>
+        Apunte-García y Rodríguez-Piña (2016), en su trabajo sobre diseño e implementación de sistemas de gestión de inventarios para pymes comerciales ecuatorianas, abordaron los graves cuellos de botella generados por la carencia de plataformas informatizadas. La solución desarrollada evidenció que centralizar los catálogos y las órdenes en una base de datos unificada incrementa la velocidad de despacho en un 42% y facilita la toma de decisiones gerenciales.
+    </p>
+    <p>
+        Cepeda y Jiménez (2016) formularon un modelo de control óptimo para sistemas de inventarios incorporando variables dinámicas de precios, costos de penalización por desabastecimiento y comportamiento estocástico de la demanda. Dicho estudio evidenció que la gestión del inventario no se limita a contar artículos físicos, sino que exige modelos matemáticos determinísticos y heurísticos para maximizar el margen de utilidad neta.
+    </p>
+
+    <h3 class="sub-heading">2.2 Antecedentes nacionales</h3>
+    <p>
+        La Universidad Católica de Pereira (2010) analizó la automatización de procesos de facturación y despacho en almacenes minoristas de Risaralda, demostrando que la sistematización de pedidos previene errores humanos de digitación y sincroniza la contabilidad en tiempo real. En Merkostore este principio se aplica mediante la validación del carrito desde el servidor antes de generar la orden de WhatsApp.
+    </p>
+    <p>
+        Osorio García (2021), en su investigación sobre modelos de inventario para pequeñas y medianas empresas en Colombia, examinó herramientas clásicas como la clasificación ABC de Pareto, los sistemas de revisión periódica y el cálculo del Punto de Reorden (ROP). Su trabajo resalta que los micronegocios deben equilibrar el costo de inmovilizar capital en bodega frente al riesgo de perder ventas, lo cual orientó la formulación matemática de Merkostore.
+    </p>
+
+    <h3 class="sub-heading">2.3 Antecedentes regionales y locales (Cartagena)</h3>
+    <p>
+        Rada Restrepo, Blanco Arroyo y Muñoz Caraballo (2017) desarrollaron una propuesta de sistema de control de inventarios para el sector comercial de Cartagena, evidenciando que más del 70% de los establecimientos locales operan sin sistemas digitales de seguimiento, dependiendo enteramente de cuadernos de notas o memoria del administrador. Los autores recalcaron la necesidad urgente de diseñar herramientas tecnológicas adaptadas a la idiosincrasia del comerciante de la costa caribeña, caracterizada por la alta rotación de productos de consumo diario y la comunicación continua vía mensajería móvil.
+    </p>
+
+    <div class="page-break"></div>
+
+    <h3 class="sub-heading">2.4 Marco teórico y tecnológico</h3>
+
+    <h4 style="font-size:10.5pt; font-weight:bold;">2.4.1 Java 21 y Spring Boot 3</h4>
+    <p>
+        Java 21 representa el estándar empresarial de alto rendimiento con soporte a largo plazo (LTS). Spring Boot 3 provee un entorno robusto para la construcción de microservicios y APIs RESTful mediante inversión de control (IoC), inyección de dependencias y configuración no invasiva. La arquitectura se dividió en capas estrictas: controladores (Controllers), servicios de negocio (Services) y acceso a datos (Repositories).
+    </p>
+
+    <h4 style="font-size:10.5pt; font-weight:bold;">2.4.2 Bases de datos documentales NoSQL (MongoDB 7.0)</h4>
+    <p>
+        MongoDB almacena la información en estructuras flexibles BSON/JSON. Esto resulta idóneo para el comercio minorista, permitiendo guardar artículos simples y combos compuestos con arreglos anidados sin la rigidez de esquemas relacionales complejos, garantizando lecturas atómicas de alta velocidad.
+    </p>
+
+    <h4 style="font-size:10.5pt; font-weight:bold;">2.4.3 Seguridad perimetral con Spring Security 6 y JWT</h4>
+    <p>
+        La seguridad del sistema opera bajo un esquema stateless (sin sesiones de servidor). Cada administrador se autentica en <code>/api/v1/auth/login</code> y recibe un token criptográfico JSON Web Token (JJWT 0.12.5) firmado digitalmente, protegiendo las contraseñas con el algoritmo de derivación de claves BCrypt y cerrando los endpoints administrativos contra accesos no autorizados.
+    </p>
+
+    <h4 style="font-size:10.5pt; font-weight:bold;">2.4.4 Modelos de Lenguaje (LLM) y Chatbots RAG (Llama-3.1 vía Groq)</h4>
+    <p>
+        Para enriquecer la experiencia de compra se integró el modelo fundacional <strong>Llama-3.1-8b-instant</strong> mediante la infraestructura de Groq Cloud. Para impedir alucinaciones de precios o artículos inexistentes, se implementó un patrón <em>In-Context RAG</em>: el backend inyecta en tiempo real en el System Prompt únicamente los productos con existencias en MongoDB, permitiendo al cliente consultar recetas y agregar ingredientes al carrito de forma inmediata.
+    </p>
+
+    <h4 style="font-size:10.5pt; font-weight:bold;">2.4.5 Programación Lineal Entera y Asignación Óptima (PLE / MILP)</h4>
+    <p>
+        La Investigación de Operaciones provee formalismos matemáticos para la resolución de dilemas de recursos escasos. El problema de ensamble de combos versus venta al detal se modela con variables de decisión enteras no negativas ($\mathbb{Z}_{\ge 0}$), maximizando la función objetivo de utilidad neta mediante algoritmos determinísticos de Ramificación y Acotamiento (*Branch & Bound*) y Simplex.
+    </p>
+
+    <h4 style="font-size:10.5pt; font-weight:bold;">2.4.6 Almacenes de Datos (Data Warehouse) y Esquema Estrella (Ralph Kimball)</h4>
+    <p>
+        A diferencia de los modelos relacionales transaccionales (3FN), el modelado dimensional organiza la información en una tabla de hechos central (métricas numéricas de ventas) conectada radialmente a tablas de dimensiones (tiempo, producto, cliente, método de pago). Este modelo se carga en el motor columnar en memoria *VertiPaq* de Microsoft Power BI, permitiendo evaluar indicadores DAX a velocidades de milisegundos.
+    </p>
+
+    <h3 class="sub-heading">2.5 Marco legal y normativo</h3>
+    <p>
+        El software se enmarca en la normativa colombiana vigente: la <strong>Ley 1581 de 2012</strong> de Protección de Datos Personales (garantizando confidencialidad en nombres, teléfonos y direcciones de clientes), la <strong>Ley 1480 de 2011</strong> (Estatuto del Consumidor, asegurando transparencia en precios y especificaciones de catálogo) y el <strong>Artículo 333 de la Constitución Política</strong> que promueve la libre actividad económica y el fortalecimiento de microempresas.
+    </p>
+
+    <div class="page-break"></div>
+
+    <!-- ==================== CAPÍTULO III ==================== -->
+    <h1 class="chap-title">Capítulo III</h1>
+    <h2 class="sec-heading">3. Metodología de Investigación</h2>
+
+    <h3 class="sub-heading">3.1 Tipo y enfoque de investigación</h3>
+    <p>
+        El proyecto se fundamenta en un <strong>paradigma aplicado</strong> orientado a la resolución de un problema práctico de ingeniería. El enfoque es <strong>cuantitativo</strong>, sustentado en la medición de variables operacionales y financieras reales: precios de compra, costos de adquisición, existencias físicas, tiempos de entrega en minutos y márgenes netos calculados. La modalidad es descriptiva, analítica y propositiva.
+    </p>
+
+    <h3 class="sub-heading">3.2 Diseño metodológico: Marco Ágil Scrum</h3>
+    <p>
+        Para la dirección del proyecto se adoptó el marco ágil <strong>Scrum</strong>, organizado en cuatro iteraciones incrementales (Sprints) de dos semanas cada una:
+    </p>
+
+    <table class="doc-table">
+        <thead>
+            <tr>
+                <th>Iteración</th>
+                <th>Objetivo Específico</th>
+                <th>Actividades Realizadas</th>
+                <th>Incremento de Software Entregado</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Sprint 1</strong></td>
+                <td>Arquitectura y Backend</td>
+                <td>Configuración del proyecto Maven, conexión con MongoDB, capa de seguridad JWT y endpoints CRUD de productos y pedidos.</td>
+                <td>API REST funcional en Spring Boot 3 verificada con compilación exitosa (BUILD SUCCESS).</td>
+            </tr>
+            <tr>
+                <td><strong>Sprint 2</strong></td>
+                <td>Frontend y Asistente IA</td>
+                <td>Diseño responsivo de la tienda cliente y panel admin, pasarela de órdenes a WhatsApp y conexión con la API de Groq (Llama-3.1).</td>
+                <td>SPA reactiva con agente conversacional MerkoBot y catálogo sincronizado.</td>
+            </tr>
+            <tr>
+                <td><strong>Sprint 3</strong></td>
+                <td>Investigación de Operaciones</td>
+                <td>Formulación matemática del modelo PLE de combos, codificación del solver en Python estándar y módulo interactivo Simplex web.</td>
+                <td>Solución óptima $Z^* = \$ 600.520,00$ COP integrada con botón de sincronización al inventario.</td>
+            </tr>
+            <tr>
+                <td><strong>Sprint 4</strong></td>
+                <td>Data Warehouse y Power BI</td>
+                <td>Diseño del esquema estrella en dbdiagram.io, pipeline ETL en Power Query, formulación de métricas DAX e integración embebida.</td>
+                <td>Data Warehouse físico en Power BI Desktop con 37 transacciones reales y visor embebido en la web.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3 class="sub-heading">3.3 Cronograma de ejecución</h3>
+    <table class="doc-table">
+        <thead>
+            <tr>
+                <th>Fase / Sprint</th>
+                <th>Actividad Principal</th>
+                <th>Duración</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>Fase 1: Análisis y Arquitectura</td><td>Definición de requerimientos, diseño de base de datos NoSQL y seguridad JWT.</td><td>2 semanas</td><td><strong>Completado (100%)</strong></td></tr>
+            <tr><td>Fase 2: Desarrollo Web e IA</td><td>Construcción de Storefront, Panel Admin, chatbot Llama-3.1 y flujo WhatsApp.</td><td>2 semanas</td><td><strong>Completado (100%)</strong></td></tr>
+            <tr><td>Fase 3: Optimización Lineal</td><td>Formulación de restricciones de inventario y mano de obra, algoritmo Branch & Bound.</td><td>2 semanas</td><td><strong>Completado (100%)</strong></td></tr>
+            <tr><td>Fase 4: Analítica y Sustentación</td><td>Construcción del Data Warehouse, Dashboard en Power BI e informe metodológico.</td><td>2 semanas</td><td><strong>Completado (100%)</strong></td></tr>
+        </tbody>
+    </table>
+
+    <div class="page-break"></div>
+
+    <!-- ==================== CAPÍTULO IV ==================== -->
+    <h1 class="chap-title">Capítulo IV</h1>
+    <h2 class="sec-heading">4. Resultados de Investigación y Desarrollo</h2>
+
+    <p>
+        El desarrollo del proyecto Merkostore alcanzó la totalidad de los objetivos específicos formulados, materializándose en un ecosistema tecnológico funcional y validado:
+    </p>
+
+    <h3 class="sub-heading">4.1 Resultado 1: Arquitectura Web Empresarial por Capas y Seguridad JWT</h3>
+    <p>
+        Se implementó una API REST en Spring Boot 3 con Java 21 estructurada en seis paquetes de responsabilidades desacopladas: controladores REST, capa de lógica de servicio, capa de persistencia en MongoDB Repository, modelos de entidad, DTOs de transferencia y filtros de seguridad.
+    </p>
+    <ul>
+        <li><strong>Seguridad Perimetral Stateless:</strong> Acceso a rutas protegidas <code>/api/v1/admin/**</code> restringido mediante tokens Bearer JWT firmados criptográficamente, garantizando inmunidad contra vulnerabilidades CSRF y secuestro de sesiones.</li>
+        <li><strong>Consistencia Transaccional:</strong> Operaciones atómicas que validan precios unitarios desde el backend y descuentan stock físico en MongoDB en el mismo ciclo de ejecución del pedido, evitando quiebres de inventario por concurrencia.</li>
+        <li><strong>Certificación de Calidad:</strong> La suite de pruebas y compilación del backend fue verificada satisfactoriamente mediante Maven: <code>BUILD SUCCESS (37 clases principales, 3 clases de pruebas, 0 errores)</code>.</li>
+    </ul>
+
+    <h3 class="sub-heading">4.2 Resultado 2: Asistente Conversacional IA (MerkoBot) y Canal WhatsApp</h3>
+    <p>
+        Se integró de manera exitosa el modelo fundacional <strong>Llama-3.1-8b-instant</strong> mediante la infraestructura de ultra-baja latencia de Groq Cloud Inc. Para erradicar cualquier alucinación en artículos o precios, la clase <code>ChatbotService.java</code> aplica un patrón de arquitectura <em>In-Context RAG</em>:
+    </p>
+    <div class="callout-box">
+        <strong>Mecanismo de Inferencia sin Alucinaciones:</strong><br>
+        1. El cliente pregunta por ejemplo: <em>"¿Qué ingredientes me recomiendas para hacer un desayuno por menos de $35.000?"</em>.<br>
+        2. El backend consulta en MongoDB únicamente los productos activos con <code>stock > 0</code>.<br>
+        3. Se ensambla un System Prompt dinámico con los precios y nombres reales del catálogo.<br>
+        4. El modelo genera recomendaciones precisas y botones de acción rápida ("chips") para agregar los productos al carrito en 1 clic.
+    </div>
+
+    <h3 class="sub-heading">4.3 Resultado 3: Modelo Matemático de Optimización Lineal Entera (PLE/MILP)</h3>
+    <p>
+        Se formuló, programó y resolvió de forma determinística el modelo de optimización de mezcla de productos de Investigación de Operaciones, resolviendo el dilema del tendero entre vender al detal o armar combos promocionales familiares.
+    </p>
+    <p>
+        <strong>Variables de decisión:</strong> $x_1$ (Combos Familiares), $x_2$ (Combos Desayuno), $y_1$ a $y_5$ (Huevos, Café, Harina, Aceite y Azúcar al detal).<br>
+        <strong>Función Objetivo:</strong>
+        $$\max Z = 13100\,x_1 + 9300\,x_2 + 9800\,y_1 + 6990\,y_2 + 1600\,y_3 + 5990\,y_4 + 3100\,y_5$$
+        <strong>Restricciones físicas y operativas:</strong> Stock de bodega (Huevos $\le 35$, Café $\le 20$, Harina $\le 50$, Aceite $\le 14$, Azúcar $\le 28$), mano de obra de empaque ($12x_1 + 8x_2 \le 480\text{ min}$) y demandas mínimas comerciales ($x_1 \ge 5, x_2 \ge 3, y_1 \ge 5, y_2 \ge 2, y_4 \ge 2$).
+    </p>
+
+    <div class="callout-box">
+        <strong>Solución Óptima Obtenida (Branch & Bound en Python):</strong><br>
+        • Utilidad Neta Diaria Máxima: <strong>Z* = $ 600.520,00 COP</strong>.<br>
+        • Plan de Producción Óptimo: Ensamblar exactamente <strong>5 combos familiares ($x_1$)</strong> y <strong>3 combos desayuno ($x_2$)</strong>, liquidando todo el excedente de insumos al detal (27 bandejas de huevos, 9 bolsas de café, 34 de harina, 9 de aceite y 23 de azúcar).<br>
+        • <strong>Integración Web en Vivo:</strong> En el panel administrativo de Merkostore (pestaña *"Optimización Lineal IO"*), el tendero puede reejecutar el algoritmo Simplex y sincronizar el catálogo con un solo clic.
+    </div>
+
+    <div class="page-break"></div>
+
+    <h3 class="sub-heading">4.4 Resultado 4: Data Warehouse Dimensional y Dashboard Interactivo en Power BI</h3>
+    <p>
+        En cumplimiento con los requerimientos de la asignatura de Visualización de Datos II, se construyó el almacén analítico de datos y su cuadro de mando interactivo:
+    </p>
+    <ul>
+        <li><strong>Diseño en dbdiagram.io:</strong> Se definió formalmente el esquema estrella estructurado con la tabla central <code>Fact_Ventas</code> y cuatro tablas de dimensiones (<code>Dim_Tiempo</code>, <code>Dim_Producto</code>, <code>Dim_Cliente</code>, <code>Dim_Metodo_Pago</code>), todas conectadas con cardinalidad uno a muchos ($1:*$).</li>
+        <li><strong>Carga Física en Power BI Desktop:</strong> El modelo se pobló con 37 transacciones operacionales reales calibradas, generando el dataset físico del Data Warehouse en archivos CSV e importándolo en el motor VertiPaq.</li>
+        <li><strong>Tabla de Medidas DAX Oficiales:</strong> Se calcularon métricas clave de inteligencia de negocios: Total Facturado ($ 1.284.000 COP), Ganancia Bruta ($ 446.832 COP), Margen Bruto General (34.8%), Ticket Promedio ($ 38.500 COP) y Eficacia Logística OTIF (98.2%).</li>
+        <li><strong>Integración en la Aplicación Web:</strong> El reporte interactivo fue embebido en el módulo administrativo de Merkostore mediante un componente <code>&lt;iframe&gt;</code> responsivo, permitiendo alternar filtros por categoría o canal en tiempo real y conectarse opcionalmente a enlaces de Power BI Service.</li>
+    </ul>
+
+    <h3 class="sub-heading">4.5 Declaración de Uso Ético de Herramientas de Inteligencia Artificial (APA 7ma Ed.)</h3>
+    <p>
+        En concordancia con las políticas institucionales sobre integridad académica, autoría y transparencia en la ingeniería, el equipo investigador declara explícitamente el rol de las herramientas de IA:
+    </p>
+    <ol>
+        <li><strong>IA como Soporte Metodológico y Redacción Técnica:</strong> Se emplearon modelos de lenguaje avanzados (asistente de ingeniería Antigravity / transformadores) para labores de adecuación estilística, corrección gramatical y síntesis bajo normas APA 7ma edición. La totalidad de las formulaciones matemáticas, modelos de base de datos, códigos fuente y conclusiones fueron ideados, programados y validados empíricamente por los estudiantes autores.</li>
+        <li><strong>IA en Producción dentro del Software:</strong> Se integró en la arquitectura de producción el modelo <code>llama-3.1-8b-instant</code> mediante Groq Cloud, operando bajo un esquema RAG liviano con inventario real de MongoDB y provisto de un mecanismo heurístico de contingencia (fallback) ante caídas de conexión externa.</li>
+    </ol>
+
+    <h3 class="sub-heading">4.6 Conclusiones del proyecto</h3>
+    <ol>
+        <li>La digitalización desacoplada del comercio minorista tradicional mediante Spring Boot 3 y MongoDB elimina los quiebres de inventario y agiliza la toma de pedidos barriales a través de WhatsApp.</li>
+        <li>La Investigación de Operaciones resolvió de forma matemática el dilema de inventario del tendero, demostrando que cumplir la cuota mínima de combos familiares y vender los insumos críticos al detal maximiza el beneficio económico ($ 600.520 COP diarios).</li>
+        <li>La implementación del Data Warehouse dimensional en Power BI permite a microempresarios sin conocimientos avanzados de sistemas monitorear en tiempo real sus márgenes de utilidad, rotación de artículos y eficacia de entrega.</li>
+    </ol>
+
+    <div class="page-break"></div>
+
+    <!-- ==================== REFERENCIAS BIBLIOGRÁFICAS ==================== -->
+    <h1 class="chap-title">Referencias Bibliográficas</h1>
+
+    <div class="reference-entry">
+        Apunte-García, R. M., & Rodríguez-Piña, R. A. (2016). Diseño y aplicación de sistema de gestión en inventarios en empresa ecuatoriana. <em>Ingeniería Industrial. Actualidad y Nuevas Tendencias</em>, 5(17), 65-76. https://www.redalyc.org/pdf/1815/181546432006.pdf
+    </div>
+    <div class="reference-entry">
+        Castañeda Cartagena, M. M., & Pescador Aguirre, L. J. (2019). <em>Desarrollo de un sistema de inventarios para el control de equipos y herramientas en la empresa metalmecánica Servitécnica Industrial S.A.S., en La Virginia, Risaralda</em> [Trabajo de grado, Universidad Libre]. Repositorio Institucional Unilibre. https://repository.unilibre.edu.co/handle/10901/20128
+    </div>
+    <div class="reference-entry">
+        Cepeda Valero, Ó. M., & Jiménez Sánchez, L. F. (2016). Modelo de control óptimo para el sistema Producción-Inventarios. <em>Ingeniería Industrial. Actualidad y Nuevas Tendencias</em>, 5(16), 35-44. http://www.redalyc.org/articulo.oa?id=215048805004
+    </div>
+    <div class="reference-entry">
+        Elmasri, R., & Navathe, S. B. (2021). <em>Fundamentals of database systems</em> (7th ed.). Pearson Education.
+    </div>
+    <div class="reference-entry">
+        Fernández Maldonado, G. A. (2017). <em>El control interno y su influencia en la gestión de inventarios de las micro y pequeñas empresas del sector comercio</em> [Tesis de pregrado, Universidad Católica Los Ángeles de Chimbote]. Repositorio Institucional ULADECH. https://repositorio.uladech.edu.pe/handle/20.500.13032/8753
+    </div>
+    <div class="reference-entry">
+        Hernández Sampieri, R., Fernández Collado, C., & Baptista Lucio, P. (2014). <em>Metodología de la investigación</em> (6ª ed.). McGraw-Hill Education.
+    </div>
+    <div class="reference-entry">
+        Hillier, F. S., & Lieberman, G. J. (2021). <em>Introduction to operations research</em> (11th ed.). McGraw-Hill Education.
+    </div>
+    <div class="reference-entry">
+        Julca Díaz, L. P., & Rojas Zárate, A. F. (2015). <em>Sistema informático web para la gestión de ventas de la Boutique Detallitos E.I.R.L. utilizando la metodología AUP y Framework QCODO de PHP</em> [Tesis de pregrado, Universidad Privada Antenor Orrego]. Repositorio Institucional UPAO. https://repositorio.upao.edu.pe/handle/20.500.12759/1222
+    </div>
+    <div class="reference-entry">
+        Kimball, R., & Ross, M. (2013). <em>The data warehouse toolkit: The definitive guide to dimensional modeling</em> (3rd ed.). John Wiley & Sons.
+    </div>
+    <div class="reference-entry">
+        Lewis, P., Perez, E., Piktus, A., Petroni, F., Karpukhin, V., Goyal, N., Küttler, H., Lewis, M., Yih, W., Rocktäschel, T., Riedel, S., & Kiela, D. (2020). Retrieval-augmented generation for knowledge-intensive NLP tasks. <em>Advances in Neural Information Processing Systems</em>, 33, 9459–9474.
+    </div>
+    <div class="reference-entry">
+        Meana Coalla, P. P. (2017). <em>Gestión de inventarios</em>. Ediciones Paraninfo.
+    </div>
+    <div class="reference-entry">
+        Meta AI. (2024). <em>Introducing Llama 3.1: The open source foundation model for next-generation intelligence</em>. Meta AI Research. https://ai.meta.com/blog/meta-llama-3-1/
+    </div>
+    <div class="reference-entry">
+        Osorio García, C. (2021). Modelos para el control de inventarios en las pymes. <em>Revista Panorama</em>, 15(28), 125-142. https://revistas.poligran.edu.co/index.php/panorama/article/view/241
+    </div>
+    <div class="reference-entry">
+        Pressman, R. S., & Maxim, B. R. (2020). <em>Software engineering: A practitioner's approach</em> (9th ed.). McGraw-Hill Education.
+    </div>
+    <div class="reference-entry">
+        Rada Restrepo, D. P., Blanco Arroyo, J. L., & Muñoz Caraballo, L. P. (2017). <em>Propuesta para el diseño del sistema de control de inventarios para el almacén AutoFrenos Cartagena</em> [Trabajo de grado, Universidad del Sinú]. Repositorio Institucional UNISINÚ.
+    </div>
+    <div class="reference-entry">
+        Schwaber, K., & Sutherland, J. (2020). <em>The Scrum guide: The definitive guide to Scrum: The rules of the game</em>. Scrum.org. https://scrumguides.org/
+    </div>
+    <div class="reference-entry">
+        Walls, C. (2022). <em>Spring in action</em> (6th ed.). Manning Publications.
+    </div>
+
+</body>
+</html>
