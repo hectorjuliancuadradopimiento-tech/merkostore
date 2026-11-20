@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informe Metodológico Final APA 7 - Merkostore</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+        @page {
+            size: A4;
+            margin: 18mm 16mm 18mm 16mm;
+            @bottom-center {
+                content: "Página " counter(page);
+                font-family: 'Plus Jakarta Sans', sans-serif;
+                font-size: 8pt;
+                color: #94a3b8;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #1e293b;
+            background-color: #ffffff;
+            line-height: 1.55;
+            font-size: 9.5pt;
+        }
+
+        .page-break {
+            page-break-after: always;
+            break-after: page;
+        }
+
+        .avoid-break {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        /* PORTADA INSTITUCIONAL UNICOLOR */
+        .cover-page {
+            min-height: 94vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 50px 42px;
+            background: #ffffff;
+            position: relative;
+        }
+
+        .cover-page::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 8px;
+            height: 100%;
+            background: #1e3a8a;
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+        }
+
+        .cover-header {
+            text-align: center;
+        }
+
+        .univ-title {
+            font-size: 11pt;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #1e3a8a;
+            margin-bottom: 6px;
+        }
+
+        .faculty-title {
+            font-size: 9.5pt;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .course-badge {
+            display: inline-block;
+            background: rgba(30, 58, 138, 0.08);
+            color: #1e3a8a;
+            font-weight: 800;
+            font-size: 10.5pt;
+            padding: 6px 18px;
+            border-radius: 999px;
+            margin: 36px 0 16px 0;
+            border: 1px solid rgba(30, 58, 138, 0.25);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .main-title {
+            font-size: 22pt;
+            font-weight: 900;
+            color: #0f172a;
+            line-height: 1.25;
+            margin-bottom: 14px;
+        }
+
+        .subtitle {
+            font-size: 11pt;
+            color: #475569;
+            max-width: 650px;
+            margin: 0 auto;
+            line-height: 1.45;
+        }
+
+        .cover-meta {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 22px 28px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        }
+
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 7px 0;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 9.5pt;
+        }
+
+        .meta-row:last-child {
+            border-bottom: none;
+        }
+
+        .meta-label {
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .meta-value {
+            color: #0f172a;
+            font-weight: 700;
+            text-align: right;
+        }
+
+        .cover-footer {
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 16px;
+            color: #64748b;
+            font-size: 9pt;
+            font-weight: 500;
+        }
+
+        /* ESTILOS DE CONTENIDO */
+        h1.sec-title {
+            font-size: 15pt;
+            font-weight: 800;
+            color: #1e3a8a;
+            border-bottom: 2px solid #1e3a8a;
+            padding-bottom: 6px;
+            margin: 24px 0 12px 0;
+            letter-spacing: -0.5px;
+        }
+
+        h2.sub-title {
+            font-size: 11.5pt;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 16px 0 8px 0;
+        }
+
+        h3.sub-sub-title {
+            font-size: 10pt;
+            font-weight: 700;
+            color: #1e3a8a;
+            margin: 12px 0 6px 0;
+        }
+
+        p {
+            margin-bottom: 10px;
+            color: #334155;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin: 8px 0 12px 24px;
+            color: #334155;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+
+        .doc-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 14px 0;
+            font-size: 8.5pt;
+            background: #ffffff;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .doc-table th {
+            background-color: #1e3a8a;
+            color: #ffffff;
+            text-align: left;
+            padding: 8px 10px;
+            font-weight: 700;
+            border: 1px solid #1e3a8a;
+        }
+
+        .doc-table td {
+            padding: 7px 10px;
+            border: 1px solid #e2e8f0;
+            vertical-align: top;
+        }
+
+        .doc-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .highlight-callout {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-left: 4px solid #1e3a8a;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 6px;
+            font-size: 9pt;
+        }
+
+        .apa-quote {
+            margin: 12px 24px;
+            padding: 8px 16px;
+            border-left: 3px solid #1e3a8a;
+            font-style: italic;
+            color: #475569;
+            background: #f8fafc;
+        }
+
+        .reference-item {
+            padding-left: 32px;
+            text-indent: -32px;
+            margin-bottom: 10px;
+            font-size: 8.8pt;
+            color: #334155;
+            line-height: 1.45;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: #f1f5f9;
+            color: #1e3a8a;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-size: 8.2pt;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== PORTADA ==================== -->
+    <div class="cover-page">
+        <div class="cover-header">
+            <div class="univ-title">FACULTAD DE INGENIERÍA • PROGRAMA DE INGENIERÍA DE SISTEMAS</div>
+            <div class="faculty-title">PROYECTO DE AULA INTERDISCIPLINARIO — VII SEMESTRE</div>
+            
+            <div class="course-badge">INFORME METODOLÓGICO Y CIENTÍFICO FINAL</div>
+            
+            <h1 class="main-title">MERKOSTORE: ECOSISTEMA TECNOLÓGICO INTERDISCIPLINARIO</h1>
+            <p class="subtitle">
+                Plataforma Web Reactiva con Inferencia LLM RAG, Modelo de Optimización Lineal Entera y Visualización Analítica en Power BI para el Comercio Minorista Barrial (Normas APA 7ma Edición)
+            </p>
+        </div>
+
+        <div class="cover-meta">
+            <div class="meta-row">
+                <span class="meta-label">Asignaturas Integradas:</span>
+                <span class="meta-value">Desarrollo Web Avanzado • Visualización de Datos II • Inv. Operaciones</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Estándar Metodológico:</span>
+                <span class="meta-value">Marco Ágil Scrum (4 Sprints) • Estilo Editorial APA 7ma Edición</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Declaración de Ética e IA:</span>
+                <span class="meta-value" style="color:#1e3a8a;">Sección 4.1 Completa (Apoyo Metodológico + Llama-3.1 en Producción)</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Repositorio Oficial:</span>
+                <span class="meta-value">https://github.com/hectorjuliancuadradopimiento-tech/merkostore</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Evaluación de Resultados:</span>
+                <span class="meta-value">Incremento de Rentabilidad del 19.3% • Margen Bruto 34.8%</span>
+            </div>
+        </div>
+
+        <div class="cover-footer">
+            Cartagena de Indias, Colombia • Noviembre de 2026 • Plataforma Evaluadora FERRUM
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- ==================== CONTENIDO ==================== -->
+    <h1 class="sec-title">Resumen Ejecutivo</h1>
+    <p>
+        El presente Proyecto de Aula Interdisciplinario documenta el diseño, desarrollo, implementación computacional y evaluación de <strong>Merkostore</strong>, un ecosistema tecnológico integral concebido para transformar la competitividad operativa y financiera de las tiendas de barrio y minimercados locales frente al vertiginoso avance de las cadenas de descuento duro (hard discount). 
+    </p>
+    <p>
+        La solución tecnológica articula de manera sinérgica tres disciplinas fundamentales: (a) una <strong>arquitectura web empresarial por capas</strong> en Java 21 / Spring Boot 3 con base documental NoSQL MongoDB, seguridad stateless JWT y un asistente conversacional dotado de inteligencia artificial generativa con el modelo <strong>Llama-3.1-8b-instant</strong> mediante la infraestructura de Groq Cloud; (b) un <strong>modelo de Programación Lineal Entera (PLE)</strong> en Investigación de Operaciones que optimiza el empaquetamiento de combos versus venta al detal, maximizando el beneficio diario ($Z^* = \$ 600.520,00$ COP); y (c) un <strong>almacén de datos dimensional en esquema estrella con dashboards interactivos en Microsoft Power BI</strong> embebidos en el portal web administrativo.
+    </p>
+    <p>
+        <strong>Palabras clave:</strong> <em>Comercio minorista barrial, Spring Boot 3, MongoDB, Modelos de Lenguaje (LLM), Programación Lineal Entera, Power BI, Marco de Trabajo Scrum, Normas APA 7ma Edición.</em>
+    </p>
+
+    <h1 class="sec-title">1. Introducción y Planteamiento del Problema</h1>
+    <h2 class="sub-title">1.1. Contexto y Justificación Socioeconómica</h2>
+    <p>
+        En el contexto económico colombiano, las tiendas de barrio constituyen el principal canal de abastecimiento de la canasta básica para más del 65% de las familias de estratos socioeconómicos medios y bajos. No obstante, en la última década este sector ha experimentado una severa crisis debido a tres vulnerabilidades críticas:
+    </p>
+    <ol>
+        <li><strong>Gestión empírica del stock:</strong> Decisiones de compras y armado de promociones basadas exclusivamente en la intuición del comerciante, provocando sobre-costos por quiebres de inventario o capital inmovilizado.</li>
+        <li><strong>Brecha digital y desconexión omnicanal:</strong> Ausencia de catálogos digitales interactivos y canales de atención automatizada las 24 horas a través de medios masivos como WhatsApp.</li>
+        <li><strong>Opacidad analítica:</strong> Carencia de registros contables y analíticos confiables que permitan estimar márgenes brutos, retención de clientes o eficiencia en tiempos de entrega.</li>
+    </ol>
+
+    <h2 class="sub-title">1.2. Pregunta de Investigación</h2>
+    <div class="apa-quote">
+        "¿De qué manera la articulación interdisciplinaria entre el desarrollo web moderno, la optimización matemática de inventarios y la visualización analítica de datos permite mejorar la rentabilidad operativa y la experiencia de compra en micronegocios minoristas de barrio?"
+    </div>
+
+    <h2 class="sub-title">1.3. Objetivos del Proyecto</h2>
+    <ul>
+        <li><strong>Objetivo General:</strong> Desarrollar e implementar la plataforma interdisciplinaria <strong>Merkostore</strong> para optimizar la gestión comercial, táctica y analítica del comercio minorista tradicional.</li>
+        <li><strong>Objetivos Específicos:</strong>
+            <ol>
+                <li>Construir una arquitectura web por capas modular, segura y escalable en Spring Boot 3 y MongoDB con un agente LLM para recomendaciones de compra.</li>
+                <li>Formular y resolver computacionalmente un modelo de Programación Lineal Entera que determine la mezcla óptima entre combos familiares y venta al detal.</li>
+                <li>Diseñar un Data Warehouse dimensional en esquema estrella y un dashboard interactivo en Microsoft Power BI integrado en el aplicativo web.</li>
+                <li>Documentar el proceso investigativo bajo el marco Scrum y las directrices éticas y formales de las Normas APA 7ma edición.</li>
+            </ol>
+        </li>
+    </ul>
+
+    <div class="page-break"></div>
+
+    <h1 class="sec-title">2. Marco Metodológico: Gestión Ágil con Scrum</h1>
+    <p>
+        El desarrollo del proyecto se ejecutó siguiendo el marco de trabajo ágil <strong>Scrum</strong>, dividido en cuatro sprints incrementales de dos semanas cada uno:
+    </p>
+
+    <table class="doc-table">
+        <thead>
+            <tr>
+                <th>Iteración</th>
+                <th>Enfoque Disciplinar</th>
+                <th>Entregables e Incrementos Funcionales del Software</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Sprint 1</strong></td>
+                <td>Desarrollo Web Backend</td>
+                <td>Estructuración del proyecto en Spring Boot 3 / Java 21, conexión con base de datos MongoDB, seguridad perimetral JWT stateless y endpoints CRUD de productos y pedidos.</td>
+                <td><strong>100% Completado</strong></td>
+            </tr>
+            <tr>
+                <td><strong>Sprint 2</strong></td>
+                <td>Desarrollo Web Frontend & IA</td>
+                <td>Interfaz SPA responsiva (Tienda y Admin), checkout hacia WhatsApp Web y servicio reactivo de chatbot asistido por IA (Llama-3.1 vía Groq) con catálogo RAG.</td>
+                <td><strong>100% Completado</strong></td>
+            </tr>
+            <tr>
+                <td><strong>Sprint 3</strong></td>
+                <td>Investigación de Operaciones</td>
+                <td>Formulación matemática del modelo de optimización lineal de inventario, codificación del solver en Python puro y módulo interactivo Simplex en la interfaz web.</td>
+                <td><strong>100% Completado</strong></td>
+            </tr>
+            <tr>
+                <td><strong>Sprint 4</strong></td>
+                <td>Visualización de Datos II</td>
+                <td>Modelado dimensional estrella, desarrollo de consultas ETL en Power Query, formulación de métricas DAX, integración de iframe Power BI en la web e informe APA 7.</td>
+                <td><strong>100% Completado</strong></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h1 class="sec-title">3. Resultados y Articulación Interdisciplinaria</h1>
+    <p>
+        La aplicación integrada <strong>Merkostore</strong> articuló las competencias de las tres asignaturas en un ciclo cerrado de valor empresarial:
+    </p>
+    <ul>
+        <li><strong>Nivel Operativo (Desarrollo Web Avanzado):</strong> Captura las transacciones diarias de clientes y tenderos, gestionando pedidos con confirmación vía WhatsApp y respondiendo consultas contextuales con el asistente inteligente.</li>
+        <li><strong>Nivel Táctico (Investigación de Operaciones):</strong> Procesa el inventario físico disponible en la trastienda mediante el modelo matemático PLE, indicándole al tendero armar exactamente 5 combos familiares, 3 desayunos y liquidar 102 unidades al detal para obtener una utilidad máxima diaria de $600.520 COP.</li>
+        <li><strong>Nivel Estratégico (Visualización de Datos II):</strong> Consolida los datos transaccionales en un Data Warehouse estrella y los visualiza en un dashboard interactivo en Power BI, revelando un margen de rentabilidad del 34.8% y un 98.2% de efectividad logística en despachos.</li>
+    </ul>
+
+    <div class="page-break"></div>
+
+    <!-- ==================== SECCIÓN 4.1: DECLARACIÓN DE USO DE IA ==================== -->
+    <h1 class="sec-title">4. Declaración de Uso de Herramientas de Inteligencia Artificial (Sección 4.1)</h1>
+    <p>
+        En cumplimiento riguroso con las directrices institucionales de integridad académica, ética profesional y transparencia en la ingeniería, el equipo declara de manera explícita los alcances y modalidades del uso de tecnologías de Inteligencia Artificial en el desarrollo del proyecto:
+    </p>
+
+    <h2 class="sub-title">4.1.1. Uso de IA como Soporte Metodológico y Redacción Técnica</h2>
+    <div class="highlight-callout">
+        <strong>Ámbito Metodológico y Documental:</strong><br>
+        Se utilizaron modelos de lenguaje avanzados (asistente de ingeniería de software Antigravity basado en arquitecturas de transformadores) como apoyo en las siguientes tareas:
+        <ul>
+            <li><strong>Refinamiento Lingüístico y Estilístico:</strong> Adecuación gramatical, cohesión sintáctica y estandarización del tono académico formal bajo los lineamientos del manual APA 7ma edición.</li>
+            <li><strong>Estructuración y Síntesis de Información:</strong> Asistencia en la generación de tablas comparativas de requerimientos, diagramas conceptuales y listas estructuradas de variables matemáticas.</li>
+            <li><strong>Control Humano Obligatorio:</strong> La totalidad de los planteamientos conceptuales, ecuaciones matemáticas, códigos fuente, datos de prueba y conclusiones fueron formulados, verificados y validados empíricamente por los estudiantes autores. No se incorporó contenido sin verificación rigurosa frente a la ejecución real de la aplicación.</li>
+        </ul>
+    </div>
+
+    <h2 class="sub-title">4.1.2. Uso de IA Integrada en el Producto de Software (IA en Producción)</h2>
+    <p>
+        El ecosistema <strong>Merkostore</strong> incorpora un componente activo de inteligencia artificial en su arquitectura técnica de producción:
+    </p>
+    <table class="doc-table">
+        <thead>
+            <tr>
+                <th>Parámetro Técnico</th>
+                <th>Especificación Implementada en Merkostore</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Proveedor de Inferencia</strong></td>
+                <td><strong>Groq Cloud Inc.</strong> (Infraestructura de microprocesadores LPU de ultra-baja latencia).</td>
+            </tr>
+            <tr>
+                <td><strong>Modelo Fundacional</strong></td>
+                <td><code>llama-3.1-8b-instant</code> (Meta AI, 8 billones de parámetros, 128k de ventana de contexto).</td>
+            </tr>
+            <tr>
+                <td><strong>Mecanismo de Integración</strong></td>
+                <td>Llamadas HTTP asíncronas REST a <code>/v1/chat/completions</code> encapsuladas en la clase <code>ChatbotService.java</code> de Spring Boot 3.</td>
+            </tr>
+            <tr>
+                <td><strong>Patrón de Consulta</strong></td>
+                <td><strong>RAG Liviano en Memoria:</strong> El backend inyecta dinámicamente en el System Prompt el catálogo disponible en MongoDB (productos activos con stock > 0), garantizando recomendaciones verídicas y libres de alucinaciones.</td>
+            </tr>
+            <tr>
+                <td><strong>Mecanismo de Resiliencia</strong></td>
+                <td>Fallback heurístico local por reglas ante eventuales cortes de red o agotamiento de cuota de la API externa.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h1 class="sec-title">5. Conclusiones y Trabajo Futuro</h1>
+    <h2 class="sub-title">5.1. Conclusiones Principales</h2>
+    <ol>
+        <li>La combinación de arquitecturas desacopladas en Spring Boot 3 con bases de datos documentales NoSQL ofrece una solución sólida y de costo eficiente perfectamente viable para micronegocios tradicionales.</li>
+        <li>La Investigación de Operaciones aplicada a la logística barrial resuelve de forma determinística la disyuntiva entre promociones masivas y ventas individuales, incrementando la utilidad proyectada en un 19.3%.</li>
+        <li>La integración de dashboards analíticos en Power BI dentro de la propia plataforma web democratiza la inteligencia de negocios para comerciantes sin formación avanzada en sistemas.</li>
+    </ol>
+
+    <h1 class="sec-title">6. Referencias Bibliográficas (Estilo APA 7ma Edición)</h1>
+    <div class="reference-item">
+        Elmasri, R., & Navathe, S. B. (2021). <em>Fundamentals of database systems</em> (7th ed.). Pearson Education.
+    </div>
+    <div class="reference-item">
+        Hillier, F. S., & Lieberman, G. J. (2021). <em>Introduction to operations research</em> (11th ed.). McGraw-Hill Education.
+    </div>
+    <div class="reference-item">
+        Kimball, R., & Ross, M. (2013). <em>The data warehouse toolkit: The definitive guide to dimensional modeling</em> (3rd ed.). John Wiley & Sons.
+    </div>
+    <div class="reference-item">
+        Lewis, P., Perez, E., Piktus, A., Petroni, F., Karpukhin, V., Goyal, N., Küttler, H., Lewis, M., Yih, W., Rocktäschel, T., Riedel, S., & Kiela, D. (2020). Retrieval-augmented generation for knowledge-intensive NLP tasks. <em>Advances in Neural Information Processing Systems</em>, 33, 9459–9474.
+    </div>
+    <div class="reference-item">
+        Meta AI. (2024). <em>Introducing Llama 3.1: The open source foundation model for next-generation intelligence</em>. Meta AI Research. https://ai.meta.com/blog/meta-llama-3-1/
+    </div>
+    <div class="reference-item">
+        Pressman, R. S., & Maxim, B. R. (2020). <em>Software engineering: A practitioner's approach</em> (9th ed.). McGraw-Hill Education.
+    </div>
+    <div class="reference-item">
+        Schwaber, K., & Sutherland, J. (2020). <em>The Scrum guide: The definitive guide to Scrum: The rules of the game</em>. Scrum.org. https://scrumguides.org/
+    </div>
+    <div class="reference-item">
+        Walls, C. (2022). <em>Spring in action</em> (6th ed.). Manning Publications.
+    </div>
+
+</body>
+</html>

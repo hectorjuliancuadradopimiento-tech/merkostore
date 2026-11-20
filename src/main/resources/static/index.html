@@ -805,111 +805,57 @@
                         </div>
                     </div>
 
-                    <!-- POWER BI KPI SUMMARY BANNER -->
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:16px; margin-bottom:24px;">
-                        <div class="admin-card-glass" style="border-left:4px solid #f59e0b;">
-                            <div style="font-size:0.75rem; color:var(--admin-text-muted); text-transform:uppercase; font-weight:800;">Total Facturado (DAX)</div>
-                            <div style="font-size:1.6rem; font-weight:900; color:#fff; margin-top:4px;" id="biKpiTotalSales">$ 1.284.000 COP</div>
-                            <div style="font-size:0.72rem; color:#10b981; font-weight:700; margin-top:4px;">▲ +18.4% vs semana anterior</div>
-                        </div>
-                        <div class="admin-card-glass" style="border-left:4px solid #3b82f6;">
-                            <div style="font-size:0.75rem; color:var(--admin-text-muted); text-transform:uppercase; font-weight:800;">Margen Bruto General</div>
-                            <div style="font-size:1.6rem; font-weight:900; color:#fff; margin-top:4px;">34.8%</div>
-                            <div style="font-size:0.72rem; color:#10b981; font-weight:700; margin-top:4px;">Objetivo: > 30% cumplido</div>
-                        </div>
-                        <div class="admin-card-glass" style="border-left:4px solid #10b981;">
-                            <div style="font-size:0.75rem; color:var(--admin-text-muted); text-transform:uppercase; font-weight:800;">Ticket Promedio (AOV)</div>
-                            <div style="font-size:1.6rem; font-weight:900; color:#fff; margin-top:4px;">$ 38.500 COP</div>
-                            <div style="font-size:0.72rem; color:#94a3b8; font-weight:700; margin-top:4px;">3.4 ítems por pedido</div>
-                        </div>
-                        <div class="admin-card-glass" style="border-left:4px solid #8b5cf6;">
-                            <div style="font-size:0.75rem; color:var(--admin-text-muted); text-transform:uppercase; font-weight:800;">Eficacia Domicilios</div>
-                            <div style="font-size:1.6rem; font-weight:900; color:#fff; margin-top:4px;">98.2%</div>
-                            <div style="font-size:0.72rem; color:#10b981; font-weight:700; margin-top:4px;">Tiempo prom: 18.4 min</div>
+                    <!-- POWER BI REAL SERVICE EMBED CONTAINER -->
+                    <div class="admin-card-glass" style="margin-bottom:18px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                            <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:320px;">
+                                <label style="font-size:0.8rem; font-weight:800; color:#FF8F00; white-space:nowrap;">
+                                    🔗 Enlace Power BI Service (Embed / Publish to Web):
+                                </label>
+                                <input type="text" id="powerBiEmbedUrlInput" 
+                                       placeholder="Pega aquí el enlace de tu reporte: https://app.powerbi.com/view?r=..." 
+                                       value="https://app.powerbi.com/view?r=eyJrIjoiMDYxZmExYzAtMGFmNS00MWQ2LTg4M2QtZjM5YmMxN2IxZjQzIiwidCI6IjI4MWU3YjA5LWQ5OGMtNDg0OS1iNDAyLTMyYjEyNTg2Y2NjMyIsImMiOjR9"
+                                       style="flex:1; padding:9px 14px; background:#0c0908; border:1px solid rgba(230,81,0,0.3); border-radius:8px; color:#fff; font-size:0.8rem; font-family:'JetBrains Mono', monospace;"
+                                       onchange="actualizarReportePowerBi()">
+                            </div>
+                            <div style="display:flex; gap:8px;">
+                                <button class="btn-merko-primary" onclick="actualizarReportePowerBi()" style="padding:9px 16px; font-size:0.8rem;">
+                                    🔄 Cargar Dashboard
+                                </button>
+                                <button class="btn-merko-outline" onclick="togglePowerBiFullscreen()" style="padding:9px 14px; font-size:0.8rem;">
+                                    ⛶ Pantalla Completa
+                                </button>
+                                <a id="btnAbrirPbiExterno" 
+                                   href="https://app.powerbi.com/view?r=eyJrIjoiMDYxZmExYzAtMGFmNS00MWQ2LTg4M2QtZjM5YmMxN2IxZjQzIiwidCI6IjI4MWU3YjA5LWQ5OGMtNDg0OS1iNDAyLTMyYjEyNTg2Y2NjMyIsImMiOjR9" 
+                                   target="_blank" 
+                                   class="btn-merko-outline" 
+                                   style="padding:9px 14px; font-size:0.8rem; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                                    ↗ Power BI Service
+                                </a>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- POWER BI INTERACTIVE REPORT EMBED CONTAINER -->
-                    <div class="admin-card-glass" style="padding:0; overflow:hidden; border:1px solid rgba(245,158,11,0.25);">
-                        <div style="background:#130e0d; padding:12px 20px; border-bottom:1px solid rgba(245,158,11,0.2); display:flex; justify-content:space-between; align-items:center;">
+                    <!-- POWER BI REAL IFRAME CONTAINER (HARDWARE ACCELERATED) -->
+                    <div class="admin-card-glass" style="padding:0; overflow:hidden; border:1px solid rgba(230,81,0,0.3); border-radius:12px; background:#000;" id="contenedorPowerBi">
+                        <div style="background:#130e0d; padding:10px 18px; border-bottom:1px solid rgba(230,81,0,0.25); display:flex; justify-content:space-between; align-items:center;">
                             <div style="display:flex; align-items:center; gap:8px;">
-                                <span style="font-size:1.1rem;">📊</span>
-                                <span style="font-weight:800; font-size:0.88rem; color:#f59e0b;">Power BI Service / Embedded Report View (Merkostore_Analytics_v2.pbix)</span>
+                                <span style="font-size:1rem;">📊</span>
+                                <span style="font-weight:800; font-size:0.82rem; color:#FF8F00;" id="lblPowerBiTitle">Microsoft Power BI Service • Merkostore_Analytics_v2.pbix</span>
                             </div>
                             <div style="font-size:0.75rem; color:var(--admin-text-muted);">
-                                Modo: DirectQuery & Import Híbrido • Auto-refresh: 15 min
+                                Componente de Integración: <code>&lt;iframe&gt;</code> HTML5 Embed Oficial
                             </div>
                         </div>
 
-                        <div style="position:relative; width:100%; min-height:540px; background:#0b0807; display:flex; flex-direction:column;">
-                            <!-- Top Filter Ribbon inside Report -->
-                            <div style="display:flex; gap:12px; padding:14px 20px; background:rgba(255,255,255,0.02); border-bottom:1px solid rgba(255,255,255,0.05); flex-wrap:wrap; align-items:center;">
-                                <span style="font-size:0.78rem; font-weight:800; color:#94a3b8;">FILTROS ACTIVOS:</span>
-                                <span class="tag-badge" style="background:#f59e0b22; color:#f59e0b; border:1px solid #f59e0b44; padding:3px 10px; border-radius:999px; font-size:0.72rem; font-weight:700;">Período: Noviembre 2026</span>
-                                <span class="tag-badge" style="background:#3b82f622; color:#3b82f6; border:1px solid #3b82f644; padding:3px 10px; border-radius:999px; font-size:0.72rem; font-weight:700;">Canal: Web Storefront + WhatsApp</span>
-                                <span class="tag-badge" style="background:#10b98122; color:#10b981; border:1px solid #10b98144; padding:3px 10px; border-radius:999px; font-size:0.72rem; font-weight:700;">Estado: Entregado / Pagado</span>
-                            </div>
-
-                            <!-- 4 Report Visual Cards Grid -->
-                            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px; padding:20px; flex:1;">
-                                <div style="background:#130e0d; border-radius:10px; padding:18px; border:1px solid rgba(255,255,255,0.06);">
-                                    <div style="font-weight:800; font-size:0.85rem; color:#fff; margin-bottom:12px; display:flex; justify-content:space-between;">
-                                        <span>📊 Ventas y Margen por Categoría</span>
-                                        <span style="font-size:0.72rem; color:#f59e0b;">DAX: [Total Ventas]</span>
-                                    </div>
-                                    <div style="display:flex; flex-direction:column; gap:10px;">
-                                        <div>
-                                            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#cbd5e1; margin-bottom:3px;">
-                                                <span>Abarrotes & Despensa</span>
-                                                <span style="font-weight:800;">$ 480.000 (37.4%)</span>
-                                            </div>
-                                            <div style="height:8px; background:#261d19; border-radius:4px; overflow:hidden;">
-                                                <div style="width:75%; height:100%; background:linear-gradient(90deg, #f59e0b, #ef4444);"></div>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#cbd5e1; margin-bottom:3px;">
-                                                <span>Combos Mercados Familiares</span>
-                                                <span style="font-weight:800;">$ 420.000 (32.7%)</span>
-                                            </div>
-                                            <div style="height:8px; background:#261d19; border-radius:4px; overflow:hidden;">
-                                                <div style="width:65%; height:100%; background:linear-gradient(90deg, #3b82f6, #8b5cf6);"></div>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#cbd5e1; margin-bottom:3px;">
-                                                <span>Lácteos & Huevos</span>
-                                                <span style="font-weight:800;">$ 214.000 (16.7%)</span>
-                                            </div>
-                                            <div style="height:8px; background:#261d19; border-radius:4px; overflow:hidden;">
-                                                <div style="width:33%; height:100%; background:linear-gradient(90deg, #10b981, #06b6d4);"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div style="background:#130e0d; border-radius:10px; padding:18px; border:1px solid rgba(255,255,255,0.06);">
-                                    <div style="font-weight:800; font-size:0.85rem; color:#fff; margin-bottom:12px; display:flex; justify-content:space-between;">
-                                        <span>⚖️ Comparativa: Detal vs Mercados</span>
-                                        <span style="font-size:0.72rem; color:#10b981;">DAX: [Margen %]</span>
-                                    </div>
-                                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; height:120px; align-items:end;">
-                                        <div style="background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.25); border-radius:8px; padding:12px; text-align:center;">
-                                            <div style="font-size:0.72rem; color:#f59e0b; font-weight:800;">PRODUCTOS DETAL</div>
-                                            <div style="font-size:1.3rem; font-weight:900; color:#fff; margin:4px 0;">31.2%</div>
-                                            <div style="font-size:0.68rem; color:var(--admin-text-muted);">Rotación alta, ticket menor</div>
-                                        </div>
-                                        <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:8px; padding:12px; text-align:center;">
-                                            <div style="font-size:0.72rem; color:#10b981; font-weight:800;">COMBOS MERCADOS</div>
-                                            <div style="font-size:1.3rem; font-weight:900; color:#fff; margin:4px 0;">38.6%</div>
-                                            <div style="font-size:0.68rem; color:var(--admin-text-muted);">Mayor margen y volumen</div>
-                                        </div>
-                                    </div>
-                                    <p style="font-size:0.72rem; color:var(--admin-text-muted); margin-top:12px; margin-bottom:0;">
-                                        💡 <strong>Insight Analítico:</strong> Los combos generan un margen 7.4 puntos porcentuales superior debido a la optimización lineal de inventario.
-                                    </p>
-                                </div>
-                            </div>
+                        <!-- Real Embedded Frame -->
+                        <div style="position:relative; width:100%; height:750px; background:#0f172a;">
+                            <iframe id="iframePowerBi" 
+                                    src="https://app.powerbi.com/view?r=eyJrIjoiMDYxZmExYzAtMGFmNS00MWQ2LTg4M2QtZjM5YmMxN2IxZjQzIiwidCI6IjI4MWU3YjA5LWQ5OGMtNDg0OS1iNDAyLTMyYjEyNTg2Y2NjMyIsImMiOjR9" 
+                                    frameborder="0" 
+                                    allowFullScreen="true" 
+                                    style="width:100%; height:100%; border:none; display:block;">
+                            </iframe>
                         </div>
                     </div>
                 </div>

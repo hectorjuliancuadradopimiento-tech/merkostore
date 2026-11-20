@@ -1340,7 +1340,58 @@ function switchAdminSubTab(tab) {
     if (tab === 'categories') renderAdminCategoriesTable();
     if (tab === 'orders') renderHistorialUnificadoTable();
     if (tab === 'users') loadAdminUsersData();
+    if (tab === 'bi') initPowerBiEmbed();
     if (tab === 'io') ejecutarOptimizacionLinealIO();
+}
+
+// ==========================================================================
+// VISUALIZACIÓN DE DATOS II - COMPONENTE OFICIAL DE INTEGRACIÓN POWER BI
+// ==========================================================================
+
+function initPowerBiEmbed() {
+    const savedUrl = Storage.get('powerbi_embed_url');
+    const input = document.getElementById('powerBiEmbedUrlInput');
+    const iframe = document.getElementById('iframePowerBi');
+    const btnExterno = document.getElementById('btnAbrirPbiExterno');
+
+    if (savedUrl && input && iframe) {
+        input.value = savedUrl;
+        if (iframe.src !== savedUrl) {
+            iframe.src = savedUrl;
+        }
+        if (btnExterno) btnExterno.href = savedUrl;
+    }
+}
+
+function actualizarReportePowerBi() {
+    const input = document.getElementById('powerBiEmbedUrlInput');
+    const iframe = document.getElementById('iframePowerBi');
+    const btnExterno = document.getElementById('btnAbrirPbiExterno');
+    if (!input || !iframe) return;
+
+    let url = (input.value || '').trim();
+    if (!url) {
+        showToast('⚠️ Ingresa una URL válida de Power BI Service', 'warning', '⚠️');
+        return;
+    }
+
+    iframe.src = url;
+    if (btnExterno) btnExterno.href = url;
+    Storage.set('powerbi_embed_url', url);
+    showToast('✓ Informe de Power BI actualizado exitosamente', 'success', '📊');
+}
+
+function togglePowerBiFullscreen() {
+    const contenedor = document.getElementById('contenedorPowerBi');
+    if (!contenedor) return;
+
+    if (!document.fullscreenElement) {
+        contenedor.requestFullscreen().catch(() => {
+            showToast('No se pudo activar pantalla completa', 'warning', '⚠️');
+        });
+    } else {
+        document.exitFullscreen();
+    }
 }
 
 // ==========================================================================

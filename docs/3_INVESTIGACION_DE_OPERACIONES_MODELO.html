@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelo Matemático de Optimización - Investigación de Operaciones - Merkostore</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+        @page {
+            size: A4;
+            margin: 18mm 16mm 18mm 16mm;
+            @bottom-center {
+                content: "Página " counter(page);
+                font-family: 'Plus Jakarta Sans', sans-serif;
+                font-size: 8pt;
+                color: #94a3b8;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #1e293b;
+            background-color: #ffffff;
+            line-height: 1.55;
+            font-size: 9.5pt;
+        }
+
+        .page-break {
+            page-break-after: always;
+            break-after: page;
+        }
+
+        .avoid-break {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        /* PORTADA INSTITUCIONAL UNICOLOR */
+        .cover-page {
+            min-height: 94vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 50px 42px;
+            background: #ffffff;
+            position: relative;
+        }
+
+        .cover-page::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 8px;
+            height: 100%;
+            background: #1e3a8a;
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+        }
+
+        .cover-header {
+            text-align: center;
+        }
+
+        .univ-title {
+            font-size: 11pt;
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #1e3a8a;
+            margin-bottom: 6px;
+        }
+
+        .faculty-title {
+            font-size: 9.5pt;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .course-badge {
+            display: inline-block;
+            background: rgba(30, 58, 138, 0.08);
+            color: #1e3a8a;
+            font-weight: 800;
+            font-size: 10.5pt;
+            padding: 6px 18px;
+            border-radius: 999px;
+            margin: 36px 0 16px 0;
+            border: 1px solid rgba(30, 58, 138, 0.25);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .main-title {
+            font-size: 23pt;
+            font-weight: 900;
+            color: #0f172a;
+            line-height: 1.25;
+            margin-bottom: 14px;
+        }
+
+        .subtitle {
+            font-size: 11.5pt;
+            color: #475569;
+            max-width: 650px;
+            margin: 0 auto;
+            line-height: 1.45;
+        }
+
+        .cover-meta {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 22px 28px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        }
+
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 7px 0;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 9.5pt;
+        }
+
+        .meta-row:last-child {
+            border-bottom: none;
+        }
+
+        .meta-label {
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .meta-value {
+            color: #0f172a;
+            font-weight: 700;
+            text-align: right;
+        }
+
+        .cover-footer {
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 16px;
+            color: #64748b;
+            font-size: 9pt;
+            font-weight: 500;
+        }
+
+        /* ESTILOS DE CONTENIDO */
+        h1.sec-title {
+            font-size: 16pt;
+            font-weight: 800;
+            color: #1e3a8a;
+            border-bottom: 2px solid #1e3a8a;
+            padding-bottom: 6px;
+            margin: 26px 0 14px 0;
+            letter-spacing: -0.5px;
+        }
+
+        h2.sub-title {
+            font-size: 12pt;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 18px 0 8px 0;
+        }
+
+        h3.sub-sub-title {
+            font-size: 10.5pt;
+            font-weight: 700;
+            color: #1e3a8a;
+            margin: 14px 0 6px 0;
+        }
+
+        p {
+            margin-bottom: 10px;
+            color: #334155;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin: 8px 0 12px 24px;
+            color: #334155;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+
+        .doc-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 14px 0;
+            font-size: 8.5pt;
+            background: #ffffff;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .doc-table th {
+            background-color: #1e3a8a;
+            color: #ffffff;
+            text-align: left;
+            padding: 8px 10px;
+            font-weight: 700;
+            border: 1px solid #1e3a8a;
+        }
+
+        .doc-table td {
+            padding: 7px 10px;
+            border: 1px solid #e2e8f0;
+            vertical-align: top;
+        }
+
+        .doc-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        pre {
+            background: #0f172a;
+            color: #f8fafc;
+            padding: 12px 14px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 7.8pt;
+            line-height: 1.45;
+            margin: 12px 0;
+            overflow-x: auto;
+            border-left: 4px solid #1e3a8a;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            background: #f1f5f9;
+            color: #1e3a8a;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-size: 8.2pt;
+            font-weight: 600;
+        }
+
+        pre code {
+            background: transparent;
+            color: inherit;
+            padding: 0;
+        }
+
+        .math-box {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-left: 5px solid #1e3a8a;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 8.8pt;
+            color: #0f172a;
+        }
+
+        .highlight-callout {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-left: 4px solid #1e3a8a;
+            padding: 12px 16px;
+            margin: 12px 0;
+            border-radius: 6px;
+            font-size: 9pt;
+        }
+
+        .badge-slack {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 7.5pt;
+            font-weight: 700;
+        }
+        .badge-bottleneck {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        .badge-surplus {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== PORTADA ==================== -->
+    <div class="cover-page">
+        <div class="cover-header">
+            <div class="univ-title">FACULTAD DE INGENIERÍA • PROGRAMA DE INGENIERÍA DE SISTEMAS</div>
+            <div class="faculty-title">PROYECTO DE AULA INTERDISCIPLINARIO — VII SEMESTRE</div>
+            
+            <div class="course-badge">ASIGNATURA: INVESTIGACIÓN DE OPERACIONES</div>
+            
+            <h1 class="main-title">MODELO MATEMÁTICO DE OPTIMIZACIÓN LINEAL ENTERA</h1>
+            <p class="subtitle">
+                Formulación, Implementación Computacional en Python Simplex/B&B y Sincronización Web del Problema de Mezcla Óptima de Inventario (Combos vs. Detal) para Merkostore
+            </p>
+        </div>
+
+        <div class="cover-meta">
+            <div class="meta-row">
+                <span class="meta-label">Proyecto de Software:</span>
+                <span class="meta-value">MERKOSTORE — E-Commerce Minorista Barrial Inteligente</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Entregable Académico:</span>
+                <span class="meta-value">3. Informe Técnico y Formulación Matemática de Operaciones</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Método de Optimización:</span>
+                <span class="meta-value">Programación Lineal Entera (PLE / MILP) — Branch & Bound</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Entorno Computacional:</span>
+                <span class="meta-value">Python 3 (Standard B&B / Scipy) + Módulo Web Interactivo</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Resultado Óptimo Diario:</span>
+                <span class="meta-value" style="color:#1e3a8a;">Z* = $ 600.520,00 COP (5 Fam, 3 Des, 102 Detal)</span>
+            </div>
+            <div class="meta-row">
+                <span class="meta-label">Código Fuente en GitHub:</span>
+                <span class="meta-value">https://github.com/hectorjuliancuadradopimiento-tech/merkostore</span>
+            </div>
+        </div>
+
+        <div class="cover-footer">
+            Cartagena de Indias, Colombia • Noviembre de 2026 • Plataforma Evaluadora FERRUM
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- ==================== CONTENIDO ==================== -->
+    <h1 class="sec-title">1. Definición del Problema y Justificación Económica</h1>
+    <p>
+        En el comercio minorista tradicional y tiendas de barrio como <strong>Merkostore</strong>, el comerciante se enfrenta a un dilema diario fundamental de asignación de recursos escasos: <strong>¿Conviene ensamblar los productos de primera necesidad en "Mercados Combos" familiares con descuento o venderlos de forma individual al detal?</strong>
+    </p>
+    <ul>
+        <li><strong>Riesgo por sobre-empaquetamiento:</strong> Si se arman demasiados combos promocionales, se agotan insumos críticos (aceite, café, huevos) y se pierden ventas al detal individuales que poseen un margen de ganancia porcentual significativamente superior.</li>
+        <li><strong>Riesgo por sub-empaquetamiento:</strong> Si no se arman suficientes combos, se reduce el ticket promedio de compra por cliente y los hogares de estratos 1, 2 y 3 migran hacia las cadenas de descuento duro (D1, Ara, Ísimo).</li>
+        <li><strong>Restricción operativa de mano de obra:</strong> El ensamble y sellado de combos consume tiempo de mano de obra limitada en la trastienda durante la jornada matutina.</li>
+    </ul>
+
+    <div class="highlight-callout">
+        <strong>Objetivo del Modelo:</strong> Determinar el plan óptimo diario de ensamble de combos ($x_1, x_2$) y ventas al detal ($y_1, y_2, y_3, y_4, y_5$) que <strong>maximice la utilidad neta total diaria ($Z^*$)</strong>, respetando estrictamente las restricciones de inventario físico en bodega, la capacidad horaria del operario de empaque y los compromisos de demanda mínima del mercado barrial.
+    </div>
+
+    <h1 class="sec-title">2. Formulación del Modelo Matemático (PLE)</h1>
+    <p>
+        El problema se modela rigurosamente como un problema de <strong>Programación Lineal Entera Pura (PLE)</strong>, donde todas las variables de decisión deben tomar valores enteros positivos no fraccionarios ($\mathbb{Z}_{\ge 0}$).
+    </p>
+
+    <h2 class="sub-title">2.1. Variables de Decisión</h2>
+    <ul>
+        <li>$x_1$: Cantidad de combos <strong>"Mercado Familiar Esencial"</strong> a ensamblar y vender ($x_1 \in \mathbb{Z}_{\ge 0}$).</li>
+        <li>$x_2$: Cantidad de combos <strong>"Mercado Desayuno Completo"</strong> a ensamblar y vender ($x_2 \in \mathbb{Z}_{\ge 0}$).</li>
+        <li>$y_1$: Cantidad de bandejas de <strong>Huevos Kikes AA x30</strong> a vender al detal ($y_1 \in \mathbb{Z}_{\ge 0}$).</li>
+        <li>$y_2$: Cantidad de bolsas de <strong>Café Sello Rojo 425g</strong> a vender al detal ($y_2 \in \mathbb{Z}_{\ge 0}$).</li>
+        <li>$y_3$: Cantidad de bolsas de <strong>Harina Pan 1Kg</strong> a vender al detal ($y_3 \in \mathbb{Z}_{\ge 0}$).</li>
+        <li>$y_4$: Cantidad de botellas de <strong>Aceite Medalla de Oro 3Lt</strong> a vender al detal ($y_4 \in \mathbb{Z}_{\ge 0}$).</li>
+        <li>$y_5$: Cantidad de bolsas de <strong>Azúcar Blanca 2.5Kg</strong> a vender al detal ($y_5 \in \mathbb{Z}_{\ge 0}$).</li>
+    </ul>
+
+    <h2 class="sub-title">2.2. Parámetros Económicos y Márgenes de Contribución Unitarios</h2>
+    <table class="doc-table">
+        <thead>
+            <tr>
+                <th>Variable</th>
+                <th>Producto / Combo</th>
+                <th>Precio Venta (COP)</th>
+                <th>Costo Adquisición (COP)</th>
+                <th>Margen Unitario $c_j$ (COP)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>$x_1$</strong></td>
+                <td>Combo Mercado Familiar Esencial</td>
+                <td>$ 44.900</td>
+                <td>$ 31.800</td>
+                <td><strong>$ 13.100</strong></td>
+            </tr>
+            <tr>
+                <td><strong>$x_2$</strong></td>
+                <td>Combo Mercado Desayuno Completo</td>
+                <td>$ 34.500</td>
+                <td>$ 25.200</td>
+                <td><strong>$ 9.300</strong></td>
+            </tr>
+            <tr>
+                <td><strong>$y_1$</strong></td>
+                <td>Huevos Kikes AA x30 (Detal)</td>
+                <td>$ 24.500</td>
+                <td>$ 14.700</td>
+                <td><strong>$ 9.800</strong></td>
+            </tr>
+            <tr>
+                <td><strong>$y_2$</strong></td>
+                <td>Café Sello Rojo 425g (Detal)</td>
+                <td>$ 21.990</td>
+                <td>$ 15.000</td>
+                <td><strong>$ 6.990</strong></td>
+            </tr>
+            <tr>
+                <td><strong>$y_3$</strong></td>
+                <td>Harina Pan 1Kg (Detal)</td>
+                <td>$ 4.800</td>
+                <td>$ 3.200</td>
+                <td><strong>$ 1.600</strong></td>
+            </tr>
+            <tr>
+                <td><strong>$y_4$</strong></td>
+                <td>Aceite Mezcla Medalla Oro 3Lt (Detal)</td>
+                <td>$ 19.490</td>
+                <td>$ 13.500</td>
+                <td><strong>$ 5.990</strong></td>
+            </tr>
+            <tr>
+                <td><strong>$y_5$</strong></td>
+                <td>Azúcar Blanca 2.5Kg (Detal)</td>
+                <td>$ 9.900</td>
+                <td>$ 6.800</td>
+                <td><strong>$ 3.100</strong></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="page-break"></div>
+
+    <h2 class="sub-title">2.3. Función Objetivo</h2>
+    <p>Maximizar el Beneficio Económico Neto Total Diario ($Z$):</p>
+    <div class="math-box">
+        <strong>MAXIMIZAR:</strong><br>
+        Z = 13100·x₁ + 9300·x₂ + 9800·y₁ + 6990·y₂ + 1600·y₃ + 5990·y₄ + 3100·y₅
+    </div>
+
+    <h2 class="sub-title">2.4. Restricciones del Sistema Operativo</h2>
+    <h3 class="sub-sub-title">a) Balance de Insumos Físicos en Bodega:</h3>
+    <div class="math-box">
+        (1) Huevos AA x30: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1·x₁ + 1·x₂ + 1·y₁ ≤ 35 &nbsp;(Bandejas disponibles)<br>
+        (2) Café Sello Rojo 425g: &nbsp; 1·x₁ + 2·x₂ + 1·y₂ ≤ 20 &nbsp;(Bolsas disponibles)<br>
+        (3) Harina Pan 1Kg: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2·x₁ + 2·x₂ + 1·y₃ ≤ 50 &nbsp;(Bolsas disponibles)<br>
+        (4) Aceite Mezcla 3Lt: &nbsp;&nbsp;&nbsp;&nbsp; 1·x₁ + 0·x₂ + 1·y₄ ≤ 14 &nbsp;(Botellas disponibles)<br>
+        (5) Azúcar Blanca 2.5Kg: &nbsp;&nbsp; 1·x₁ + 0·x₂ + 1·y₅ ≤ 28 &nbsp;(Bolsas disponibles)
+    </div>
+
+    <h3 class="sub-sub-title">b) Capacidad Operativa de Mano de Obra (Empaque):</h3>
+    <p>
+        Un operario asignado durante 8 horas diarias de jornada matutina (480 minutos). El ensamble del combo familiar requiere 12 minutos y el combo desayuno 8 minutos:
+    </p>
+    <div class="math-box">
+        (6) Tiempo de Empaque: &nbsp;&nbsp;&nbsp;&nbsp; 12·x₁ + 8·x₂ ≤ 480 &nbsp;(Minutos laborables)
+    </div>
+
+    <h3 class="sub-sub-title">c) Políticas Comerciales y Demanda Mínima de Mercado:</h3>
+    <div class="math-box">
+        (7) Compromiso Mercado Familiar: &nbsp; x₁ ≥ 5<br>
+        (8) Compromiso Mercado Desayuno: &nbsp; x₂ ≥ 3<br>
+        (9) Demanda al detal garantizada: y₁ ≥ 5, &nbsp; y₂ ≥ 2, &nbsp; y₄ ≥ 2
+    </div>
+
+    <h3 class="sub-sub-title">d) Condiciones de No Negatividad e Integralidad:</h3>
+    <div class="math-box">
+        x₁, x₂, y₁, y₂, y₃, y₄, y₅ ∈ ℤ⁺ ∪ {0}
+    </div>
+
+    <h1 class="sec-title">3. Implementación Computacional en Python</h1>
+    <p>
+        Para asegurar máxima robustez, portabilidad y reproducibilidad (0 dependencias externas o paquetes de terceros no estándar), se desarrolló el script <code>docs/optimizacion_combos_merkostore.py</code> empleando un solucionador determinístico de Branch & Bound puro sobre Python estándar:
+    </p>
+
+    <pre><code># docs/optimizacion_combos_merkostore.py
+# Solucionador Determinístico de Optimización Lineal Entera (PLE) para Merkostore
+def solve_merkostore_optimal():
+    # Coeficientes de Utilidad Unitaria
+    c = {"x1": 13100, "x2": 9300, "y1": 9800, "y2": 6990, "y3": 1600, "y4": 5990, "y5": 3100}
+    best_z = -1
+    best_sol = None
+
+    # Exploración Branch & Bound acotada por demandas y capacidad de empaque
+    for x1 in range(5, 15):
+        for x2 in range(3, 10):
+            if (12 * x1 + 8 * x2) > 480:
+                continue
+            y1 = 35 - (x1 + x2)
+            y2 = 20 - (x1 + 2 * x2)
+            y3 = 50 - (2 * x1 + 2 * x2)
+            y4 = 14 - x1
+            y5 = 28 - x1
+
+            if y1 >= 5 and y2 >= 2 and y3 >= 0 and y4 >= 2 and y5 >= 0:
+                z = (x1 * c["x1"] + x2 * c["x2"] + y1 * c["y1"] + 
+                     y2 * c["y2"] + y3 * c["y3"] + y4 * c["y4"] + y5 * c["y5"])
+                if z > best_z:
+                    best_z = z
+                    best_sol = (x1, x2, y1, y2, y3, y4, y5)
+    return best_z, best_sol
+
+# Ejecución: Z* = $ 600.520 COP | Solución: x1=5, x2=3, y1=27, y2=9, y3=34, y4=9, y5=23</code></pre>
+
+    <div class="page-break"></div>
+
+    <h1 class="sec-title">4. Resultados Óptimos y Análisis de Sensibilidad</h1>
+
+    <h2 class="sub-title">4.1. Solución Óptima Global ($Z^*$)</h2>
+    <table class="doc-table">
+        <thead>
+            <tr>
+                <th>Variable</th>
+                <th>Nombre del Producto / Combo</th>
+                <th>Cantidad Óptima</th>
+                <th>Unidad</th>
+                <th>Margen Unitario</th>
+                <th>Contribución a Utilidad</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>x₁*</strong></td>
+                <td>Combo Mercado Familiar Esencial</td>
+                <td><strong>5</strong></td>
+                <td>Combos</td>
+                <td>$ 13.100</td>
+                <td>$ 65.500 COP</td>
+            </tr>
+            <tr>
+                <td><strong>x₂*</strong></td>
+                <td>Combo Mercado Desayuno Completo</td>
+                <td><strong>3</strong></td>
+                <td>Combos</td>
+                <td>$ 9.300</td>
+                <td>$ 27.900 COP</td>
+            </tr>
+            <tr>
+                <td><strong>y₁*</strong></td>
+                <td>Huevos Kikes AA x30 (Detal)</td>
+                <td><strong>27</strong></td>
+                <td>Bandejas</td>
+                <td>$ 9.800</td>
+                <td>$ 264.600 COP</td>
+            </tr>
+            <tr>
+                <td><strong>y₂*</strong></td>
+                <td>Café Sello Rojo 425g (Detal)</td>
+                <td><strong>9</strong></td>
+                <td>Bolsas</td>
+                <td>$ 6.990</td>
+                <td>$ 62.910 COP</td>
+            </tr>
+            <tr>
+                <td><strong>y₃*</strong></td>
+                <td>Harina Pan 1Kg (Detal)</td>
+                <td><strong>34</strong></td>
+                <td>Bolsas</td>
+                <td>$ 1.600</td>
+                <td>$ 54.400 COP</td>
+            </tr>
+            <tr>
+                <td><strong>y₄*</strong></td>
+                <td>Aceite Medalla de Oro 3Lt (Detal)</td>
+                <td><strong>9</strong></td>
+                <td>Botellas</td>
+                <td>$ 5.990</td>
+                <td>$ 53.910 COP</td>
+            </tr>
+            <tr>
+                <td><strong>y₅*</strong></td>
+                <td>Azúcar Blanca 2.5Kg (Detal)</td>
+                <td><strong>23</strong></td>
+                <td>Bolsas</td>
+                <td>$ 3.100</td>
+                <td>$ 71.300 COP</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr style="background:#f1f5f9; font-weight:800; font-size:9.5pt;">
+                <td colspan="5" style="text-align:right; color:#1e3a8a;">UTILIDAD NETA TOTAL DIARIA ÓPTIMA (Z*):</td>
+                <td style="color:#1e3a8a;">$ 600.520,00 COP</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <h2 class="sub-title">4.2. Análisis de Holguras y Cuellos de Botella (Slacks)</h2>
+    <table class="doc-table">
+        <thead>
+            <tr>
+                <th>Recurso / Restricción</th>
+                <th>Capacidad Máxima</th>
+                <th>Consumo Real</th>
+                <th>Holgura (Slack)</th>
+                <th>Porcentaje de Uso</th>
+                <th>Diagnóstico Operativo</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Huevos Kikes AA x30</td>
+                <td>35 bandejas</td>
+                <td>35</td>
+                <td>0</td>
+                <td>100.0%</td>
+                <td><span class="badge-slack badge-bottleneck">Cuello de Botella Activo</span></td>
+            </tr>
+            <tr>
+                <td>Café Sello Rojo 425g</td>
+                <td>20 bolsas</td>
+                <td>20</td>
+                <td>0</td>
+                <td>100.0%</td>
+                <td><span class="badge-slack badge-bottleneck">Cuello de Botella Activo</span></td>
+            </tr>
+            <tr>
+                <td>Harina Pan 1Kg</td>
+                <td>50 bolsas</td>
+                <td>50</td>
+                <td>0</td>
+                <td>100.0%</td>
+                <td><span class="badge-slack badge-bottleneck">Cuello de Botella Activo</span></td>
+            </tr>
+            <tr>
+                <td>Aceite Medalla de Oro 3Lt</td>
+                <td>14 botellas</td>
+                <td>14</td>
+                <td>0</td>
+                <td>100.0%</td>
+                <td><span class="badge-slack badge-bottleneck">Cuello de Botella Activo</span></td>
+            </tr>
+            <tr>
+                <td>Azúcar Blanca 2.5Kg</td>
+                <td>28 bolsas</td>
+                <td>28</td>
+                <td>0</td>
+                <td>100.0%</td>
+                <td><span class="badge-slack badge-bottleneck">Cuello de Botella Activo</span></td>
+            </tr>
+            <tr>
+                <td>Tiempo Operario Empaque</td>
+                <td>480 minutos</td>
+                <td>84 minutos</td>
+                <td><strong>396 minutos</strong></td>
+                <td>17.5%</td>
+                <td><span class="badge-slack badge-surplus">Recurso Abundante / Subutilizado</span></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 class="sub-title">4.3. Conclusiones Gerenciales e Impacto de Decisión</h2>
+    <ol>
+        <li><strong>Estrategia de Margen por Detal vs. Descuento de Combo:</strong> El modelo demostró matemáticamente que los combos promocionales, aunque útiles para fidelizar y garantizar demanda mínima ($x_1=5, x_2=3$), sacrifican margen unitario de productos clave (como el Café y los Huevos). Por ende, el sistema debe producir la cota mínima de combos exigida y liquidar el 100% de los insumos restantes al detal individual.</li>
+        <li><strong>Inexistencia de Restricción en Mano de Obra:</strong> El operario solo requiere 84 minutos de sus 480 minutos disponibles para armar los combos requeridos. Esto prueba que el crecimiento del micronegocio no está limitado por el personal de empaque, sino por la liquidez y capacidad de abastecimiento con mayoristas.</li>
+    </ol>
+
+    <h1 class="sec-title">5. Integración con la Aplicación Web Merkostore</h1>
+    <p>
+        El modelo matemático no permaneció como un ejercicio teórico aislado, sino que se integró directamente en el panel administrativo de <strong>Merkostore</strong> a través de la pestaña <strong>"Optimización Lineal (IO)"</strong> en <code>index.html</code> y <code>app.js</code>:
+    </p>
+    <ul>
+        <li><strong>Solucionador Simplex en Vivo:</strong> El comerciante puede ajustar el inventario disponible de insumos y recalcular en tiempo real el plan óptimo de ensamble con un solo clic en <em>"Ejecutar Modelo Simplex"</em>.</li>
+        <li><strong>Sincronización Automática con la Tienda:</strong> El botón <em>"Sincronizar Tienda con Solución Óptima"</em> actualiza instantáneamente las existencias visibles en el catálogo de clientes, fijando el stock de combos y detal a sus valores óptimos ($x^*, y^*$).</li>
+        <li><strong>Control Transaccional en Backend:</strong> En <code>OrderService.java</code>, al despacharse un combo, el servidor descuenta atómicamente los insumos que lo componen en MongoDB, protegiendo las restricciones de balance de masa del modelo.</li>
+    </ul>
+
+</body>
+</html>
