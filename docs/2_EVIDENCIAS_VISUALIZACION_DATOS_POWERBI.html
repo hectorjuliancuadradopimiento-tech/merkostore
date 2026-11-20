@@ -344,19 +344,14 @@
     <!-- ==================== INTRODUCCIÓN Y GUÍA ==================== -->
     <h1 class="sec-title">Introducción: Requerimientos Oficiales de la Asignatura</h1>
     <p>
-        En cumplimiento estricto con las <strong>Definiciones del Proyecto de Aula</strong> establecidas para la asignatura de <strong>Visualización de Datos II</strong> en la Fundación Universitaria Tecnológico Comfenalco, el presente informe técnico consolida las cuatro fases y evidencias metodológicas exigidas:
+        En cumplimiento estricto con las directrices académicas y rúbrica del <strong>Proyecto de Aula</strong> para la asignatura de <strong>Visualización de Datos II</strong> en la Fundación Universitaria Tecnológico Comfenalco, el presente informe técnico consolida las cuatro fases y evidencias metodológicas solicitadas:
     </p>
 
-    <div class="img-container">
-        <img src="images/slide_comfenalco.jpg" alt="Requerimientos Oficiales Proyecto de Aula Comfenalco" style="max-height: 240px;">
-        <div class="img-caption">Figura 1: Requerimientos oficiales de la asignatura Visualización de Datos II (Tecnológico Comfenalco).</div>
-    </div>
-
     <ol>
-        <li><strong>Identificación de las Fuentes de Datos (Tipos y Acceso - Semana 2):</strong> Identificación rigurosa de las colecciones operacionales en MongoDB y los mecanismos de extracción.</li>
-        <li><strong>Modelo Dimensional (Esquema Estrella o Copo de Nieve - Semana 2):</strong> Diseño formal en <code>dbdiagram.io</code> con relaciones 1:* entre la tabla de hechos y las dimensiones.</li>
-        <li><strong>Desarrollo del Data Warehouse (Semana 3):</strong> Implementación física del almacén de datos con valores reales cargados y transformados mediante el pipeline ETL.</li>
-        <li><strong>Dashboards Interactivos Finales en Power BI (Semana 3):</strong> Métricas DAX, cuadros de mando interactivos e integración directa en la aplicación web Merkostore.</li>
+        <li><strong>Identificación de las Fuentes de Datos (Tipos y Acceso):</strong> Identificación y descripción técnica de las colecciones operacionales en MongoDB y los mecanismos de extracción ETL.</li>
+        <li><strong>Modelo Dimensional (Esquema Estrella):</strong> Diseño formal en <code>dbdiagram.io</code> con relaciones unidireccionales (1 : *) entre la tabla de hechos central y sus dimensiones descriptivas.</li>
+        <li><strong>Desarrollo del Data Warehouse:</strong> Implementación física del almacén de datos con valores reales cargados y transformados en Microsoft Power BI Desktop (motor VertiPaq).</li>
+        <li><strong>Dashboards Interactivos Finales en Power BI:</strong> Formulación DAX de KPIs de negocio, cuadros de mando interactivos e integración con la aplicación web Merkostore.</li>
     </ol>
 
     <!-- ==================== SECCIÓN 1 ==================== -->
@@ -427,7 +422,7 @@ in
 
     <div class="img-container">
         <img src="images/dbdiagram_modelo.png" alt="Modelo Dimensional Diseñado en dbdiagram.io" style="max-height: 380px;">
-        <div class="img-caption">Figura 2: Modelo dimensional en esquema estrella diseñado en la herramienta dbdiagram.io.</div>
+        <div class="img-caption">Figura 1: Modelo dimensional en esquema estrella diseñado en la herramienta dbdiagram.io.</div>
     </div>
 
     <h2 class="sub-title">2.1. Diccionario de Tablas y Relaciones del Modelo</h2>
@@ -484,7 +479,7 @@ in
 
     <div class="img-container">
         <img src="images/powerbi_modelo_desktop.png" alt="Data Warehouse Implementado en Power BI Desktop" style="max-height: 380px;">
-        <div class="img-caption">Figura 3: Data Warehouse implementado físicamente en Microsoft Power BI Desktop (Vista de Modelo y Relaciones).</div>
+        <div class="img-caption">Figura 2: Data Warehouse implementado físicamente en Microsoft Power BI Desktop (Vista de Modelo y Relaciones).</div>
     </div>
 
     <h2 class="sub-title">3.1. Valores Reales Almacenados en el Data Warehouse</h2>
