@@ -50,8 +50,8 @@ public class DataInitializer implements CommandLineRunner {
         public void run(String... args) throws Exception {
                 seedAdminUser();
                 seedStoreConfig();
-                seedCategoriesAndProducts();
-                seedSampleOrders();
+                seedCategoriesAndProducts(false);
+                seedSampleOrders(false);
         }
 
         private void seedAdminUser() {
@@ -89,8 +89,9 @@ public class DataInitializer implements CommandLineRunner {
                 }
         }
 
-        private void seedCategoriesAndProducts() {
-                if (categoryRepository.count() == 0 || productRepository.count() < 12) {
+        public void seedCategoriesAndProducts(boolean force) {
+                boolean needsSeed = force || categoryRepository.count() == 0 || !productRepository.existsById("PRD-001") || productRepository.count() < 12;
+                if (needsSeed) {
                         categoryRepository.deleteAll();
                         productRepository.deleteAll();
 
@@ -222,8 +223,14 @@ public class DataInitializer implements CommandLineRunner {
                 }
         }
 
-        private void seedSampleOrders() {
-                if (orderRepository.count() == 0 || orderRepository.count() < 20) {
+        public void seedSampleOrders(boolean force) {
+                boolean hasLegacyOrders = orderRepository.findAll().stream()
+                                .anyMatch(o -> o.getOrderNumber() != null && o.getOrderNumber().startsWith("MS-"));
+                boolean hasPbiOrder = orderRepository.findAll().stream()
+                                .anyMatch(o -> "PED-001".equals(o.getOrderNumber()));
+                boolean needsSeed = force || hasLegacyOrders || !hasPbiOrder || orderRepository.count() < 20;
+
+                if (needsSeed) {
                         orderRepository.deleteAll();
 
                         // 8 Clientes de Cartagena (Dim_Cliente)

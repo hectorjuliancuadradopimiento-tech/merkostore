@@ -1,0 +1,10 @@
+target/
+.git/
+.github/
+.vscode/
+scratch/
+docs/
+*.md
+*.pdf
+*.html
+!src/**

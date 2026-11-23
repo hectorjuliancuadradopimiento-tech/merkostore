@@ -1,5 +1,6 @@
 package com.merkostore.api.controllers;
 
+import com.merkostore.api.config.DataInitializer;
 import com.merkostore.api.dtos.ApiResponse;
 import com.merkostore.api.exceptions.ResourceNotFoundException;
 import com.merkostore.api.models.Category;
@@ -49,6 +50,7 @@ public class AdminDashboardController {
     private final PasswordEncoder passwordEncoder;
     private final OrderService orderService;
     private final MongoTemplate mongoTemplate;
+    private final DataInitializer dataInitializer;
 
     public AdminDashboardController(
             ProductRepository productRepository,
@@ -59,7 +61,8 @@ public class AdminDashboardController {
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             OrderService orderService,
-            MongoTemplate mongoTemplate) {
+            MongoTemplate mongoTemplate,
+            DataInitializer dataInitializer) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.orderRepository = orderRepository;
@@ -69,11 +72,19 @@ public class AdminDashboardController {
         this.passwordEncoder = passwordEncoder;
         this.orderService = orderService;
         this.mongoTemplate = mongoTemplate;
+        this.dataInitializer = dataInitializer;
     }
 
     // ==========================================
     // 1. DASHBOARD METRICS & CONFIG
     // ==========================================
+
+    @PostMapping("/dashboard/sync-pbi-data")
+    public ResponseEntity<ApiResponse<Void>> syncPbiData() {
+        dataInitializer.seedCategoriesAndProducts(true);
+        dataInitializer.seedSampleOrders(true);
+        return ResponseEntity.ok(ApiResponse.ok("Datos sincronizados exitosamente con Power BI Star Schema"));
+    }
 
     @GetMapping("/dashboard/metrics")
     public ResponseEntity<ApiResponse<DashboardMetrics>> getMetrics(@RequestParam(defaultValue = "default-store") String storeId) {
