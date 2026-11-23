@@ -1348,34 +1348,21 @@ function switchAdminSubTab(tab) {
 // VISUALIZACIÓN DE DATOS II - COMPONENTE OFICIAL DE INTEGRACIÓN POWER BI
 // ==========================================================================
 
-function initPowerBiEmbed() {
-    const savedUrl = Storage.get('powerbi_embed_url');
-    const input = document.getElementById('powerBiEmbedUrlInput');
-    const iframe = document.getElementById('iframePowerBi');
-    const btnExterno = document.getElementById('btnAbrirPbiExterno');
+const DEFAULT_POWERBI_URL = 'https://app.powerbi.com/view?r=eyJrIjoiYjgwMjBiYjctOWU1ZC00ZGY2LTkwOGMtN2VlYmUwY2M1OWFhIiwidCI6IjlkMTJiZjNmLWU0ZjYtNDdhYi05MTJmLTFhMmYwZmM0OGFhNCIsImMiOjR9';
 
-    const activeUrl = savedUrl || 'pbi_report.html';
-    if (input) input.value = activeUrl;
-    if (iframe) iframe.src = activeUrl;
-    if (btnExterno) btnExterno.href = activeUrl;
+function initPowerBiEmbed() {
+    const iframe = document.getElementById('iframePowerBi');
+    if (iframe && (!iframe.src || iframe.src.includes('pbi_report.html'))) {
+        iframe.src = DEFAULT_POWERBI_URL;
+    }
 }
 
 function actualizarReportePowerBi() {
-    const input = document.getElementById('powerBiEmbedUrlInput');
     const iframe = document.getElementById('iframePowerBi');
-    const btnExterno = document.getElementById('btnAbrirPbiExterno');
-    if (!input || !iframe) return;
-
-    let url = (input.value || '').trim();
-    if (!url) {
-        url = 'pbi_report.html';
-        input.value = url;
+    if (iframe) {
+        iframe.src = DEFAULT_POWERBI_URL;
+        showToast('✓ Dashboard de Power BI recargado', 'success', '📊');
     }
-
-    iframe.src = url;
-    if (btnExterno) btnExterno.href = url;
-    Storage.set('powerbi_embed_url', url);
-    showToast('✓ Informe de Power BI sincronizado exitosamente', 'success', '📊');
 }
 
 function togglePowerBiFullscreen() {

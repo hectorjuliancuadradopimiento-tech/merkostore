@@ -1,13 +1,13 @@
-id_producto,nombre_producto,categoria,tipo_producto,precio_regular,tiene_descuento,stock_disponible
-PRD-001,Huevos Kikes AA x30,Lácteos y Huevos,DETAL,24500,False,35
-PRD-002,Café Sello Rojo 425g,Abarrotes y Despensa,DETAL,21990,False,20
-PRD-003,Harina Pan 1Kg,Abarrotes y Despensa,DETAL,4800,False,50
-PRD-004,Aceite Medalla de Oro 3Lt,Abarrotes y Despensa,DETAL,19490,False,14
-PRD-005,Azúcar Blanca 2.5Kg,Abarrotes y Despensa,DETAL,9900,False,28
-PRD-006,Arroz Diana 1Kg,Abarrotes y Despensa,DETAL,4500,False,45
-PRD-007,Leche Colanta Entera 900ml,Lácteos y Huevos,DETAL,4200,False,30
-PRD-008,Pan Bimbo Artesano 500g,Panadería,DETAL,8500,False,18
-PRD-009,Jabón Rey Barra 300g,Cuidado del Hogar,DETAL,3200,False,40
-CMB-001,Mercado Familiar Esencial,Combos Mercados,MERCADO,44900,True,10
-CMB-002,Mercado Desayuno Completo,Combos Mercados,MERCADO,34500,True,8
-CMB-003,Combo Aseo y Hogar,Combos Mercados,MERCADO,28000,True,6
+id_producto,nombre_producto,categoria,tipo_producto,precio_regular,costo_base,tiene_descuento,stock_disponible
+PRD-001,Huevos Kikes AA x30,Lácteos y Huevos,DETAL,24500,14700,FALSE,35
+PRD-002,Café Sello Rojo 425g,Abarrotes y Despensa,DETAL,21990,15000,FALSE,20
+PRD-003,Harina Pan 1Kg,Abarrotes y Despensa,DETAL,4800,3200,FALSE,50
+PRD-004,Aceite Medalla de Oro 3Lt,Abarrotes y Despensa,DETAL,19490,13500,FALSE,14
+PRD-005,Azúcar Blanca 2.5Kg,Abarrotes y Despensa,DETAL,9900,6800,FALSE,28
+PRD-006,Arroz Diana 1Kg,Abarrotes y Despensa,DETAL,4500,3100,FALSE,45
+PRD-007,Leche Colanta Entera 900ml,Lácteos y Huevos,DETAL,4200,2900,FALSE,30
+PRD-008,Pan Bimbo Artesano 500g,Panadería,DETAL,8500,6000,FALSE,18
+PRD-009,Jabón Rey Barra 300g,Cuidado del Hogar,DETAL,3200,2100,FALSE,40
+CMB-001,Mercado Familiar Esencial,Combos Mercados,MERCADO,44900,31800,TRUE,10
+CMB-002,Mercado Desayuno Completo,Combos Mercados,MERCADO,34500,25200,TRUE,8
+CMB-003,Combo Aseo y Hogar,Combos Mercados,MERCADO,28000,18500,TRUE,6

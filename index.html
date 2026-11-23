@@ -783,75 +783,58 @@
 
                 <!-- SUBTAB 8: POWER BI ANALYTICS DASHBOARD -->
                 <div id="subtabBi" style="display:none;">
-                    <div class="admin-card-glass" style="margin-bottom:24px;">
+                    <!-- HEADER DEL DASHBOARD -->
+                    <div class="admin-card-glass" style="margin-bottom:20px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
                             <div>
-                                <span class="merko-brand-badge" style="background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);">VISUALIZACIÓN DE DATOS II • PROYECTO DE AULA</span>
+                                <span class="merko-brand-badge" style="background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);">
+                                    VISUALIZACIÓN DE DATOS II • PROYECTO DE AULA
+                                </span>
                                 <h2 style="font-size:1.45rem; font-weight:900; color:#fff; margin-top:8px; margin-bottom:4px;">
-                                    📊 Dashboard Analítico Ejecutivo Merkostore (Power BI)
+                                    📊 Dashboard Analítico Ejecutivo Merkostore
                                 </h2>
                                 <p style="font-size:0.85rem; color:var(--admin-text-muted); margin:0;">
-                                    Integración en tiempo real del almacén de datos (MongoDB → Modelo Estrella → DAX) para inteligencia de negocios y toma de decisiones.
+                                    Monitoreo interactivo en tiempo real conectado a base de datos Postgres en la nube (Neon) con modelo dimensional en estrella y actualización programada.
                                 </p>
                             </div>
-                            <div style="display:flex; gap:10px;">
-                                <button class="btn-merko-outline" onclick="showToast('Sincronizando modelo dimensional con MongoDB...', 'info', '🔄')">
-                                    🔄 Refrescar ETL
-                                </button>
-                                <a href="docs/2_EVIDENCIAS_VISUALIZACION_DATOS_POWERBI.md" target="_blank" class="btn-merko-primary" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
-                                    📑 Ver Evidencias Power BI ➔
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- POWER BI REAL SERVICE EMBED CONTAINER -->
-                    <div class="admin-card-glass" style="margin-bottom:18px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-                            <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:320px;">
-                                <label style="font-size:0.8rem; font-weight:800; color:#FF8F00; white-space:nowrap;">
-                                    🔗 Enlace Power BI Service (Embed / Publish to Web):
-                                </label>
-                                <input type="text" id="powerBiEmbedUrlInput" 
-                                       placeholder="Pega aquí el enlace de tu reporte de Power BI Service o usa pbi_report.html" 
-                                       value="pbi_report.html"
-                                       style="flex:1; padding:9px 14px; background:#0c0908; border:1px solid rgba(230,81,0,0.3); border-radius:8px; color:#fff; font-size:0.8rem; font-family:'JetBrains Mono', monospace;"
-                                       onchange="actualizarReportePowerBi()">
-                            </div>
-                            <div style="display:flex; gap:8px;">
-                                <button class="btn-merko-primary" onclick="actualizarReportePowerBi()" style="padding:9px 16px; font-size:0.8rem;">
-                                    🔄 Cargar Dashboard
-                                </button>
-                                <button class="btn-merko-outline" onclick="togglePowerBiFullscreen()" style="padding:9px 14px; font-size:0.8rem;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span style="display:inline-flex; align-items:center; gap:6px; font-size:0.8rem; color:#10b981; font-weight:700; background:rgba(16,185,129,0.1); padding:6px 12px; border-radius:20px; border:1px solid rgba(16,185,129,0.25);">
+                                    <span style="width:8px; height:8px; border-radius:50%; background:#10b981; display:inline-block; box-shadow:0 0 8px #10b981;"></span>
+                                    En línea • Power BI Service
+                                </span>
+                                <button class="btn-merko-outline" onclick="togglePowerBiFullscreen()" style="padding:8px 14px; font-size:0.82rem; display:inline-flex; align-items:center; gap:6px;">
                                     ⛶ Pantalla Completa
                                 </button>
-                                <a id="btnAbrirPbiExterno" 
-                                   href="pbi_report.html" 
+                                <a href="https://app.powerbi.com/view?r=eyJrIjoiYjgwMjBiYjctOWU1ZC00ZGY2LTkwOGMtN2VlYmUwY2M1OWFhIiwidCI6IjlkMTJiZjNmLWU0ZjYtNDdhYi05MTJmLTFhMmYwZmM0OGFhNCIsImMiOjR9" 
                                    target="_blank" 
-                                   class="btn-merko-outline" 
-                                   style="padding:9px 14px; font-size:0.8rem; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
-                                    ↗ Abrir en Nueva Ventana
+                                   class="btn-merko-primary" 
+                                   style="padding:8px 14px; font-size:0.82rem; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                                    ↗ Abrir en Power BI
                                 </a>
                             </div>
                         </div>
                     </div>
 
-                    <!-- POWER BI REAL IFRAME CONTAINER (HARDWARE ACCELERATED) -->
-                    <div class="admin-card-glass" style="padding:0; overflow:hidden; border:1px solid rgba(230,81,0,0.3); border-radius:12px; background:#000;" id="contenedorPowerBi">
-                        <div style="background:#130e0d; padding:10px 18px; border-bottom:1px solid rgba(230,81,0,0.25); display:flex; justify-content:space-between; align-items:center;">
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <span style="font-size:1rem;">📊</span>
-                                <span style="font-weight:800; font-size:0.82rem; color:#FF8F00;" id="lblPowerBiTitle">Microsoft Power BI Service • Merkostore_Analytics.pbix</span>
+                    <!-- CONTENEDOR OFICIAL DEL DASHBOARD DE POWER BI -->
+                    <div class="admin-card-glass" style="padding:0; overflow:hidden; border:1px solid rgba(245,158,11,0.3); border-radius:14px; background:#0b0f19; box-shadow:0 10px 30px rgba(0,0,0,0.5);" id="contenedorPowerBi">
+                        <div style="background:#111827; padding:12px 20px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span style="font-size:1.1rem;">📊</span>
+                                <div>
+                                    <span style="font-weight:800; font-size:0.85rem; color:#f59e0b;">Microsoft Power BI Service • merkostore dsss</span>
+                                    <span style="font-size:0.75rem; color:var(--admin-text-muted); margin-left:8px;">(Esquema Estrella • 1:* Fact & Dimensiones)</span>
+                                </div>
                             </div>
                             <div style="font-size:0.75rem; color:var(--admin-text-muted);">
-                                Componente de Integración: <code>&lt;iframe&gt;</code> HTML5 Embed Oficial
+                                Integración: <code>&lt;iframe&gt;</code> HTML5 Oficial
                             </div>
                         </div>
 
-                        <!-- Real Embedded Frame -->
-                        <div style="position:relative; width:100%; height:750px; background:#0f172a;">
+                        <!-- IFRAME DEL DASHBOARD DE POWER BI -->
+                        <div style="position:relative; width:100%; height:820px; background:#0f172a;">
                             <iframe id="iframePowerBi" 
-                                    src="pbi_report.html" 
+                                    title="merkostore dsss"
+                                    src="https://app.powerbi.com/view?r=eyJrIjoiYjgwMjBiYjctOWU1ZC00ZGY2LTkwOGMtN2VlYmUwY2M1OWFhIiwidCI6IjlkMTJiZjNmLWU0ZjYtNDdhYi05MTJmLTFhMmYwZmM0OGFhNCIsImMiOjR9" 
                                     frameborder="0" 
                                     allowFullScreen="true" 
                                     style="width:100%; height:100%; border:none; display:block;">
