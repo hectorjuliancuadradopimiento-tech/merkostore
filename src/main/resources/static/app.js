@@ -833,7 +833,7 @@ function updateDashboardKPIs() {
     const kpiAlertText = document.getElementById('kpiAlertText');
 
     const displaySales = todaySalesSum > 0 ? todaySalesSum : validOrders.reduce((acc, o) => acc + (Number(o.total) || 0), 0);
-    const displaySubtext = todaySalesSum > 0 ? `↑ ${todayCount} ventas en el día` : `↑ ${validOrders.length} ventas sincronizadas Power BI ($ 1.29M)`;
+    const displaySubtext = todaySalesSum > 0 ? `↑ ${todayCount} ventas en el día` : `↑ ${validOrders.length} ventas sincronizadas Power BI ($ 1.06M)`;
 
     if (kpiSales) kpiSales.textContent = `$ ${displaySales.toLocaleString('es-CO')}`;
     if (kpiSalesSubtext) kpiSalesSubtext.textContent = displaySubtext;
