@@ -695,8 +695,13 @@
                         <div style="font-size:1rem; font-weight:900; color:var(--brand-primary); margin-bottom:8px;">📌 A. Identidad del negocio</div>
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
                             <div class="merko-form-group">
-                                <label>TÍTULO DEL SITIO</label>
-                                <input type="text" id="cfgStoreName" value="Merkostore Supertienda Don Pedro">
+                                <label>NOMBRE DE LA MARCA</label>
+                                <div style="padding:10px 14px; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.15); border-radius:10px; color:#ffffff; font-weight:900; display:flex; align-items:center; gap:8px;">
+                                    <span style="font-size:1.1rem;">🏪</span>
+                                    <span style="letter-spacing:0.5px; font-size:0.95rem;">MERKOSTORE</span>
+                                    <span style="font-size:0.72rem; background:rgba(34,197,94,0.2); color:#4ade80; border:1px solid rgba(34,197,94,0.35); padding:2px 8px; border-radius:12px; margin-left:auto; font-weight:700;">Marca Oficial Protegida</span>
+                                </div>
+                                <small style="color:var(--text-muted); font-size:0.75rem; margin-top:4px; display:block;">El nombre de la tienda está fijado como <strong>MERKOSTORE</strong> para mantener la consistencia de marca.</small>
                             </div>
                             <div class="merko-form-group">
                                 <label>TEXTO BOTÓN DEL HERO</label>
@@ -1448,17 +1453,22 @@
 
     </div>
 
-    <!-- FLOATING STICKY CART FAB BUTTON -->
-    <button class="floating-cart-fab" onclick="toggleCartDrawer()" id="floatingCartFab" title="Ver Carrito de Compra">
-        <div class="fab-icon-wrap">
-            <span class="fab-icon">🛒</span>
-            <span class="fab-badge-pulse" id="fabCartBadge">0</span>
+    <!-- FLOATING STICKY CART FAB DOCK BAR (VISIBLE SOLO CUANDO HAY PRODUCTOS) -->
+    <button class="floating-cart-fab" onclick="toggleCartDrawer()" id="floatingCartFab" title="Ver Carrito de Compra" style="display: none;">
+        <div class="fab-left-group">
+            <div class="fab-icon-wrap">
+                <span class="fab-icon">🛒</span>
+                <span class="fab-badge-pulse" id="fabCartBadge">0</span>
+            </div>
+            <div class="fab-text-wrap">
+                <span class="fab-title" id="fabCartTitle">Ver Carrito</span>
+                <span class="fab-fee-note" id="fabCartFeeNote">🛵 Domicilio: $ 3.000 incluido</span>
+            </div>
         </div>
-        <div class="fab-text-wrap">
-            <span class="fab-title">Ver Carrito</span>
+        <div class="fab-right-group">
             <span class="fab-total" id="fabCartTotal">$ 0</span>
+            <span class="fab-arrow">➔</span>
         </div>
-        <span class="fab-arrow">➔</span>
     </button>
 
     <!-- FLOATING WHATSAPP BUTTON (MATCHING REFERENCE IMAGE 2 EXACTLY) -->

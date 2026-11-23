@@ -101,7 +101,7 @@ const state = {
 
     // Store Configuration
     storeConfig: {
-        storeName: 'Merkostore - Tu Supermercado',
+        storeName: 'MERKOSTORE',
         whatsappPhone: '573004567890',
         address: 'Cartagena de Indias, Bolívar',
         fulfillmentType: 'DELIVERY',
@@ -1201,10 +1201,11 @@ function switchView(view) {
     const appHeader = document.getElementById('appHeader');
     const floatingCartFab = document.getElementById('floatingCartFab');
     const floatingWhatsappBtn = document.getElementById('floatingWhatsappBtn');
+    const totalCartItems = Object.values(state.cart || {}).reduce((a, b) => a + b, 0);
 
     if (topBar) topBar.style.display = isStorefront ? '' : 'none';
     if (appHeader) appHeader.style.display = isStorefront ? '' : 'none';
-    if (floatingCartFab) floatingCartFab.style.display = isStorefront ? '' : 'none';
+    if (floatingCartFab) floatingCartFab.style.display = (isStorefront && totalCartItems > 0) ? 'flex' : 'none';
     if (floatingWhatsappBtn) floatingWhatsappBtn.style.display = isStorefront ? '' : 'none';
 
     if (isAdmin) {
@@ -1423,6 +1424,9 @@ function renderCart() {
     if (itemsCountBadge) itemsCountBadge.textContent = `${totalItems} ${totalItems === 1 ? 'Producto' : 'Productos'}`;
 
     if (cartIds.length === 0) {
+        const floatingCartFab = document.getElementById('floatingCartFab');
+        if (floatingCartFab) floatingCartFab.style.display = 'none';
+
         cartList.innerHTML = `
             <div class="cart-empty-state">
                 <div class="empty-icon-animated">🛒</div>
@@ -1514,6 +1518,7 @@ function updateFreeShippingProgress(subtotal) {
 }
 
 function updateCartTotals(subtotal) {
+    const totalItems = Object.values(state.cart || {}).reduce((a, b) => a + b, 0);
     const isFree = subtotal >= 30000;
     const rawFee = state.storeConfig.deliveryFee || 3000;
     const fee = (state.storeConfig.fulfillmentType === 'DELIVERY' && !isFree) ? rawFee : 0;
@@ -1524,10 +1529,31 @@ function updateCartTotals(subtotal) {
     const feeSummary = document.getElementById('cartDeliveryFeeSummary');
     const grandTotal = document.getElementById('cartTotal');
     const fabTotal = document.getElementById('fabCartTotal');
+    const fabCartTitle = document.getElementById('fabCartTitle');
+    const fabCartFeeNote = document.getElementById('fabCartFeeNote');
+    const floatingCartFab = document.getElementById('floatingCartFab');
 
     if (subStep1) subStep1.textContent = `$ ${subtotal.toLocaleString('es-CO')}`;
     if (subStep3) subStep3.textContent = `$ ${subtotal.toLocaleString('es-CO')}`;
     if (fabTotal) fabTotal.textContent = `$ ${total.toLocaleString('es-CO')}`;
+    
+    if (fabCartTitle) {
+        fabCartTitle.textContent = `Ver Carrito (${totalItems} ${totalItems === 1 ? 'ítem' : 'ítems'})`;
+    }
+
+    if (fabCartFeeNote) {
+        if (state.storeConfig.fulfillmentType === 'PICKUP') {
+            fabCartFeeNote.innerHTML = '🛵 Recogida en local • <strong>Sin costo</strong>';
+        } else if (isFree) {
+            fabCartFeeNote.innerHTML = '🛵 <strong>¡Domicilio GRATIS incluido!</strong>';
+        } else {
+            fabCartFeeNote.innerHTML = `🛵 Domicilio: <strong>$ ${fee.toLocaleString('es-CO')}</strong> incluido`;
+        }
+    }
+
+    if (floatingCartFab) {
+        floatingCartFab.style.display = (totalItems > 0 && state.currentView === 'storefront') ? 'flex' : 'none';
+    }
     
     if (feeSummary) {
         if (state.storeConfig.fulfillmentType === 'PICKUP') {
@@ -3055,16 +3081,20 @@ async function deleteOrder(orderId) {
 }
 
 async function saveStoreConfig() {
-    state.storeConfig.storeName = document.getElementById('cfgStoreName').value;
-    state.storeConfig.whatsappPhone = document.getElementById('cfgWhatsappPhone').value;
-    state.storeConfig.deliveryFee = parseFloat(document.getElementById('cfgDeliveryFee').value);
-    state.storeConfig.minimumOrder = parseFloat(document.getElementById('cfgMinOrder').value);
-    state.storeConfig.address = document.getElementById('cfgAddress').value;
+    state.storeConfig.storeName = 'MERKOSTORE';
+    const waInput = document.getElementById('cfgWhatsappPhone');
+    if (waInput) state.storeConfig.whatsappPhone = waInput.value;
+    const feeInput = document.getElementById('cfgDeliveryFee');
+    if (feeInput) state.storeConfig.deliveryFee = parseFloat(feeInput.value);
+    const minInput = document.getElementById('cfgMinOrder');
+    if (minInput) state.storeConfig.minimumOrder = parseFloat(minInput.value);
+    const addrInput = document.getElementById('cfgAddress');
+    if (addrInput) state.storeConfig.address = addrInput.value;
 
     try {
         await API.put('/api/v1/admin/store-config', {
             storeId: 'default-store',
-            storeName: state.storeConfig.storeName,
+            storeName: 'MERKOSTORE',
             whatsappPhone: state.storeConfig.whatsappPhone,
             deliveryFee: state.storeConfig.deliveryFee,
             minimumOrder: state.storeConfig.minimumOrder,
@@ -3085,8 +3115,9 @@ function openStoreWhatsApp() {
 }
 
 function syncStoreConfigUI() {
+    state.storeConfig.storeName = 'MERKOSTORE';
     const storeNameEl = document.getElementById('navStoreName');
-    if (storeNameEl) storeNameEl.textContent = state.storeConfig.storeName;
+    if (storeNameEl) storeNameEl.textContent = 'MERKOSTORE';
 
     const topBarPhoneEl = document.getElementById('topBarPhone');
     if (topBarPhoneEl) topBarPhoneEl.textContent = `📲 WhatsApp Tienda: ${state.storeConfig.whatsappPhone}`;
@@ -3146,7 +3177,7 @@ async function loadPublicBackendData() {
         const cfgRes = await API.get('/api/v1/admin/store-config').catch(() => null);
         if (cfgRes && cfgRes.data) {
             state.storeConfig = {
-                storeName: cfgRes.data.storeName || 'Don Pedro - Tienda de Barrio',
+                storeName: 'MERKOSTORE',
                 whatsappPhone: cfgRes.data.whatsappPhone || '573001234567',
                 address: cfgRes.data.address || 'Calle 45 # 23 - 10 Barrio El Prado',
                 fulfillmentType: 'DELIVERY',
@@ -3390,7 +3421,7 @@ async function sendUserChatMessage() {
             conversationId: chatState.conversationId,
             storeId: 'default-store',
             storeConfig: {
-                storeName: state.storeConfig?.storeName || 'Don Pedro - Tienda de Barrio',
+                storeName: 'MERKOSTORE',
                 whatsappPhone: state.storeConfig?.whatsappPhone || '573001234567',
                 address: state.storeConfig?.address || 'Calle 45 # 23 - 10 Barrio El Prado',
                 deliveryFee: state.storeConfig?.deliveryFee || 3000,
@@ -3571,7 +3602,7 @@ function clearChatHistory() {
     const body = document.getElementById('chatbotMessagesBody');
     if (!body) return;
     chatState.conversationId = null;
-    const store = state.storeConfig || { storeName: 'Don Pedro - Tienda de Barrio' };
+    const store = state.storeConfig || { storeName: 'MERKOSTORE' };
     body.innerHTML = `
         <div class="chat-message bot-message">
             <div class="chat-bubble">
@@ -3644,7 +3675,7 @@ function getDynamicSuggestionsFromProducts() {
 function generateClientSideFallbackChat(query) {
     const q = query.toLowerCase();
     const products = (state.products || []).filter(p => p.isAvailable !== false);
-    const store = state.storeConfig || { storeName: 'Don Pedro - Tienda de Barrio', deliveryFee: 3000 };
+    const store = state.storeConfig || { storeName: 'MERKOSTORE', deliveryFee: 3000 };
 
     if (q.includes('domicilio') || q.includes('envio') || q.includes('envío') || q.includes('tiempo')) {
         return {

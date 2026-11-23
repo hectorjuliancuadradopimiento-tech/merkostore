@@ -854,7 +854,7 @@ body::before {
     transform: scale(0.92);
 }
 
-/* FLOATING STICKY CART FAB BUTTON */
+/* FLOATING STICKY CART FAB DOCK BAR (VISIBLE SOLO CUANDO HAY PRODUCTOS) */
 .floating-cart-fab {
     position: fixed;
     bottom: 28px;
@@ -862,18 +862,30 @@ body::before {
     background: linear-gradient(135deg, #FF8F00 0%, #FF6F00 50%, #E65100 100%);
     color: #ffffff;
     border: 2px solid #ffffff;
-    padding: 12px 22px;
+    padding: 10px 22px;
     border-radius: 999px;
     font-weight: 900;
     font-size: 0.95rem;
     cursor: pointer;
     box-shadow: 0 12px 35px rgba(255, 111, 0, 0.5);
     z-index: 999;
+    display: none; /* Se activa dinámicamente cuando totalItems > 0 */
+    align-items: center;
+    gap: 16px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: fabPulse 2.5s infinite alternate;
+}
+
+.fab-left-group {
     display: flex;
     align-items: center;
     gap: 12px;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    animation: fabPulse 2.5s infinite alternate;
+}
+
+.fab-right-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 /* FLOATING WHATSAPP BUTTON (MATCHING REFERENCE IMAGE 2 EXACTLY) */
@@ -953,17 +965,35 @@ body::before {
     display: flex;
     flex-direction: column;
     text-align: left;
+    line-height: 1.15;
 }
 
 .fab-title {
-    font-size: 0.8rem;
+    font-size: 0.88rem;
+    font-weight: 900;
+    color: #ffffff;
+    letter-spacing: -0.2px;
+}
+
+.fab-fee-note {
+    font-size: 0.72rem;
+    color: #fff3e0;
+    font-weight: 700;
     opacity: 0.95;
-    line-height: 1.1;
+    margin-top: 2px;
+    white-space: nowrap;
+}
+
+.fab-fee-note strong {
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
 .fab-total {
-    font-size: 1rem;
+    font-size: 1.05rem;
     font-weight: 900;
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
 }
 
 .fab-arrow {
@@ -4178,15 +4208,15 @@ body.admin-fullscreen-active #viewStorefront {
     .chatbot-widget-container {
         right: 10px;
         left: 10px;
-        bottom: 75px;
+        bottom: 80px;
         width: calc(100vw - 20px);
         height: 72vh;
     }
     .floating-chatbot-btn {
-        bottom: 78px;
+        bottom: 140px;
         right: 14px;
-        width: 50px;
-        height: 50px;
+        width: 48px;
+        height: 48px;
     }
 }
 
@@ -4243,14 +4273,31 @@ body.admin-fullscreen-active #viewStorefront {
         padding: 16px 12px !important;
     }
 
-    /* 3. HERO BANNER */
+    /* 3. HERO BANNER (RETAINS FULL DESKTOP ANIMATIONS & EFFECTS ON MOBILE) */
     .hero-attention-banner {
         padding: 22px 16px !important;
-        border-radius: 16px !important;
-        margin-bottom: 20px !important;
+        border-radius: 18px !important;
+        margin-bottom: 22px !important;
         flex-direction: column !important;
         text-align: center !important;
         gap: 16px !important;
+        position: relative !important;
+        overflow: hidden !important;
+        background: linear-gradient(135deg, #BF360C 0%, #E65100 30%, #FF6F00 65%, #FF8F00 100%) !important;
+        box-shadow: 0 12px 35px rgba(255, 111, 0, 0.4), 0 0 25px rgba(255, 143, 0, 0.25) !important;
+        border: 2.5px solid rgba(255, 255, 255, 0.95) !important;
+    }
+
+    .hero-attention-banner::after {
+        content: '' !important;
+        position: absolute !important;
+        top: -50% !important;
+        left: -50% !important;
+        width: 200% !important;
+        height: 200% !important;
+        background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 60%) !important;
+        pointer-events: none !important;
+        animation: rotateHeroShine 12s linear infinite !important;
     }
 
     .hero-content-left {
@@ -4258,24 +4305,29 @@ body.admin-fullscreen-active #viewStorefront {
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
+        position: relative !important;
+        z-index: 2 !important;
     }
 
     .hero-badge-flash {
         font-size: 0.72rem !important;
-        padding: 5px 12px !important;
+        padding: 5px 14px !important;
         margin-bottom: 10px !important;
+        animation: badgePulse 2s infinite ease-in-out !important;
     }
 
     .hero-main-title {
-        font-size: 1.42rem !important;
-        line-height: 1.22 !important;
+        font-size: 1.45rem !important;
+        line-height: 1.2 !important;
         margin-bottom: 8px !important;
+        letter-spacing: -0.3px !important;
     }
 
     .hero-sub-text {
         font-size: 0.88rem !important;
         margin-bottom: 16px !important;
         line-height: 1.4 !important;
+        opacity: 0.95 !important;
     }
 
     .hero-cta-btn {
@@ -4285,15 +4337,22 @@ body.admin-fullscreen-active #viewStorefront {
         justify-content: center !important;
         display: flex !important;
         align-items: center !important;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25) !important;
     }
 
     .hero-logo-emblem-wrap {
-        margin-top: 4px !important;
+        margin-top: 6px !important;
+        position: relative !important;
+        z-index: 2 !important;
+    }
+
+    .hero-logo-emblem-wrap .reflective-shimmer-sweep {
+        animation: reflectiveShimmerSweep 3s infinite cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
     .reflective-logo-wrap.size-lg {
-        width: 80px !important;
-        height: 80px !important;
+        width: 84px !important;
+        height: 84px !important;
     }
 
     /* 4. CATEGORY BADGES (HORIZONTAL SMOOTH CHIPS ON MOBILE) */
@@ -4619,6 +4678,61 @@ body.admin-fullscreen-active #viewStorefront {
     div[style*="grid-template-columns: 1fr 1fr"] {
         grid-template-columns: 1fr !important;
         gap: 12px !important;
+    }
+
+    /* 16. MOBILE FLOATING STICKY CART BAR (LONGER, CENTERED DOCK) */
+    .floating-cart-fab {
+        position: fixed !important;
+        bottom: 12px !important;
+        left: 12px !important;
+        right: 12px !important;
+        width: calc(100% - 24px) !important;
+        max-width: 480px !important;
+        margin: 0 auto !important;
+        padding: 12px 18px !important;
+        border-radius: 16px !important;
+        justify-content: space-between !important;
+        box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55), 0 0 25px rgba(255, 111, 0, 0.45) !important;
+        z-index: 1000 !important;
+        animation: fabPulse 2.5s infinite alternate !important;
+    }
+
+    .fab-left-group {
+        gap: 10px !important;
+    }
+
+    .fab-title {
+        font-size: 0.88rem !important;
+    }
+
+    .fab-fee-note {
+        font-size: 0.7rem !important;
+    }
+
+    .fab-total {
+        font-size: 1.05rem !important;
+    }
+
+    /* POSITION WHATSAPP & MERKOBOT ABOVE THE CART BAR TO PREVENT OVERLAPPING */
+    .floating-whatsapp-btn {
+        bottom: 80px !important;
+        right: 14px !important;
+        width: 52px !important;
+        height: 52px !important;
+        z-index: 998 !important;
+    }
+
+    .floating-chatbot-btn {
+        bottom: 140px !important;
+        right: 14px !important;
+        width: 48px !important;
+        height: 48px !important;
+        z-index: 998 !important;
+    }
+
+    /* PREVENT CONTENT AT BOTTOM FROM BEING COVERED BY CART BAR */
+    .main-wrapper {
+        padding-bottom: 96px !important;
     }
 }
 
