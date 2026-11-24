@@ -2009,14 +2009,6 @@ async function processWhatsAppCheckout() {
         showToast(`❌ Error al procesar el pedido: ${err.message}`, 'error', '❌');
     }
 }
-            loadPublicBackendData();
-        } else {
-            showToast(`❌ No se pudo registrar el pedido: ${response.message || 'Error en el servidor'}`, 'error', '❌');
-        }
-    } catch (err) {
-        showToast(`❌ Error al procesar el pedido: ${err.message}`, 'error', '❌');
-    }
-}
 
 // ==========================================================================
 // MERKO BRAND ADMIN DASHBOARD & PRODUCTO/MERCADO EDITOR ENGINE
