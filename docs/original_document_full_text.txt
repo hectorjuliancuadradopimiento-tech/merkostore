@@ -1,0 +1,775 @@
+=== PÁGINA 01 ===
+Merkostore: sistema web para la gestión de ventas, pedidos e inventario
+de una tienda de barrio
+Julián David Cuadrado Martínez, Cristian Andrés Barrios Gómez, Santiago Ar-
+güello
+Castro e Ian Pabuena Caro.
+Facultad de Ingeniería, Tecnología en Desarrollo de Software,
+Semestre I
+V
+Walter Alberto Aspriella Castellar, Estefanía Burgos Alarcón, María
+José Rodríguez Rodríguez, Fabio García Ramírez, Javier Mendoza Beltrán,
+Lucía
+Margarita Mestre Tapia y Xavier José del Río Acosta.
+Octubre 11 de 2026
+
+=== PÁGINA 02 ===
+Tabla de contenido
+Capítulo I
+3
+Capí-
+tulo I
+3
+1. Problema
+3
+1. Pro-
+blema
+3
+1.1 Descripción del problema
+3
+1.1 Descripción del pro-
+blema
+3
+1.2 Pregunta problema
+3
+1.2 Pregunta pro-
+blema
+3
+1.3 Árbol del problema
+4
+1.3 Árbol del pro-
+blema
+4
+2. Justificación
+5
+2. Justifi-
+cación
+5
+3. Objetivos
+6
+3. Obje-
+tivos
+6
+3.1 Objetivo general
+6
+3.1 Objetivo
+ge-
+neral
+6
+
+=== PÁGINA 03 ===
+3.2 Objetivos específicos
+6
+3.2 Objetivos especí-
+ficos
+6
+Capítulo II
+7
+Capí-
+tulo II
+7
+4. Estado del arte
+7
+4. Estado del
+arte
+7
+Capítulo III
+15
+Capí-
+tulo III
+15
+5. Meto
+dología de investigación
+15
+5. Metodología de investi-
+gación
+15
+Capítulo IV
+18
+Capí-
+tulo IV
+18
+6. Resultados
+de investigación
+18
+6. Resultados de investi-
+gación
+18
+6.1 Conclusiones
+18
+6.1 Conclu-
+siones
+18
+Referencias
+Bibliográficas
+9
+Referencias Bibliográficas
+
+=== PÁGINA 04 ===
+Capítulo I
+1. Problema
+1.1 Descripción del problema
+Las tiendas de barrio cumplen una función importante en el comercio cotidiano,
+pues ofrecen alimentos, bebidas, artículos
+de aseo y otros productos de consumo fre-
+cuente. Sin embargo, algunos pequeños comercios tienen dificultades para organizar el
+catálogo, mantener actualizadas las existencias, registrar los pedidos y consultar sus
+ventas. Cuando estos procesos se manejan de
+forma manual o mediante herramientas se-
+paradas, pueden presentarse errores en la disponibilidad de los productos, demoras al
+atender solicitudes y dificultades para conocer el comportamiento de las ventas.
+Merkostore surge como una solución tecnológica
+para una tienda de barrio que busca
+ofrecer sus productos por internet y facilitar las tareas del administrador. El sistema
+cuenta con una vista pública para que los clientes consulten el catálogo, seleccionen
+productos, gestionen su carrito y realicen ped
+idos, y un panel administrativo para ges-
+tionar productos, categorías, pedidos, usuarios y configuración de la tienda. La aplica-
+ción utiliza tecnologías web y una base de datos para centralizar la información y man-
+tener una relación más ordenada entre las v
+entas y el inventario.
+A pesar de contar con funcionalidades para administrar productos y pedidos, existe una
+oportunidad de fortalecer el apoyo a las decisiones del negocio mediante el análisis de
+las ventas, los niveles de existencias y la rentabilidad d
+e los productos. Por ello, Mer-
+kostore puede servir como base para incorporar herramientas de Investigación de Ope-
+
+=== PÁGINA 05 ===
+raciones que ayuden a recomendar cantidades de compra, identificar productos priorita-
+rios y optimizar el uso de los recursos, sin reemplazar la
+decisión final del administra-
+dor.
+
+=== PÁGINA 06 ===
+1.2 Pregunta problema
+¿Cómo puede Merkostore apoyar la gestión comercial de una tienda de barrio
+mediante una plataforma web que integre el catálogo de clientes, los pedidos y el con-
+trol administrativo del inventario, y q
+ue permita mejorar la toma de decisiones sobre el
+abastecimiento?
+1.3 Árbol del problema
+
+=== PÁGINA 07 ===
+
+
+=== PÁGINA 08 ===
+1.4 Justificación
+Este proyecto se justifica en la necesidad de facilitar la gestión de las tiendas de
+barrio, negocios que suelen manejar una gran variedad de
+productos y atender pedidos
+de clientes de manera continua. La falta de centralización de la información puede difi-
+cultar la consulta de existencias, el seguimiento de las ventas y la organización de los
+pedidos. Una plataforma web permite reunir estos pro
+cesos en un solo sistema y ofrecer
+al cliente una forma más cómoda de consultar los productos disponibles y solicitar sus
+compras.
+Merkostore integra una tienda pública y un panel de administración. En la vista
+del cliente se puede explorar el catálogo, bu
+scar productos, revisar descuentos, seleccio-
+nar cantidades, registrar información de entrega y escoger un método de pago disponi-
+ble. En la vista administrativa se pueden gestionar productos y categorías, consultar mé-
+tricas de ventas, actualizar estados de
+los pedidos, revisar pagos y configurar datos ge-
+nerales del negocio. Esta integración busca reducir tareas repetitivas, mejorar la organi-
+zación y facilitar el seguimiento de cada pedido.
+
+=== PÁGINA 09 ===
+El proyecto también puede aportar al crecimiento de pequeños co
+mercios al
+brindarles un canal digital de ventas y herramientas para organizar sus operaciones. A
+partir de los datos registrados por la plataforma, se podrán estudiar patrones de demanda
+y evaluar la incorporación de modelos de Investigación de Operacione
+s. Por ejemplo, un
+modelo de programación lineal podría recomendar cantidades de compra para maximi-
+zar la ganancia estimada bajo límites de dinero, disponibilidad y demanda; estas reco-
+mendaciones deberán calcularse con datos reales del negocio y validarse
+antes de apli-
+carse.
+1.5 Objetivos
+1.5.1 Objetivo general
+Desarrollar y documentar Merkostore, una plataforma web Full
+-
+Stack para una
+tienda de barrio que integre el catálogo de productos, el proceso de compra, la gestión
+de pedidos y la administración del
+inventario, con el propósito de mejorar la organiza-
+ción comercial y facilitar la toma de decisiones del negocio.
+1.5.2 Objetivos específicos
+Identificar las necesidades principales de los clientes y del administrador
+para definir las funcionalidades de la
+tienda pública y del panel de control.
+
+=== PÁGINA 10 ===
+Diseñar e integrar una arquitectura web con HTML, CSS y JavaScript en
+el frontend, Java 17 y Spring Boot 3 en el backend, y MongoDB para almacenar pro-
+ductos, categorías, usuarios, pedidos y configuraciones.
+Implement
+ar y verificar las funciones de consulta del catálogo, carrito de
+compras, creación y seguimiento de pedidos, gestión administrativa, control de existen-
+cias y seguridad de acceso.
+Analizar cómo los datos de ventas, precios, costos y existencias pueden
+util
+izarse como base para futuras herramientas de Investigación de Operaciones orienta-
+das a optimizar las compras y el inventario.
+Capítulo II
+2. Estado del arte
+El desarrollo de plataformas para pequeños comercios se relaciona con distintas
+áreas: sistemas
+de inventario, comercio electrónico, automatización de ventas, gestión
+de pedidos y apoyo a la toma de decisiones. Las investigaciones sobre control de exis-
+tencias destacan la importancia de disponer de registros actualizados y de establecer po-
+líticas de a
+bastecimiento. Por su parte, las soluciones de comercio electrónico permiten
+ampliar los canales de atención y organizar la información de las transacciones. Estos
+antecedentes ayudan a contextualizar el desarrollo de Merkostore y las oportunidades de
+anál
+isis que pueden construirse sobre sus datos.
+
+=== PÁGINA 11 ===
+2.1 Antecedentes internacionales
+Gianella Fernández Maldonado \(2017\, en su investigación sobre el control in-
+terno y la gestión de inventarios en micro y pequeñas empresas comerciales, estudió
+cómo los
+procedimientos de control influyen en la organización de las existencias. El
+trabajo resalta la importancia de supervisar los movimientos de inventario para dismi-
+nuir errores, pérdidas e ineficiencias. Este antecedente se relaciona con Merkostore por-
+que el
+registro de los productos y la actualización de las cantidades disponibles son ne-
+cesarios para atender los pedidos de los clientes de manera confiable.
+Apunte
+-
+García y Rodríguez
+-
+Piña \(2016\, en su estudio sobre el diseño y aplica-
+ción de un sistema de ges
+tión de inventarios en una empresa ecuatoriana, abordaron las
+dificultades administrativas asociadas con la falta de herramientas informatizadas. La
+solución desarrollada permitió mejorar el control de bienes y facilitar la toma de deci-
+siones. Su experienc
+ia sirve como referencia para organizar en Merkostore los datos de
+productos, categorías, existencias y pedidos dentro de una plataforma centralizada.
+Cepeda y Jiménez \(2016\ estudiaron un modelo de control óptimo para sistemas de pro-
+ducción e inventarios
+e incluyeron variables económicas relacionadas con la demanda,
+los precios y el deterioro. Este tipo de investigación muestra que el inventario no solo
+consiste en conocer cuántas unidades existen, sino también en tomar decisiones consi-
+
+=== PÁGINA 12 ===
+derando costos y co
+mportamiento de la demanda. En una futura ampliación de Mer-
+kostore, estos principios pueden orientar el análisis de cantidades de compra y la bús-
+queda de mejores resultados económicos.
+2.2 Antecedentes nacionales
+La Universidad Católica de Pereira \(2010\
+presentó una propuesta tecnológica
+para automatizar procesos de facturación en almacenes de cadena de Risaralda. El tra-
+bajo se enfocó en mejorar la agilidad y confiabilidad de las operaciones comerciales
+mediante herramientas informáticas. Aunque su conte
+xto es diferente, este antecedente
+muestra el valor de automatizar tareas que antes se realizaban manualmente y se rela-
+ciona con la creación y el seguimiento de pedidos en Merkostore.
+La automatización de los procesos comerciales puede ayudar a disminuir e
+rrores de re-
+gistro, organizar las transacciones y mejorar la experiencia de compra. En Merkostore,
+la creación de pedidos se conecta con el backend, donde se validan los productos y sus
+precios antes de registrar la orden. Así, la información importante pa
+ra el negocio se ad-
+ministra desde una fuente central y no depende únicamente de los datos enviados por el
+navegador del cliente.
+Osorio García \(2021\, en su trabajo sobre modelos para el control de inventarios
+en las pymes, revisó alternativas para
+mejorar los niveles de existencias y el servicio al
+cliente. Entre las estrategias analizadas se encuentran la clasificación ABC, los sistemas
+
+=== PÁGINA 13 ===
+de reposición y el inventario de seguridad. Estos enfoques pueden servir como referen-
+cia para una futura evolució
+n de Merkostore, por ejemplo, al clasificar productos según
+su importancia comercial o definir alertas de reabastecimiento a partir del comporta-
+miento de las ventas.
+Los estudios sobre gestión de inventarios en pequeñas y medianas empresas
+también señalan
+que el exceso de mercancía puede comprometer recursos económicos,
+mientras que los faltantes pueden ocasionar ventas perdidas e insatisfacción. Para una
+tienda de barrio, el reto consiste en encontrar un equilibrio entre disponibilidad y costo.
+Merkostore
+incorpora campos de existencias y umbrales de alerta de stock bajo, que
+pueden apoyar el control operativo y servir como insumo para modelos de optimización.
+2.3 Antecedentes regionales y/o locales
+Rada Restrepo, Blanco Arroyo y Muñoz Caraballo \(2017\ p
+resentaron una pro-
+puesta para el diseño de un sistema de control de inventarios para un almacén de Carta-
+gena. Su trabajo aplicó herramientas de revisión y clasificación de productos con el pro-
+pósito de organizar las existencias. Este antecedente es pertine
+nte para Merkostore por
+su contexto regional y porque resalta la utilidad de definir procedimientos claros para
+supervisar mercancías y detectar productos que requieren mayor atención.
+
+=== PÁGINA 14 ===
+La clasificación de productos y el seguimiento sistemático de las entra
+das y salidas per-
+miten priorizar los artículos de mayor movimiento. En Merkostore, las ventas y los pe-
+didos registrados pueden analizarse para conocer cuáles productos tienen mayor de-
+manda, siempre que se cuente con un periodo de información suficiente. En
+una fase
+posterior, este análisis podría combinarse con técnicas de Investigación de Operaciones
+para orientar las decisiones de reposición.
+Julca Díaz y Rojas Zárate \(2015\ desarrollaron un sistema informático web para
+la gestión de ventas de una
+boutique. El trabajo muestra cómo una aplicación web puede
+integrar el canal de ventas con la gestión de información comercial. Aunque el negocio
+estudiado no es una tienda de barrio, su enfoque es cercano a Merkostore, que también
+utiliza una interfaz web
+para que los clientes consulten productos y realicen pedidos,
+mientras el administrador controla las operaciones.
+En el contexto de Cartagena y de otras ciudades colombianas, los pequeños ne-
+gocios enfrentan el reto de competir y atender clientes que espe
+ran información clara
+sobre productos, precios y disponibilidad. Una plataforma de comercio electrónico
+puede facilitar el acceso al catálogo y mejorar la organización de pedidos, pero debe
+acompañarse de registros consistentes y mecanismos de seguridad. M
+erkostore busca
+responder a estas necesidades mediante la separación entre la vista pública y las funcio-
+nes administrativas.
+
+=== PÁGINA 15 ===
+Los antecedentes revisados evidencian que la gestión digital de inventarios y
+ventas puede mejorar la organización operativa y res
+paldar decisiones comerciales. Para
+Merkostore, estos aportes se reflejan en la centralización del catálogo, el control de pe-
+didos y la administración de existencias. Además, los modelos de inventario y progra-
+mación matemática ofrecen una línea de trabajo
+para convertir los datos almacenados en
+recomendaciones de abastecimiento y rentabilidad.
+2.4 Marco teórico
+2.4.1 Java y Spring Boot
+Java es un lenguaje de programación utilizado para desarrollar aplicaciones.
+Spring Boot facilita la construcción de
+aplicaciones backend y servicios web, al propor-
+cionar una estructura para configurar componentes y separar responsabilidades. Mer-
+kostore utiliza Java 17 y Spring Boot 3 para procesar solicitudes, aplicar reglas del ne-
+gocio y comunicar el frontend con la ba
+se de datos.
+2.4.2 Inventario
+El inventario representa las existencias de productos disponibles para la venta y
+su control permite comparar las cantidades registradas con los movimientos reales del
+negocio. Una administración adecuada ayuda a detectar falt
+antes, prevenir acumulacio-
+nes innecesarias y planificar reposiciones. En Merkostore, el stock disponible y los um-
+brales de alerta forman parte de la gestión administrativa de los productos.
+2.4.3 Comercio electrónico y pedidos
+
+=== PÁGINA 16 ===
+El comercio electrónico
+permite que los clientes consulten productos y realicen
+solicitudes de compra a través de medios digitales. En Merkostore, el catálogo público,
+el carrito y el formulario de pedido conforman el flujo de compra. El sistema registra
+datos de entrega, notas d
+el cliente y el método de pago seleccionado, y permite al admi-
+nistrador dar seguimiento al estado de la orden.
+2.5 Marco contextual
+Merkostore es un proyecto de tienda de barrio digital diseñado para facilitar la
+venta al detal de productos de consumo
+frecuente y combos de mercado. La plataforma
+cuenta con una vista pública responsiva para explorar categorías, buscar productos, con-
+sultar descuentos y generar pedidos. También dispone de un panel administrativo desde
+el cual se gestionan productos, catego
+rías, existencias, pedidos, pagos, usuarios admi-
+nistradores y parámetros generales del negocio. El backend está desarrollado con Java
+17 y Spring Boot 3, mientras que MongoDB almacena la información de la aplicación.
+La propuesta busca organizar la operaci
+ón comercial y dejar una base de datos útil para
+análisis posteriores de ventas e inventario.
+2.6 Marco legal
+La Ley 1581 de 2012 establece disposiciones para la protección de datos perso-
+nales en Colombia. Es pertinente para Merkostore porque la platafor
+ma puede manejar
+nombres, teléfonos, direcciones de entrega e información relacionada con pedidos. Por
+
+=== PÁGINA 17 ===
+ello, el acceso a estos datos debe limitarse a las funciones necesarias, y su tratamiento
+debe realizarse con responsabilidad y medidas de seguridad apro
+piadas.
+La Ley 1480 de 2011, Estatuto del Consumidor, contempla derechos y deberes relacio-
+nados con la información ofrecida a los consumidores y las relaciones de consumo. Para
+una plataforma de comercio electrónico es importante mostrar de manera clara lo
+s pro-
+ductos, precios, descuentos y condiciones de entrega, así como facilitar información
+comprensible sobre el pedido. La aplicación debe revisarse para que sus prácticas co-
+merciales y la información presentada sean coherentes con la normativa aplicable.
+La Constitución Política de Colombia, en su artículo 333, reconoce la libertad de
+la actividad económica y la iniciativa privada dentro de los límites del bien común. Este
+principio contextualiza el uso de herramientas tecnológicas para fortalecer la acti
+vidad
+de los pequeños comercios, mejorar sus procesos y facilitar el acceso de los clientes a
+sus productos.
+Además de las normas legales, el sistema debe aplicar buenas prácticas de seguridad.
+Merkostore utiliza Spring Security para restringir las funcion
+es administrativas a usua-
+rios autorizados, tokens JWT para gestionar la autenticación y BCrypt para proteger las
+contraseñas almacenadas. Estas medidas técnicas apoyan la protección de las cuentas y
+de las operaciones administrativas, aunque no sustituyen
+una revisión integral de seguri-
+dad y cumplimiento legal.
+
+=== PÁGINA 18 ===
+Capítulo III
+3. Metodología
+3.1 Tipo de investigación
+Paradigma: El proyecto se aborda desde un paradigma aplicado y orien-
+tado a la solución de un problema práctico. Se utiliza información
+estructurada del
+sistema
+productos, existencias, pedidos y ventas
+para describir la operación
+comercial y verificar el comportamiento de las funcionalidades desarrolladas. La
+plataforma tecnológica es el medio para centralizar los datos y apoyar la evalu
+a-
+ción del proceso.
+Enfoque de la investigación:
+Cuantitativo: Se pueden analizar variables numéricas como unidades dispo-
+nibles, cantidades solicitadas, precios, descuentos, valores de los pedidos y número
+de órdenes. Estas variables permiten revisar el
+comportamiento de la operación y,
+si se dispone de datos suficientes, evaluar indicadores de ventas e inventario. Las
+cifras deben obtenerse de los registros reales del sistema y no asumirse sin medi-
+ción.
+
+=== PÁGINA 19 ===
+Modalidad:
+La investigación es descriptiva y apli
+cada, porque caracteriza las funciones y ne-
+cesidades de una tienda de barrio y desarrolla una solución tecnológica para atenderlas.
+También contempla pruebas funcionales del sistema. Como línea de mejora, se propone
+evaluar modelos de Investigación de Oper
+aciones con datos reales, sin afirmar que la
+optimización matemática ya se encuentre implementada en la versión actual.
+3.2 Diseño metodológico
+Objetivo específico
+Actividades
+Resultados esperados
+Diseñar la arquitectura de
+la plataforma.
+Revisar el
+flujo de compra, el catá-
+logo público y las tareas del admi-
+nistrador; organizar los requisitos
+funcionales.
+Listado de requisitos y funcionali-
+dades de cliente y administrador.
+Definir la estructura frontend
+-
+ba-
+ckend, los controladores, servi-
+cios,
+repositorios, modelos y cone-
+xión con MongoDB.
+Arquitectura organizada y respon-
+sabilidades definidas.
+Integrar controles de segu-
+ridad e inventario.
+Desarrollar la búsqueda de pro-
+ductos, carrito, registro de pedi-
+dos, gestión de productos y cate-
+gorías, y
+control de estados.
+Flujos principales disponibles en la
+aplicación.
+Configurar autenticación y roles;
+validar precios y stock; probar la
+creación, cancelación y actualiza-
+ción de pedidos.
+Operaciones con validaciones y
+control de acceso.
+
+=== PÁGINA 20 ===
+Ejecutar
+pruebas funcionales de
+catálogo, compra, pedidos y admi-
+nistración; registrar errores y co-
+rregirlos.
+Base conceptual para un futuro
+modelo de Investigación de Ope-
+raciones.
+Evidencias de pruebas y lista de
+ajustes realizados.
+3.3 Técnicas
+de recolección de información
+3.3.1 Técnicas para la recolección de información
+Revisión de los requisitos y funcionalidades del proyecto.
+Observación y pruebas del flujo de compra y de las funciones administrativas.
+3.3.2 Instrumentos para la recolección
+de la información
+Se revisaron las funciones definidas para la tienda pública y el panel administra-
+tivo, considerando la exploración del catálogo, el carrito, la creación de pedidos, el se-
+guimiento de estados y la gestión de productos. Esta revisión permi
+te organizar los re-
+quisitos funcionales y relacionarlos con las necesidades de clientes y administradores.
+Las pruebas del sistema deben registrar el comportamiento de las operaciones
+principales, como la validación de productos y precios, la actualización
+de existencias,
+la creación de pedidos y la recuperación del stock cuando se cancela una orden. Tam-
+bién pueden recopilarse datos de ventas y existencias para evaluar, en una fase poste-
+rior, posibles recomendaciones de abastecimiento.
+3.4 Población y muest
+ra
+
+=== PÁGINA 21 ===
+La población de interés está compuesta por los procesos de venta, gestión de produc-
+tos, inventario y administración de pedidos de una tienda de barrio. Para evaluar el sis-
+tema se propone utilizar los casos de prueba correspondientes a las funciones imp
+lemen-
+tadas y, cuando se disponga de usuarios reales, recoger observaciones de clientes y admi-
+nistradores. No se presentan porcentajes de encuestas ni resultados de campo que no ha-
+yan sido medidos.
+3.5 Cronograma
+El cronograma organiza las actividades
+para analizar, documentar, implementar y ve-
+rificar Merkostore. Las fechas y duraciones de la tabla deben ajustarse al calendario real
+de trabajo del equipo.
+Fase
+Actividad
+Duración
+Fecha de inicio
+Fecha de cie-
+rre
+1. Análisis y pla-
+neación
+Definición del pro-
+blema, objetivos, re-
+quisitos y funcionali-
+dades principales.
+2 semanas
+Por definir
+Por definir
+2. Desarrollo e
+integración
+Construcción del
+frontend, backend,
+persistencia Mon-
+goDB y funciones de
+cliente y administra-
+dor.
+Según
+planifi-
+cación del
+equipo
+Por definir
+Por definir
+3. Pruebas y do-
+cumentación
+Validación de los flu-
+jos de compra, ges-
+tión de pedidos, se-
+guridad y consisten-
+cia de inventario.
+Por definir
+Por definir
+Por definir
+
+=== PÁGINA 22 ===
+Capítulo IV
+4. Resultados
+La
+revisión funcional de Merkostore permite identificar una solución organizada
+en dos áreas principales: la tienda pública para los clientes y el panel de administración
+para el dueño del negocio. La tienda pública ofrece consulta de categorías y productos,
+búsqueda, descuentos, carrito de compras, captura de datos de entrega y selección de
+método de pago. El panel administrativo permite gestionar productos y categorías, revi-
+sar indicadores de ventas, consultar pedidos, cambiar sus estados y administrar parám
+e-
+tros generales de la tienda.
+En la lógica del backend se incluyen mecanismos para proteger la consistencia
+de los pedidos y las existencias. La creación de pedidos valida los precios desde el ser-
+vidor y descuenta stock mediante una operación atómica que c
+omprueba que haya uni-
+dades suficientes. Si el proceso falla, se contempla la reversión de las cantidades des-
+contadas; cuando un pedido se cancela, el inventario asociado se restablece. También se
+usa una clave de idempotencia para reducir el riesgo de regi
+strar pedidos duplicados por
+reintentos.
+Para el primer objetivo:
+
+=== PÁGINA 23 ===
+La definición de las funciones permitió distinguir las necesidades de los clientes,
+que requieren consultar productos y realizar pedidos, de las del administrador, que nece-
+sita mantener el c
+atálogo, controlar existencias y gestionar las órdenes. Esta separación
+orientó la organización de la interfaz y de los servicios del backend.
+Para el segundo objetivo:
+Se definió una arquitectura Full
+-
+Stack con HTML5, CSS3 y JavaScript en el
+frontend, Jav
+a 17 y Spring Boot 3 en el backend, y MongoDB para la persistencia. La
+aplicación separa controladores, servicios, repositorios, modelos y configuración de se-
+guridad, lo que facilita organizar la lógica del negocio y mantener las responsabilidades
+del sist
+ema.
+Para el tercer objetivo:
+La solución contempla funciones para crear y actualizar productos, gestionar ca-
+tegorías, registrar pedidos, actualizar estados de las órdenes y controlar el inventario.
+Las reglas del servidor validan precios y disponibilidad
+, y los mecanismos de seguridad
+restringen las funciones administrativas a usuarios autorizados. La verificación final
+debe apoyarse en pruebas repetibles de cada flujo y documentar los resultados obteni-
+dos.
+Para el cuarto objetivo:
+Los datos de productos,
+costos, precios, existencias y pedidos pueden servir
+como punto de partida para aplicar Investigación de Operaciones. Una posible amplia-
+
+=== PÁGINA 24 ===
+ción consiste en formular un modelo de programación lineal entera que recomiende can-
+tidades de compra para maximizar la
+ganancia estimada, sujeto al dinero disponible, la
+demanda prevista y la capacidad de almacenamiento. Esta recomendación es una línea
+de trabajo propuesta y debe validarse con información real antes de incorporarse como
+función operativa.
+4.1 Conclusion
+es
+Merkostore reúne en una plataforma web las funciones principales de una tienda
+de barrio digital: catálogo público, carrito de compras, registro de pedidos y panel admi-
+nistrativo. La integración permite organizar la información comercial y ofrece un
+canal
+adicional para que los clientes consulten productos y realicen solicitudes de compra.
+El uso de Java 17, Spring Boot 3, MongoDB y tecnologías web permite separar
+la interfaz de usuario de las reglas de negocio y de la persistencia de datos. La autent
+ica-
+ción con JWT, el control de acceso administrativo y las validaciones de pedidos contri-
+buyen a proteger las operaciones y a mantener la consistencia de las existencias. La cali-
+dad final debe confirmarse mediante pruebas funcionales y revisión de segurida
+d.
+Como oportunidad de mejora, Merkostore puede incorporar un módulo de Inves-
+tigación de Operaciones que analice las ventas, los costos, los precios y las existencias
+para recomendar cantidades de compra o priorizar productos. De esta forma, el proyecto
+po
+dría evolucionar de una herramienta de administración comercial a un sistema que
+también apoye decisiones basadas en datos, sin presentar como implementadas funcio-
+nes que todavía se encuentren en etapa de propuesta.
+
+=== PÁGINA 25 ===
+Referencias bibliográficas
+Apunte
+-
+Garcí
+a, R. M., & Rodríguez
+-
+Piña, R. A. \(2016\. Diseño y aplicación de sistema
+de gestión en inventarios en empresa ecuatoriana
+.
+https://www.redalyc.org/pdf/1815/181546432006.pdf
+Castañeda
+Cartagena, M. M., & Pescador Aguirre, L. J. \(2019\. Desarrollo de un sistema
+de inventarios para el control de equipos y herramientas en la empresa metalmecánica
+Servitécnica Industrial S.A.S., en La Virginia, Risaralda.
+https://repository.unilibre.edu.co/handle/10901/20128
+Cepeda Valero, Ó. M., & Jiménez Sánchez, L. F. \(2016\. Modelo de control óptimo para
+el sistema Producción
+-
+Inventarios. Ingeniería Industrial. Actualidad y Nuevas Ten
+den-
+cias, 5\(16\, 35
+-
+44. Universidad de Carabobo.
+http://www.redalyc.org/articulo.oa?id=215048805004
+Fernández, O. B. \(2005\. Introducción al lenguaje de programación
+Java
+.
+Una guía bá-
+sica
+,
+9
+.
+Introduccion_a_Java20190420
+-
+21890
+-
+16e1jjg
+-
+libre.pdf
+Gianella Fernández Maldonado, A. \(2017\. El control interno y su influencia en la
+gestión
+de inventarios de las micro y pequeñas empresas del sector comercio.
+https://repositorio.uladech.edu.pe/handle/20.500.13032/8753
+Hernández Sampieri, R., Fernández Collado,
+C., & Baptista Lucio, P. \(2014\.
+Metodolo-
+gía de la investigación
+\(6ª ed.\. McGraw
+-
+Hill.
+
+=== PÁGINA 26 ===
+https://www.esup.edu.pe/wp
+-
+content/uploads/2020/12/2.%20Hernandez,%20Fernan-
+dez%20y%20Ba
+ptista
+-
+Metodolog%C3%ADa%20Investigacion%20Cienti-
+fica%206ta%20ed.pdf
+Julca Díaz, L. P., & Rojas Zárate, A. F. \(2015\.
+Sistema informático web para la gestión
+de ventas de la Boutique Detallitos E.I.R.L. utilizando la metodología AUP y Frame-
+work QCODO de PH
+P
+https://repositorio.upao.edu.pe/handle/20.500.12759/1222
+MEANA COALLA, P. P. \(2017\
+Gestión de inventarios
+. Ediciones Paraninfo, SA.
+Gestión de inventarios
+-
+MEANA COALLA, PEDRO PABLO
+-
+Google
+Libros
+Mejía Aguas, A y Roncallo Petro, M.  \(2009\.  Inventario de trabajos de grado de pregrado
+de las Universidades de Cartagena relacionados con la industria manufacturera de la ciu-
+dad.
+https://repositorio.unicartagena.edu.co/entities/publication/93ce
+5084
+-
+321e
+-
+48dd
+-
+82f6
+-
+347b6ca4c628
+Osorio García, C. \(2021\. Modelos para el control de inventarios en las pymes.
+https://revistas.poligran.edu.co/index.php/panorama/article/view/241
+Quizhpe, C. \(2018\. Diseño de un sistema de control de inventario y organización de las
+bodegas de producto terminado de la empresa Ecuaespumas Lamitex S.A.
+https://repository.ucc.edu.co
+/server/api/core/bitstreams/13214182
+-
+695d
+-
+4a73
+-
+9b06
+-
+252c768b38cf/content
+Rada Restrepo, D. P., Blanco Arroyo, J. L., & Muñoz Caraballo, L. P. \(2017\. Propuesta
+para el diseño del sistema de control de inventarios para el almacén AutoFrenos Carta-
+gena.
+http://repositorio.unisinucartagena.edu.co:8080/xmlui/handle/123456789/172
+
+=== PÁGINA 27 ===
+Thompson, I. \(2009\. Definición de producto.
+DEFINICIÓN DE PRODUCTO
+-
+Promonegocios.net
+Universidad Católica de Pereira. \(2010\. Propuesta de solución tecnológica para la auto-
+matización de procesos de factura
+ción en almacenes de cadena Risaraldeneses.
+https://repositorio.ucp.edu.co/entities/publication/fddb0b3d
+-
+6072
+-
+41d3
+-
+98e4
+-
+cd0c54748f4c

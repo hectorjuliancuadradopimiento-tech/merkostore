@@ -33,3 +33,6 @@ Desktop.ini
 .DS_Store
 *.log
 test*.pdf
+scratch/
+__pycache__/
+

@@ -26,9 +26,11 @@ public class FinancialTransaction {
     private String storeId;
 
     private TransactionType type; // INCOME, EXPENSE
-    private String category; // VENTA_PEDIDO, PROVEEDOR, SERVICIOS, NOMINA, OTRO
+    private String category; // INITIAL_BUDGET, MANUAL_ADD, SUPPLIER_PURCHASE, SALES_COST_RECOVERY, REFUND_REVERSAL, PROFIT_TRANSFER, VENTA_PEDIDO, PROVEEDOR, OTRO
     private String orderId;
+    private String referenceId;
     private BigDecimal amount;
+    private BigDecimal balanceAfter;
     private String description;
     private String paymentMethod;
     private String createdBy;

@@ -97,14 +97,44 @@ public class AdminDashboardController {
 
         Aggregation salesAggregation = Aggregation.newAggregation(
                 Aggregation.match(Criteria.where("storeId").is(storeId).and("orderStatus").ne(Order.OrderStatus.CANCELLED)),
-                Aggregation.group().sum("total").as("totalSales")
+                Aggregation.group()
+                        .sum("total").as("totalSales")
+                        .sum("grossProfit").as("totalGrossProfit")
         );
         AggregationResults<Map> salesResult = mongoTemplate.aggregate(salesAggregation, "orders", Map.class);
         BigDecimal totalSales = BigDecimal.ZERO;
+        BigDecimal totalGrossProfit = BigDecimal.ZERO;
         if (!salesResult.getMappedResults().isEmpty() && salesResult.getMappedResults().get(0).get("totalSales") != null) {
             Object rawTotal = salesResult.getMappedResults().get(0).get("totalSales");
             if (rawTotal instanceof Number) {
                 totalSales = BigDecimal.valueOf(((Number) rawTotal).doubleValue());
+            }
+            Object rawProfit = salesResult.getMappedResults().get(0).get("totalGrossProfit");
+            if (rawProfit instanceof Number) {
+                totalGrossProfit = BigDecimal.valueOf(((Number) rawProfit).doubleValue());
+            }
+        }
+
+        // Today sales & gross profit (Fase 7)
+        LocalDateTime startOfToday = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
+        Aggregation todayAggregation = Aggregation.newAggregation(
+                Aggregation.match(Criteria.where("storeId").is(storeId)
+                        .and("orderStatus").ne(Order.OrderStatus.CANCELLED)
+                        .and("createdAt").gte(startOfToday)),
+                Aggregation.group()
+                        .sum("total").as("todaySales")
+                        .sum("grossProfit").as("todayGrossProfit")
+        );
+        AggregationResults<Map> todayResult = mongoTemplate.aggregate(todayAggregation, "orders", Map.class);
+        BigDecimal todaySales = BigDecimal.ZERO;
+        BigDecimal todayGrossProfit = BigDecimal.ZERO;
+        if (!todayResult.getMappedResults().isEmpty()) {
+            Map todayMap = todayResult.getMappedResults().get(0);
+            if (todayMap.get("todaySales") instanceof Number) {
+                todaySales = BigDecimal.valueOf(((Number) todayMap.get("todaySales")).doubleValue());
+            }
+            if (todayMap.get("todayGrossProfit") instanceof Number) {
+                todayGrossProfit = BigDecimal.valueOf(((Number) todayMap.get("todayGrossProfit")).doubleValue());
             }
         }
 
@@ -120,6 +150,9 @@ public class AdminDashboardController {
 
         DashboardMetrics metrics = DashboardMetrics.builder()
                 .totalSales(totalSales)
+                .totalGrossProfit(totalGrossProfit)
+                .todaySales(todaySales)
+                .todayGrossProfit(todayGrossProfit)
                 .totalOrdersCount(totalOrdersCount)
                 .activeOrdersCount(activeOrdersCount)
                 .recentTransactions(recentTransactions)
@@ -324,13 +357,8 @@ public class AdminDashboardController {
             throw new IllegalArgumentException("El campo 'paymentStatus' es obligatorio");
         }
 
-        return orderRepository.findById(orderId)
-                .map(order -> {
-                    order.setPaymentStatus(Order.PaymentStatus.valueOf(newPaymentStatus.toUpperCase()));
-                    Order saved = orderRepository.save(order);
-                    return ResponseEntity.ok(ApiResponse.ok("Estado de pago actualizado a " + newPaymentStatus, saved));
-                })
-                .orElseThrow(() -> new ResourceNotFoundException("Pedido no encontrado con ID: " + orderId));
+        Order saved = orderService.updatePaymentStatus(orderId, newPaymentStatus);
+        return ResponseEntity.ok(ApiResponse.ok("Estado de pago actualizado a " + newPaymentStatus, saved));
     }
 
     @DeleteMapping("/orders/{orderId}")
@@ -409,6 +437,9 @@ public class AdminDashboardController {
     @Builder
     public static class DashboardMetrics {
         private BigDecimal totalSales;
+        private BigDecimal totalGrossProfit;
+        private BigDecimal todaySales;
+        private BigDecimal todayGrossProfit;
         private long totalOrdersCount;
         private long activeOrdersCount;
         private List<FinancialTransaction> recentTransactions;

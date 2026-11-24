@@ -20,7 +20,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 
 @Service
@@ -29,16 +28,19 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final StoreConfigRepository storeConfigRepository;
+    private final BudgetService budgetService;
     private final MongoTemplate mongoTemplate;
 
     public OrderService(
             OrderRepository orderRepository,
             ProductRepository productRepository,
             StoreConfigRepository storeConfigRepository,
+            BudgetService budgetService,
             MongoTemplate mongoTemplate) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.storeConfigRepository = storeConfigRepository;
+        this.budgetService = budgetService;
         this.mongoTemplate = mongoTemplate;
     }
 
@@ -47,17 +49,17 @@ public class OrderService {
     public Order createOrder(CreateOrderRequest request) {
         String storeId = request.getStoreId() != null ? request.getStoreId() : "default-store";
 
-        // 0. Idempotency Check: Prevent duplicate order processing for identical idempotency key
+        // 0. Idempotency Check
         if (request.getIdempotencyKey() != null && !request.getIdempotencyKey().trim().isEmpty()) {
             Query idempotencyQuery = Query.query(Criteria.where("storeId").is(storeId)
                     .and("idempotencyKey").is(request.getIdempotencyKey().trim()));
             Order existingOrder = mongoTemplate.findOne(idempotencyQuery, Order.class);
             if (existingOrder != null) {
-                return existingOrder; // Return previously created order without re-decrementing stock
+                return existingOrder;
             }
         }
 
-        // 1. Fetch Store Config to get official fees and thresholds
+        // 1. Fetch Store Config
         StoreConfig storeConfig = storeConfigRepository.findByStoreId(storeId)
                 .orElseGet(() -> StoreConfig.builder()
                         .storeId(storeId)
@@ -72,11 +74,14 @@ public class OrderService {
         }
 
         BigDecimal subtotal = BigDecimal.ZERO;
+        BigDecimal orderTotalCost = BigDecimal.ZERO;
+        BigDecimal orderGrossProfit = BigDecimal.ZERO;
+
         List<Order.OrderItem> orderItems = new ArrayList<>();
         List<DecrementedItem> decrementedItems = new ArrayList<>();
 
         try {
-            // 2. Process each item: validate server-side price and stock, and perform atomic decrement
+            // 2. Process each item: validate server-side price, stock, and calculate historical cost (Fase 9)
             for (CreateOrderRequest.OrderItemRequest itemReq : request.getItems()) {
                 Product product = productRepository.findById(itemReq.getProductId())
                         .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + itemReq.getProductId()));
@@ -101,6 +106,18 @@ public class OrderService {
                 BigDecimal itemSubtotal = effectivePrice.multiply(BigDecimal.valueOf(itemReq.getQuantity()));
                 subtotal = subtotal.add(itemSubtotal);
 
+                // Historical Cost & Gross Profit Tracking (Fases 7, 8, 9)
+                BigDecimal unitCost = product.getCostPrice();
+                BigDecimal itemTotalCost = null;
+                BigDecimal itemGrossProfit = null;
+
+                if (unitCost != null && unitCost.compareTo(BigDecimal.ZERO) >= 0) {
+                    itemTotalCost = unitCost.multiply(BigDecimal.valueOf(itemReq.getQuantity()));
+                    itemGrossProfit = itemSubtotal.subtract(itemTotalCost);
+                    orderTotalCost = orderTotalCost.add(itemTotalCost);
+                    orderGrossProfit = orderGrossProfit.add(itemGrossProfit);
+                }
+
                 // ATOMIC decrement in MongoDB
                 if (product.getStock() != null) {
                     Query query = Query.query(Criteria.where("_id").is(product.getId()).and("stock").gte(itemReq.getQuantity()));
@@ -119,6 +136,9 @@ public class OrderService {
                         .quantity(itemReq.getQuantity())
                         .unitPrice(effectivePrice)
                         .subtotal(itemSubtotal)
+                        .costPrice(unitCost)
+                        .totalCost(itemTotalCost)
+                        .grossProfit(itemGrossProfit)
                         .build());
             }
 
@@ -134,7 +154,6 @@ public class OrderService {
                     : Order.FulfillmentType.DELIVERY;
 
             if (fulfillmentType == Order.FulfillmentType.DELIVERY) {
-                // Free delivery if subtotal >= 30,000 COP
                 if (subtotal.compareTo(new BigDecimal("30000")) < 0) {
                     deliveryFee = storeConfig.getDeliveryFee() != null ? storeConfig.getDeliveryFee() : new BigDecimal("3000");
                 }
@@ -162,13 +181,18 @@ public class OrderService {
                     .deliveryFee(deliveryFee)
                     .subtotal(subtotal)
                     .total(total)
+                    .totalCost(orderTotalCost)
+                    .grossProfit(orderGrossProfit)
+                    .costRecoveryRecorded(false)
                     .paymentMethod(request.getPaymentMethod() != null ? request.getPaymentMethod().toUpperCase() : "WHATSAPP")
                     .paymentStatus(Order.PaymentStatus.PENDING)
                     .orderStatus(Order.OrderStatus.RECEIVED)
                     .createdAt(LocalDateTime.now())
                     .build();
 
-            return orderRepository.save(order);
+            Order savedOrder = orderRepository.save(order);
+
+            return savedOrder;
 
         } catch (Exception ex) {
             // Rollback decremented stock if order creation fails after partial decrement
@@ -202,16 +226,36 @@ public class OrderService {
         Order.OrderStatus currentStatus = order.getOrderStatus();
         validateStatusTransition(currentStatus, newStatus);
 
-        // If order is cancelled, restore product stock
+        // If order is cancelled, restore product stock and revert financial cost recovery (Fase 9, 16)
         if (newStatus == Order.OrderStatus.CANCELLED && currentStatus != Order.OrderStatus.CANCELLED) {
             restoreStockForOrder(order);
+            budgetService.revertSalesCostRecovery(order);
         }
 
         order.setOrderStatus(newStatus);
         
-        // If order marked as DELIVERED, automatically set payment status to PAID if it was PENDING
-        if (newStatus == Order.OrderStatus.DELIVERED && order.getPaymentStatus() == Order.PaymentStatus.PENDING) {
-            order.setPaymentStatus(Order.PaymentStatus.PAID);
+        // If order marked as DELIVERED, automatically set payment status to PAID and record sales cost recovery
+        if (newStatus == Order.OrderStatus.DELIVERED) {
+            if (order.getPaymentStatus() == Order.PaymentStatus.PENDING) {
+                order.setPaymentStatus(Order.PaymentStatus.PAID);
+            }
+            budgetService.recordSalesCostRecovery(order);
+        }
+
+        return orderRepository.save(order);
+    }
+
+    public Order updatePaymentStatus(String orderId, String newPaymentStatusStr) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido no encontrado con ID: " + orderId));
+
+        Order.PaymentStatus newPaymentStatus = Order.PaymentStatus.valueOf(newPaymentStatusStr.toUpperCase());
+        order.setPaymentStatus(newPaymentStatus);
+
+        if (newPaymentStatus == Order.PaymentStatus.PAID) {
+            budgetService.recordSalesCostRecovery(order);
+        } else if (newPaymentStatus == Order.PaymentStatus.REFUNDED) {
+            budgetService.revertSalesCostRecovery(order);
         }
 
         return orderRepository.save(order);

@@ -129,6 +129,29 @@ const state = {
         accountHolder: 'MERKOSTORE S.A.S',
         isStoreOpen: true
     },
+
+    // Business Budget & Inventory Replacement State
+    budget: {
+        initialBudget: 1000000,
+        currentBalance: 1000000,
+        totalPurchases: 0,
+        totalRecoveredCosts: 0,
+        totalManualInjections: 0,
+        isInitialized: false
+    },
+    budgetTransactions: [
+        {
+            id: 'tx-init-1',
+            type: 'INITIAL_BUDGET',
+            amount: 1000000,
+            description: 'Fondo inicial para reposición de mercancía',
+            referenceId: 'INIT-2026',
+            balanceAfter: 1000000,
+            registeredBy: 'Administrador (Propietario)',
+            createdAt: '2026-11-20 08:00'
+        }
+    ],
+    supplierPurchases: [],
     
     // Cart: { productId: quantity }
     cart: {},
@@ -856,6 +879,30 @@ function updateDashboardKPIs() {
     const displaySales = todaySalesSum > 0 ? todaySalesSum : totalSales;
     const displaySubtext = todaySalesSum > 0 ? `↑ ${todayCount} ventas registradas hoy` : `↑ ${validOrders.length} ventas sincronizadas Power BI ($ 1.06M)`;
 
+    // Cálculo dinámico de Ganancias de Hoy basado en costos de adquisición reales
+    let todayGrossProfitSum = 0;
+    todayOrders.forEach(o => {
+        (o.items || []).forEach(it => {
+            let cost = it.costPrice;
+            if (cost == null) {
+                const found = productsList.find(p => p.id === it.productId);
+                if (found && found.costPrice != null && found.costPrice > 0) {
+                    cost = found.costPrice;
+                }
+            }
+            if (cost != null && cost > 0) {
+                const unitPrice = it.unitPrice || 0;
+                const qty = it.qty || it.quantity || 1;
+                todayGrossProfitSum += (unitPrice - cost) * qty;
+            }
+        });
+    });
+
+    const kpiGrossProfit = document.getElementById('kpiGrossProfit');
+    const kpiGrossProfitSubtext = document.getElementById('kpiGrossProfitSubtext');
+    if (kpiGrossProfit) kpiGrossProfit.textContent = `$ ${Math.round(todayGrossProfitSum).toLocaleString('es-CO')}`;
+    if (kpiGrossProfitSubtext) kpiGrossProfitSubtext.textContent = todayOrders.length > 0 ? `Margen bruto acumulado hoy (Ventas - Costos)` : `Sin ventas registradas en el día de hoy`;
+
     if (kpiSales) kpiSales.textContent = `$ ${displaySales.toLocaleString('es-CO')}`;
     if (kpiSalesSubtext) kpiSalesSubtext.textContent = displaySubtext;
     if (kpiOrders) kpiOrders.textContent = activeOrders.length;
@@ -1064,6 +1111,14 @@ function quickEditStockFromDashboard(productId) {
 
 // INITIALIZATION
 document.addEventListener('DOMContentLoaded', () => {
+    // 0. Restore Store Budget & Transactions from Storage
+    const savedBudget = Storage.get('store_budget');
+    if (savedBudget) state.budget = savedBudget;
+    const savedTransactions = Storage.get('budget_transactions');
+    if (savedTransactions) state.budgetTransactions = savedTransactions;
+    const savedPurchases = Storage.get('supplier_purchases');
+    if (savedPurchases) state.supplierPurchases = savedPurchases;
+
     // 1. Enforce dataset synchronization with Power BI Star Schema
     const PBI_SYNC_VERSION = 'v3_powerbi_verified_sync';
     const currentVersion = Storage.get('pbi_sync_version');
@@ -2025,11 +2080,12 @@ function switchAdminSubTab(tab) {
     if (tab === 'productEditor') tab = 'products';
     state.currentAdminSubTab = tab;
 
-    ['dashboard', 'activeOrders', 'products', 'orders', 'categories', 'config', 'users', 'bi', 'io'].forEach(t => {
+    ['dashboard', 'activeOrders', 'products', 'orders', 'categories', 'config', 'users', 'bi', 'io', 'budget'].forEach(t => {
         let suffix = t.charAt(0).toUpperCase() + t.slice(1);
         if (t === 'bi') suffix = 'Bi';
         if (t === 'io') suffix = 'Io';
         if (t === 'activeOrders') suffix = 'ActiveOrders';
+        if (t === 'budget') suffix = 'Budget';
 
         const btnId = 'tabMerko' + suffix;
         const contentId = 'subtab' + suffix;
@@ -2053,6 +2109,7 @@ function switchAdminSubTab(tab) {
     if (tab === 'users') loadAdminUsersData();
     if (tab === 'bi') initPowerBiEmbed();
     if (tab === 'io') ejecutarOptimizacionLinealIO();
+    if (tab === 'budget') renderBudgetSubtab();
 }
 
 // ==========================================================================
@@ -2091,6 +2148,7 @@ function togglePowerBiFullscreen() {
 
 // ==========================================================================
 // INVESTIGACIÓN DE OPERACIONES - MOTOR DE OPTIMIZACIÓN LINEAL ENTERA (MILP)
+// INTEGRADO TOTALMENTE CON COSTOS DE ADQUISICIÓN REALES Y TIEMPO DINÁMICO DEL ADMINISTRADOR
 // ==========================================================================
 
 let ultimaSolucionIO = { x1: 5, x2: 3, y1: 27, y2: 9, y3: 34, y4: 9, y5: 23, z: 600520 };
@@ -2103,9 +2161,75 @@ function ejecutarOptimizacionLinealIO() {
     const bAzucar = parseInt(document.getElementById('ioStockAzucar')?.value) || 28;
     const bTiempo = parseInt(document.getElementById('ioTiempoArmado')?.value) || 480;
 
-    const cX1 = 13100, cX2 = 9300;
-    const cY1 = 9800, cY2 = 6990, cY3 = 1600, cY4 = 5990, cY5 = 3100;
+    // 1. Identificar productos requeridos en el catálogo
+    const prodHuevos = (state.products || []).find(p => (p.name || '').toLowerCase().includes('huevo') && p.type === 'DETAL');
+    const prodCafe = (state.products || []).find(p => ((p.name || '').toLowerCase().includes('cafe') || (p.name || '').toLowerCase().includes('café')) && p.type === 'DETAL');
+    const prodHarina = (state.products || []).find(p => (p.name || '').toLowerCase().includes('harina') && p.type === 'DETAL');
+    const prodAceite = (state.products || []).find(p => (p.name || '').toLowerCase().includes('aceite') && p.type === 'DETAL');
+    const prodAzucar = (state.products || []).find(p => ((p.name || '').toLowerCase().includes('azucar') || (p.name || '').toLowerCase().includes('azúcar')) && p.type === 'DETAL');
+    const comboFamiliar = (state.products || []).find(p => (p.name || '').toLowerCase().includes('familiar') && p.type === 'MERCADO');
+    const comboDesayuno = (state.products || []).find(p => (p.name || '').toLowerCase().includes('desayuno') && p.type === 'MERCADO');
 
+    // 2. REGLA ESTRICTA DE COSTOS: Verificar que ningún producto requerido carezca de costo registrado
+    const requiredProds = [
+        { key: 'Huevos AA (Y₁)', p: prodHuevos },
+        { key: 'Café Sello Rojo (Y₂)', p: prodCafe },
+        { key: 'Harina PAN (Y₃)', p: prodHarina },
+        { key: 'Aceite Premier (Y₄)', p: prodAceite },
+        { key: 'Azúcar Manuelita (Y₅)', p: prodAzucar }
+    ];
+
+    const missingCosts = requiredProds.filter(r => !r.p || r.p.costPrice == null || isNaN(r.p.costPrice) || r.p.costPrice <= 0);
+
+    const alertBox = document.getElementById('ioCostAlertBox');
+    const btnSync = document.getElementById('btnSyncIoCatalog');
+
+    if (missingCosts.length > 0) {
+        if (alertBox) {
+            alertBox.style.display = 'block';
+            alertBox.innerHTML = `⚠️ Los siguientes productos requeridos para el modelo de optimización no tienen costo de adquisición registrado en el catálogo: <strong>${missingCosts.map(m => m.key).join(', ')}</strong>. Un producto sin costo no puede participar en el modelo con costo cero. Por favor ingresa a "Productos & Kits" y completa el costo de adquisición.`;
+        }
+        if (btnSync) btnSync.disabled = true;
+        const lblZ = document.getElementById('ioValorZOptimo');
+        if (lblZ) lblZ.textContent = 'Requiere Registrar Costos';
+        showToast('⚠️ Completa los costos de adquisición en el inventario para ejecutar la optimización.', 'warning', '⚠️');
+        return;
+    }
+
+    if (alertBox) alertBox.style.display = 'none';
+    if (btnSync) btnSync.disabled = false;
+
+    // 3. Precios y costos reales del catálogo para cálculo dinámico de márgenes unitarios
+    const costHuevos = prodHuevos.costPrice;
+    const costCafe = prodCafe.costPrice;
+    const costHarina = prodHarina.costPrice;
+    const costAceite = prodAceite.costPrice;
+    const costAzucar = prodAzucar.costPrice;
+
+    const priceHuevos = prodHuevos.discountPrice || prodHuevos.price;
+    const priceCafe = prodCafe.discountPrice || prodCafe.price;
+    const priceHarina = prodHarina.discountPrice || prodHarina.price;
+    const priceAceite = prodAceite.discountPrice || prodAceite.price;
+    const priceAzucar = prodAzucar.discountPrice || prodAzucar.price;
+
+    const cY1 = priceHuevos - costHuevos;
+    const cY2 = priceCafe - costCafe;
+    const cY3 = priceHarina - costHarina;
+    const cY4 = priceAceite - costAceite;
+    const cY5 = priceAzucar - costAzucar;
+
+    // Costo y margen de Combos basados en la receta de sus componentes:
+    // X1 (Mercado Familiar): 1 Huevos + 1 Café + 2 Harina + 1 Aceite + 1 Azúcar
+    const costX1 = costHuevos + costCafe + (2 * costHarina) + costAceite + costAzucar;
+    const priceX1 = comboFamiliar ? (comboFamiliar.discountPrice || comboFamiliar.price) : 65000;
+    const cX1 = priceX1 - costX1;
+
+    // X2 (Mercado Desayuno): 1 Huevos + 2 Café + 2 Harina
+    const costX2 = costHuevos + (2 * costCafe) + (2 * costHarina);
+    const priceX2 = comboDesayuno ? (comboDesayuno.discountPrice || comboDesayuno.price) : 48000;
+    const cX2 = priceX2 - costX2;
+
+    // Cotas de demanda mínima
     const lbX1 = 5, lbX2 = 3;
     const lbY1 = 5, lbY2 = 2, lbY3 = 0, lbY4 = 2, lbY5 = 0;
 
@@ -2130,36 +2254,128 @@ function ejecutarOptimizacionLinealIO() {
                 const z = cX1 * x1 + cX2 * x2 + cY1 * y1 + cY2 * y2 + cY3 * y3 + cY4 * y4 + cY5 * y5;
                 if (z > mejorZ) {
                     mejorZ = z;
-                    mejorSol = { x1, x2, y1, y2, y3, y4, y5, z };
+                    mejorSol = { x1, x2, y1, y2, y3, y4, y5, z, cX1, cX2, cY1, cY2, cY3, cY4, cY5, tiempoUsado };
                 }
             }
         }
     }
 
     if (!mejorSol) {
-        showToast('⚠️ No existe solución factible con los recursos ingresados', 'warning', '⚠️');
+        showToast('⚠️ No existe solución factible con los recursos ingresados (Revisa stock o tiempo del administrador)', 'warning', '⚠️');
+        const lblZ = document.getElementById('ioValorZOptimo');
+        if (lblZ) lblZ.textContent = 'Infactible (Ajustar Recursos)';
+        if (btnSync) btnSync.disabled = true;
+        renderIoDiagnosticsInfeasible(bHuevos, bCafe, bHarina, bAceite, bAzucar, bTiempo);
         return;
     }
 
     ultimaSolucionIO = mejorSol;
 
     const lblZ = document.getElementById('ioValorZOptimo');
-    if (lblZ) lblZ.textContent = `$ ${mejorSol.z.toLocaleString('es-CO')} COP`;
+    if (lblZ) lblZ.textContent = `$ ${Math.round(mejorSol.z).toLocaleString('es-CO')} COP`;
 
-    const setVal = (id, val) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = `${val} unds`;
-    };
+    // Renderizar tabla de variables de decisión con márgenes unitarios reales
+    renderIoDecisionTable(mejorSol, prodHuevos, prodCafe, prodHarina, prodAceite, prodAzucar, comboFamiliar, comboDesayuno);
 
-    setVal('ioSolX1', mejorSol.x1);
-    setVal('ioSolX2', mejorSol.x2);
-    setVal('ioSolY1', mejorSol.y1);
-    setVal('ioSolY2', mejorSol.y2);
-    setVal('ioSolY3', mejorSol.y3);
-    setVal('ioSolY4', mejorSol.y4);
-    setVal('ioSolY5', mejorSol.y5);
+    // Renderizar diagnósticos de recursos, holguras y cuellos de botella
+    renderIoDiagnosticsGrid(mejorSol, bHuevos, bCafe, bHarina, bAceite, bAzucar, bTiempo);
 
-    showToast(`✓ Modelo MILP Resuelto: Z* = $ ${mejorSol.z.toLocaleString('es-CO')} COP`, 'success', '⚖️');
+    showToast(`✓ Modelo MILP Resuelto: Margen Máximo Z* = $ ${Math.round(mejorSol.z).toLocaleString('es-CO')} COP`, 'success', '⚖️');
+}
+
+function renderIoDecisionTable(sol, pHuevos, pCafe, pHarina, pAceite, pAzucar, cFam, cDes) {
+    const tbody = document.getElementById('ioDecisionTableBody');
+    if (!tbody) return;
+
+    const rows = [
+        { var: 'x₁', name: cFam ? cFam.name : 'Combo Mercado Familiar Esencial', type: 'COMBO', typeClass: 'color:#3b82f6; background:#3b82f622;', margin: sol.cX1, qty: sol.x1, subtotal: sol.cX1 * sol.x1, id: 'ioSolX1' },
+        { var: 'x₂', name: cDes ? cDes.name : 'Combo Mercado Desayuno Completo', type: 'COMBO', typeClass: 'color:#3b82f6; background:#3b82f622;', margin: sol.cX2, qty: sol.x2, subtotal: sol.cX2 * sol.x2, id: 'ioSolX2' },
+        { var: 'y₁', name: pHuevos ? pHuevos.name + ' (Detal)' : 'Huevo Kikes Rojo AA X30 (Detal)', type: 'DETAL', typeClass: 'color:#f59e0b; background:#f59e0b22;', margin: sol.cY1, qty: sol.y1, subtotal: sol.cY1 * sol.y1, id: 'ioSolY1' },
+        { var: 'y₂', name: pCafe ? pCafe.name + ' (Detal)' : 'Café Sello Rojo 425g (Detal)', type: 'DETAL', typeClass: 'color:#f59e0b; background:#f59e0b22;', margin: sol.cY2, qty: sol.y2, subtotal: sol.cY2 * sol.y2, id: 'ioSolY2' },
+        { var: 'y₃', name: pHarina ? pHarina.name + ' (Detal)' : 'Harina Pan 1 Kg (Detal)', type: 'DETAL', typeClass: 'color:#f59e0b; background:#f59e0b22;', margin: sol.cY3, qty: sol.y3, subtotal: sol.cY3 * sol.y3, id: 'ioSolY3' },
+        { var: 'y₄', name: pAceite ? pAceite.name + ' (Detal)' : 'Aceite Premier 1000ml (Detal)', type: 'DETAL', typeClass: 'color:#f59e0b; background:#f59e0b22;', margin: sol.cY4, qty: sol.y4, subtotal: sol.cY4 * sol.y4, id: 'ioSolY4' },
+        { var: 'y₅', name: pAzucar ? pAzucar.name + ' (Detal)' : 'Azúcar Manuelita 1000g (Detal)', type: 'DETAL', typeClass: 'color:#f59e0b; background:#f59e0b22;', margin: sol.cY5, qty: sol.y5, subtotal: sol.cY5 * sol.y5, id: 'ioSolY5' }
+    ];
+
+    tbody.innerHTML = rows.map(r => `
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+            <td style="padding:12px 18px; font-weight:800; color:#3b82f6;">${r.var}</td>
+            <td style="padding:12px 18px; color:#fff; font-weight:700;">${r.name}</td>
+            <td style="padding:12px 18px; text-align:center;"><span style="${r.typeClass} padding:2px 8px; border-radius:4px; font-size:0.72rem; font-weight:800;">${r.type}</span></td>
+            <td style="padding:12px 18px; text-align:right; color:#10b981; font-weight:800;">$ ${Math.round(r.margin).toLocaleString('es-CO')}</td>
+            <td style="padding:12px 18px; text-align:right; color:#fff; font-weight:900; font-size:1.1rem;" id="${r.id}">${r.qty} unds</td>
+            <td style="padding:12px 18px; text-align:right; color:#fff; font-weight:800;">$ ${Math.round(r.subtotal).toLocaleString('es-CO')}</td>
+        </tr>
+    `).join('');
+}
+
+function renderIoDiagnosticsGrid(sol, bH, bC, bHar, bAc, bAz, bT) {
+    const grid = document.getElementById('ioResourceDiagnosticsGrid');
+    if (!grid) return;
+
+    const usedH = sol.x1 + sol.x2 + sol.y1;
+    const usedC = sol.x1 + 2 * sol.x2 + sol.y2;
+    const usedHar = 2 * sol.x1 + 2 * sol.x2 + sol.y3;
+    const usedAc = sol.x1 + sol.y4;
+    const usedAz = sol.x1 + sol.y5;
+    const usedT = 12 * sol.x1 + 8 * sol.x2;
+
+    const resources = [
+        { name: '🥚 Huevos AA', total: bH, used: usedH, unit: 'unds', isTime: false },
+        { name: '☕ Café Sello Rojo', total: bC, used: usedC, unit: 'unds', isTime: false },
+        { name: '🌽 Harina PAN', total: bHar, used: usedHar, unit: 'unds', isTime: false },
+        { name: '🌻 Aceite Premier', total: bAc, used: usedAc, unit: 'unds', isTime: false },
+        { name: '🍚 Azúcar Manuelita', total: bAz, used: usedAz, unit: 'unds', isTime: false },
+        { name: '⏱️ Tiempo del Administrador', total: bT, used: usedT, unit: 'min', isTime: true }
+    ];
+
+    grid.innerHTML = resources.map(res => {
+        const slack = res.total - res.used;
+        const pct = res.total > 0 ? Math.round((res.used / res.total) * 100) : 100;
+        const isBottleneck = slack === 0 || (res.isTime && slack < 8);
+        const badgeColor = isBottleneck ? '#ef4444' : '#10b981';
+        const badgeBg = isBottleneck ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)';
+        const badgeBorder = isBottleneck ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)';
+        const badgeText = isBottleneck ? '🔥 Cuello de Botella' : '✅ Holgura Disponible';
+
+        return `
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <strong style="color:#ffffff; font-size:0.85rem;">${res.name}</strong>
+                    <span style="font-size:0.68rem; font-weight:800; color:${badgeColor}; background:${badgeBg}; border:1px solid ${badgeBorder}; padding:2px 6px; border-radius:4px;">
+                        ${badgeText}
+                    </span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:#94a3b8; margin-bottom:4px;">
+                    <span>Disponible: <strong style="color:#fff;">${res.total} ${res.unit}</strong></span>
+                    <span>Consumido: <strong style="color:#FF8F00;">${res.used} ${res.unit}</strong></span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:#94a3b8; margin-bottom:8px;">
+                    <span>Holgura (S): <strong style="color:${slack === 0 ? '#ef4444' : '#10b981'};">${slack} ${res.unit}</strong></span>
+                    <span>Uso: <strong style="color:#fff;">${pct}%</strong></span>
+                </div>
+                <div style="width:100%; height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
+                    <div style="width:${Math.min(pct, 100)}%; height:100%; background:${isBottleneck ? '#ef4444' : '#10b981'}; border-radius:3px;"></div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderIoDiagnosticsInfeasible(bH, bC, bHar, bAc, bAz, bT) {
+    const grid = document.getElementById('ioResourceDiagnosticsGrid');
+    if (!grid) return;
+    const minTimeNeeded = 12 * 5 + 8 * 3; // 84 min
+    grid.innerHTML = `
+        <div style="grid-column: 1 / -1; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:10px; padding:18px; color:#fca5a5; font-size:0.88rem;">
+            <strong>⚠️ Modelo Infactible:</strong> Los recursos ingresados no satisfacen simultáneamente las demandas mínimas obligatorias:
+            <ul style="margin:8px 0 0 20px; line-height:1.5;">
+                <li>Demanda mínima de combos: X₁ ≥ 5 unds, X₂ ≥ 3 unds (requiere como mínimo ${minTimeNeeded} minutos del administrador, actualmente configurados: ${bT} min).</li>
+                <li>Demanda mínima al detal: Huevos ≥ 5, Café ≥ 2, Aceite ≥ 2 unds.</li>
+                <li>Por favor incrementa el tiempo disponible del administrador o los stocks iniciales de inventario.</li>
+            </ul>
+        </div>
+    `;
 }
 
 function aplicarSolucionIOAInventario() {
@@ -2168,6 +2384,7 @@ function aplicarSolucionIOAInventario() {
     }
 
     const sol = ultimaSolucionIO;
+    if (!sol || !sol.x1) return;
 
     state.products.forEach(p => {
         const name = (p.name || '').toLowerCase();
@@ -2175,15 +2392,15 @@ function aplicarSolucionIOAInventario() {
             p.stock = sol.x1;
         } else if (name.includes('desayuno completo')) {
             p.stock = sol.x2;
-        } else if (name.includes('huevo')) {
+        } else if (name.includes('huevo') && p.type === 'DETAL') {
             p.stock = sol.y1;
-        } else if (name.includes('cafe') || name.includes('café')) {
+        } else if ((name.includes('cafe') || name.includes('café')) && p.type === 'DETAL') {
             p.stock = sol.y2;
-        } else if (name.includes('harina')) {
+        } else if (name.includes('harina') && p.type === 'DETAL') {
             p.stock = sol.y3;
-        } else if (name.includes('aceite')) {
+        } else if (name.includes('aceite') && p.type === 'DETAL') {
             p.stock = sol.y4;
-        } else if (name.includes('azucar') || name.includes('azúcar')) {
+        } else if ((name.includes('azucar') || name.includes('azúcar')) && p.type === 'DETAL') {
             p.stock = sol.y5;
         }
     });
@@ -2198,6 +2415,587 @@ function aplicarSolucionIOAInventario() {
     }
 
     showToast('✓ Stock de la tienda sincronizado con la solución óptima de IO', 'success', '📦');
+}
+
+// ==========================================================================
+// MÓDULO DE PRESUPUESTO DEL NEGOCIO & REPOSICIÓN DE MERCANCÍA (FASE 4 - 15)
+// ==========================================================================
+
+async function loadBudgetData() {
+    try {
+        const [budgetRes, txRes, purchasesRes] = await Promise.allSettled([
+            API.get('/api/v1/admin/budget'),
+            API.get('/api/v1/admin/budget/transactions'),
+            API.get('/api/v1/admin/budget/purchases')
+        ]);
+
+        if (budgetRes.status === 'fulfilled' && budgetRes.value?.data) {
+            state.budget = budgetRes.value.data;
+            Storage.set('store_budget', state.budget);
+        } else {
+            const saved = Storage.get('store_budget');
+            if (saved) state.budget = saved;
+        }
+
+        if (txRes.status === 'fulfilled' && Array.isArray(txRes.value?.data)) {
+            state.budgetTransactions = txRes.value.data;
+            Storage.set('budget_transactions', state.budgetTransactions);
+        } else {
+            const savedTx = Storage.get('budget_transactions');
+            if (savedTx) state.budgetTransactions = savedTx;
+        }
+
+        if (purchasesRes.status === 'fulfilled' && Array.isArray(purchasesRes.value?.data)) {
+            state.supplierPurchases = purchasesRes.value.data;
+            Storage.set('supplier_purchases', state.supplierPurchases);
+        } else {
+            const savedPurchases = Storage.get('supplier_purchases');
+            if (savedPurchases) state.supplierPurchases = savedPurchases;
+        }
+
+        renderBudgetSubtab();
+    } catch (e) {
+        console.warn('Fallback a almacenamiento local para presupuesto:', e);
+        const saved = Storage.get('store_budget');
+        if (saved) state.budget = saved;
+        const savedTx = Storage.get('budget_transactions');
+        if (savedTx) state.budgetTransactions = savedTx;
+        const savedPurchases = Storage.get('supplier_purchases');
+        if (savedPurchases) state.supplierPurchases = savedPurchases;
+        renderBudgetSubtab();
+    }
+}
+
+function renderBudgetSubtab() {
+    if (!state.budget) {
+        state.budget = {
+            initialBudget: 1000000,
+            currentBalance: 1000000,
+            totalPurchases: 0,
+            totalRecoveredCosts: 0,
+            totalManualInjections: 0,
+            isInitialized: false
+        };
+    }
+
+    // 1. Render KPIs
+    const elBalance = document.getElementById('budgetAvailableBalance');
+    const elPurchases = document.getElementById('budgetTotalPurchases');
+    const elRecovered = document.getElementById('budgetTotalRecovered');
+    const elInjected = document.getElementById('budgetTotalInjected');
+
+    if (elBalance) elBalance.textContent = `$ ${Math.round(state.budget.currentBalance || 0).toLocaleString('es-CO')}`;
+    if (elPurchases) elPurchases.textContent = `$ ${Math.round(state.budget.totalPurchases || 0).toLocaleString('es-CO')}`;
+    if (elRecovered) elRecovered.textContent = `$ ${Math.round(state.budget.totalRecoveredCosts || 0).toLocaleString('es-CO')}`;
+    if (elInjected) elInjected.textContent = `$ ${Math.round(state.budget.totalManualInjections || 0).toLocaleString('es-CO')}`;
+
+    // 2. Render Supplier Purchases Table
+    const purchasesTbody = document.getElementById('supplierPurchasesTableBody');
+    if (purchasesTbody) {
+        const purchasesList = state.supplierPurchases || [];
+        if (purchasesList.length === 0) {
+            purchasesTbody.innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align:center; padding:32px; color:var(--admin-text-muted);">
+                        📦 No se han registrado compras de reposición a proveedores aún.
+                    </td>
+                </tr>
+            `;
+        } else {
+            purchasesTbody.innerHTML = purchasesList.map(p => {
+                const dateStr = p.createdAt ? p.createdAt.slice(0, 16).replace('T', ' ') : 'Reciente';
+                return `
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <td style="padding:14px 18px; color:#cbd5e1; font-size:0.85rem;">${dateStr}</td>
+                        <td style="padding:14px 18px; font-weight:700; color:#ffffff;">
+                            ${p.productName}
+                            <div style="font-size:0.75rem; color:#94a3b8;">${p.productSku || p.productId}</div>
+                        </td>
+                        <td style="padding:14px 18px; font-weight:800; color:#38bdf8;">+${p.quantity} unds</td>
+                        <td style="padding:14px 18px; color:#94a3b8; font-size:0.85rem;">
+                            ${(p.previousUnitCost != null && p.previousUnitCost > 0) ? '$ ' + Math.round(p.previousUnitCost).toLocaleString('es-CO') : '<span style="color:#f59e0b;">Sin costo prev.</span>'}
+                        </td>
+                        <td style="padding:14px 18px; color:#ffffff; font-weight:700;">$ ${Math.round(p.purchaseUnitCost).toLocaleString('es-CO')}</td>
+                        <td style="padding:14px 18px; color:#10b981; font-weight:900;">$ ${Math.round(p.newWeightedAverageCost).toLocaleString('es-CO')}</td>
+                        <td style="padding:14px 18px; color:#ef4444; font-weight:800;">-$ ${Math.round(p.totalCost).toLocaleString('es-CO')}</td>
+                        <td style="padding:14px 18px; text-align:center;">
+                            <span style="font-size:0.7rem; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); padding:3px 8px; border-radius:4px; font-weight:800;">
+                                ✓ REGISTRADA
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    }
+
+    // 3. Render Budget Transactions Table
+    const txTbody = document.getElementById('budgetTransactionsTableBody');
+    if (txTbody) {
+        const txList = state.budgetTransactions || [];
+        if (txList.length === 0) {
+            txTbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align:center; padding:32px; color:var(--admin-text-muted);">
+                        📑 No hay transacciones de presupuesto registradas en el historial.
+                    </td>
+                </tr>
+            `;
+        } else {
+            txTbody.innerHTML = txList.map(tx => {
+                const dateStr = tx.createdAt ? tx.createdAt.slice(0, 16).replace('T', ' ') : 'Reciente';
+                const isPositive = ['INITIAL_BUDGET', 'MANUAL_ADD', 'SALES_COST_RECOVERY', 'PROFIT_TRANSFER'].includes(tx.type);
+                const typeLabels = {
+                    'INITIAL_BUDGET': { label: '⚙️ Presupuesto Inicial', color: '#38bdf8' },
+                    'MANUAL_ADD': { label: '➕ Inyección Capital', color: '#10b981' },
+                    'SUPPLIER_PURCHASE': { label: '📦 Compra Mercancía', color: '#ef4444' },
+                    'SALES_COST_RECOVERY': { label: '💰 Recuperación Costo', color: '#10b981' },
+                    'REFUND_REVERSAL': { label: '↩️ Reversión Cancelación', color: '#f59e0b' },
+                    'PROFIT_TRANSFER': { label: '💼 Traslado Ganancias', color: '#a855f7' }
+                };
+                const tInfo = typeLabels[tx.type] || { label: tx.type, color: '#94a3b8' };
+
+                return `
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                        <td style="padding:14px 18px; color:#cbd5e1; font-size:0.85rem;">${dateStr}</td>
+                        <td style="padding:14px 18px;">
+                            <span style="font-size:0.75rem; font-weight:800; color:${tInfo.color}; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); padding:3px 8px; border-radius:4px;">
+                                ${tInfo.label}
+                            </span>
+                            <div style="font-size:0.78rem; color:#94a3b8; margin-top:3px;">${tx.description || ''}</div>
+                        </td>
+                        <td style="padding:14px 18px; font-weight:700; color:#cbd5e1; font-size:0.85rem;">${tx.referenceId || '-'}</td>
+                        <td style="padding:14px 18px; font-weight:900; color:${isPositive ? '#10b981' : '#ef4444'}; font-size:0.95rem;">
+                            ${isPositive ? '+' : '-'}$ ${Math.round(Math.abs(tx.amount || 0)).toLocaleString('es-CO')}
+                        </td>
+                        <td style="padding:14px 18px; font-weight:800; color:#ffffff; font-size:0.95rem;">
+                            $ ${Math.round(tx.balanceAfter !== undefined ? tx.balanceAfter : state.budget.currentBalance).toLocaleString('es-CO')}
+                        </td>
+                        <td style="padding:14px 18px; color:#94a3b8; font-size:0.8rem;">${tx.registeredBy || 'Administrador'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    }
+}
+
+// --------------------------------------------------------------------------
+// MODAL CONTROLLERS & FORM HANDLERS
+// --------------------------------------------------------------------------
+
+function openInitBudgetModal() {
+    const modal = document.getElementById('modalInitBudget');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeInitBudgetModal() {
+    const modal = document.getElementById('modalInitBudget');
+    if (modal) modal.style.display = 'none';
+}
+
+async function handleInitBudgetSubmit(event) {
+    if (event) event.preventDefault();
+    const inputVal = document.getElementById('initBudgetValue')?.value;
+    const notesVal = document.getElementById('initBudgetNotes')?.value || 'Presupuesto inicial para reposición';
+    const amount = parseFloat(inputVal);
+
+    if (isNaN(amount) || amount <= 0) {
+        showToast('⚠️ Ingresa un monto de presupuesto inicial válido y positivo.', 'warning', '⚠️');
+        return;
+    }
+
+    try {
+        if (API.getToken()) {
+            await API.post('/api/v1/admin/budget/init', { amount, notes: notesVal }).catch(() => null);
+        }
+    } catch (e) {
+        console.warn('Fallback local para inicialización de presupuesto');
+    }
+
+    state.budget.initialBudget = amount;
+    state.budget.currentBalance = amount;
+    state.budget.isInitialized = true;
+
+    const newTx = {
+        id: 'tx-init-' + Date.now(),
+        type: 'INITIAL_BUDGET',
+        amount: amount,
+        description: notesVal,
+        referenceId: 'INIT-' + Date.now().toString().slice(-4),
+        balanceAfter: amount,
+        registeredBy: 'Administrador (Propietario)',
+        createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
+    };
+
+    state.budgetTransactions.unshift(newTx);
+    Storage.set('store_budget', state.budget);
+    Storage.set('budget_transactions', state.budgetTransactions);
+
+    renderBudgetSubtab();
+    closeInitBudgetModal();
+    showToast(`✅ Presupuesto inicial registrado: $ ${amount.toLocaleString('es-CO')} COP`, 'success', '💰');
+}
+
+function openAddMoneyModal() {
+    const modal = document.getElementById('modalAddMoneyBudget');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeAddMoneyModal() {
+    const modal = document.getElementById('modalAddMoneyBudget');
+    if (modal) modal.style.display = 'none';
+}
+
+async function handleAddMoneySubmit(event) {
+    if (event) event.preventDefault();
+    const amountVal = document.getElementById('addMoneyAmount')?.value;
+    const sourceVal = document.getElementById('addMoneySource')?.value || 'Aporte propio del administrador';
+    const amount = parseFloat(amountVal);
+
+    if (isNaN(amount) || amount <= 0) {
+        showToast('⚠️ Ingresa un monto válido para inyectar al presupuesto.', 'warning', '⚠️');
+        return;
+    }
+
+    try {
+        if (API.getToken()) {
+            await API.post('/api/v1/admin/budget/add-money', { amount, source: sourceVal }).catch(() => null);
+        }
+    } catch (e) {
+        console.warn('Fallback local para inyección de presupuesto');
+    }
+
+    state.budget.currentBalance += amount;
+    state.budget.totalManualInjections += amount;
+
+    const newTx = {
+        id: 'tx-add-' + Date.now(),
+        type: 'MANUAL_ADD',
+        amount: amount,
+        description: sourceVal,
+        referenceId: 'INJ-' + Date.now().toString().slice(-4),
+        balanceAfter: state.budget.currentBalance,
+        registeredBy: 'Administrador (Propietario)',
+        createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
+    };
+
+    state.budgetTransactions.unshift(newTx);
+    Storage.set('store_budget', state.budget);
+    Storage.set('budget_transactions', state.budgetTransactions);
+
+    renderBudgetSubtab();
+    closeAddMoneyModal();
+    showToast(`✅ Se agregaron $ ${amount.toLocaleString('es-CO')} COP al fondo de reposición`, 'success', '➕');
+}
+
+function openSupplierPurchaseModal() {
+    const modal = document.getElementById('modalSupplierPurchase');
+    if (!modal) return;
+
+    // Poblar select de productos DETAL disponibles
+    const select = document.getElementById('purchaseProductSelect');
+    if (select) {
+        select.innerHTML = '<option value="">-- Selecciona un producto para reponer --</option>' +
+            (state.products || []).filter(p => p.type === 'DETAL').map(p => `
+                <option value="${p.id}" data-stock="${p.stock || 0}" data-cost="${p.costPrice || 0}">
+                    ${p.name} (Stock: ${p.stock || 0} | Costo act: ${p.costPrice > 0 ? '$ ' + Math.round(p.costPrice).toLocaleString('es-CO') : 'Sin costo'})
+                </option>
+            `).join('');
+    }
+
+    // Resetear formulario
+    const qtyInput = document.getElementById('purchaseQuantity');
+    const costInput = document.getElementById('purchaseUnitCost');
+    if (qtyInput) qtyInput.value = '';
+    if (costInput) costInput.value = '';
+
+    const availDisplay = document.getElementById('purchaseBudgetAvailable');
+    if (availDisplay) availDisplay.textContent = `$ ${Math.round(state.budget.currentBalance || 0).toLocaleString('es-CO')} COP`;
+
+    calculatePurchaseTotals();
+    modal.style.display = 'flex';
+}
+
+function closeSupplierPurchaseModal() {
+    const modal = document.getElementById('modalSupplierPurchase');
+    if (modal) modal.style.display = 'none';
+}
+
+function handlePurchaseProductChange() {
+    const select = document.getElementById('purchaseProductSelect');
+    const selectedOpt = select?.options[select.selectedIndex];
+    const prevStockSpan = document.getElementById('purchasePrevStockDisplay');
+    const prevCostSpan = document.getElementById('purchasePrevCostDisplay');
+
+    if (selectedOpt && selectedOpt.value) {
+        const prod = (state.products || []).find(p => p.id === selectedOpt.value);
+        if (prod) {
+            if (prevStockSpan) prevStockSpan.textContent = `${prod.stock || 0} unds`;
+            if (prevCostSpan) prevCostSpan.textContent = (prod.costPrice != null && prod.costPrice > 0) ? `$ ${Math.round(prod.costPrice).toLocaleString('es-CO')}` : 'Sin costo previo';
+            const costInput = document.getElementById('purchaseUnitCost');
+            if (costInput && !costInput.value && prod.costPrice > 0) {
+                costInput.value = prod.costPrice;
+            }
+        }
+    } else {
+        if (prevStockSpan) prevStockSpan.textContent = '0 unds';
+        if (prevCostSpan) prevCostSpan.textContent = '$ 0';
+    }
+
+    calculatePurchaseTotals();
+}
+
+function calculatePurchaseTotals() {
+    const select = document.getElementById('purchaseProductSelect');
+    const pId = select?.value;
+    const qty = parseInt(document.getElementById('purchaseQuantity')?.value) || 0;
+    const unitCost = parseFloat(document.getElementById('purchaseUnitCost')?.value) || 0;
+    const totalCost = qty * unitCost;
+
+    const totalSpan = document.getElementById('purchaseTotalCostPreview');
+    if (totalSpan) totalSpan.textContent = `$ ${Math.round(totalCost).toLocaleString('es-CO')} COP`;
+
+    const available = state.budget.currentBalance || 0;
+    const alertBox = document.getElementById('purchaseBudgetComparisonAlert');
+    const btnSubmit = document.getElementById('btnSubmitSupplierPurchase');
+
+    if (totalCost > available) {
+        if (alertBox) {
+            alertBox.style.display = 'block';
+            alertBox.innerHTML = `⚠️ <strong>Presupuesto insuficiente:</strong> El costo total ($ ${Math.round(totalCost).toLocaleString('es-CO')}) supera el presupuesto disponible ($ ${Math.round(available).toLocaleString('es-CO')}). Faltan $ ${Math.round(totalCost - available).toLocaleString('es-CO')} COP.`;
+        }
+        if (btnSubmit) btnSubmit.disabled = true;
+    } else {
+        if (alertBox) alertBox.style.display = 'none';
+        if (btnSubmit) btnSubmit.disabled = (qty <= 0 || unitCost <= 0 || !pId);
+    }
+
+    // Cálculo y vista previa del Costo Promedio Ponderado (Fase 4)
+    const newCostSpan = document.getElementById('purchaseNewCostPreview');
+    if (newCostSpan) {
+        if (pId && qty > 0 && unitCost > 0) {
+            const prod = (state.products || []).find(p => p.id === pId);
+            const oldStock = prod ? (prod.stock || 0) : 0;
+            const oldCost = prod && prod.costPrice != null && prod.costPrice > 0 ? prod.costPrice : null;
+
+            let newAvg = unitCost;
+            if (oldCost !== null && (oldStock + qty) > 0) {
+                newAvg = Math.round(((oldStock * oldCost) + (qty * unitCost)) / (oldStock + qty));
+            }
+
+            newCostSpan.textContent = `$ ${newAvg.toLocaleString('es-CO')} COP ${oldCost ? '(antes: $ ' + Math.round(oldCost).toLocaleString('es-CO') + ')' : '(primer costo)'}`;
+        } else {
+            newCostSpan.textContent = '$ 0 COP';
+        }
+    }
+}
+
+async function handleSupplierPurchaseSubmit(event) {
+    if (event) event.preventDefault();
+
+    const select = document.getElementById('purchaseProductSelect');
+    const pId = select?.value;
+    const qty = parseInt(document.getElementById('purchaseQuantity')?.value) || 0;
+    const unitCost = parseFloat(document.getElementById('purchaseUnitCost')?.value) || 0;
+    const totalCost = qty * unitCost;
+    const supplier = document.getElementById('purchaseSupplierName')?.value.trim() || 'Proveedor Distribuidor';
+    const notes = document.getElementById('purchaseNotes')?.value.trim() || 'Reposición periódica';
+
+    if (!pId || qty <= 0 || unitCost <= 0) {
+        showToast('⚠️ Selecciona un producto e ingresa cantidad y costo unitario válidos.', 'warning', '⚠️');
+        return;
+    }
+
+    if (totalCost > (state.budget.currentBalance || 0)) {
+        showToast('❌ Presupuesto disponible insuficiente para realizar esta compra.', 'error', '❌');
+        return;
+    }
+
+    const prod = (state.products || []).find(p => p.id === pId);
+    if (!prod) return;
+
+    const oldStock = prod.stock || 0;
+    const oldCost = (prod.costPrice != null && prod.costPrice > 0) ? prod.costPrice : null;
+
+    let newWeightedCost = unitCost;
+    if (oldCost !== null && (oldStock + qty) > 0) {
+        newWeightedCost = Math.round(((oldStock * oldCost) + (qty * unitCost)) / (oldStock + qty));
+    }
+
+    try {
+        if (API.getToken()) {
+            await API.post('/api/v1/admin/budget/purchases', {
+                productId: pId,
+                quantity: qty,
+                unitCost: unitCost,
+                supplierName: supplier,
+                notes: notes
+            }).catch(() => null);
+        }
+    } catch (e) {
+        console.warn('Fallback local para compra a proveedor');
+    }
+
+    // 1. Decrementar presupuesto
+    state.budget.currentBalance -= totalCost;
+    state.budget.totalPurchases += totalCost;
+
+    // 2. Incrementar stock y actualizar costo promedio ponderado
+    prod.stock = oldStock + qty;
+    prod.costPrice = newWeightedCost;
+    prod.isAvailable = true;
+
+    // 3. Registrar movimiento de compra
+    const purchaseRecord = {
+        id: 'pur-' + Date.now(),
+        productId: pId,
+        productName: prod.name,
+        productSku: prod.sku,
+        previousStock: oldStock,
+        previousUnitCost: oldCost,
+        quantity: qty,
+        purchaseUnitCost: unitCost,
+        totalCost: totalCost,
+        newWeightedAverageCost: newWeightedCost,
+        newStock: prod.stock,
+        supplierName: supplier,
+        notes: notes,
+        createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
+    };
+    state.supplierPurchases.unshift(purchaseRecord);
+
+    // 4. Registrar transacción inmutable en el historial del presupuesto
+    const newTx = {
+        id: 'tx-pur-' + Date.now(),
+        type: 'SUPPLIER_PURCHASE',
+        amount: -totalCost,
+        description: `Compra reposición de ${qty} unds de "${prod.name}" a ${supplier}`,
+        referenceId: 'PUR-' + Date.now().toString().slice(-4),
+        balanceAfter: state.budget.currentBalance,
+        registeredBy: 'Administrador (Propietario)',
+        createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
+    };
+    state.budgetTransactions.unshift(newTx);
+
+    // 5. Recalcular stock de mercados
+    recalculateMercadosStock();
+
+    // 6. Persistir todo el estado
+    Storage.set('products', state.products);
+    Storage.set('store_budget', state.budget);
+    Storage.set('supplier_purchases', state.supplierPurchases);
+    Storage.set('budget_transactions', state.budgetTransactions);
+
+    renderBudgetSubtab();
+    renderProducts();
+    renderAdminProductsTable();
+    updateDashboardKPIs();
+    closeSupplierPurchaseModal();
+
+    showToast(`✅ Compra registrada: +${qty} unds de "${prod.name}". Nuevo costo promedio: $ ${newWeightedCost.toLocaleString('es-CO')}`, 'success', '📦');
+}
+
+function recordSalesCostRecovery(order) {
+    if (!order || order.costRecoveryRecorded) return;
+
+    let totalRecoverableCost = 0;
+    (order.items || []).forEach(it => {
+        let itemCost = it.costPrice;
+        if (itemCost == null) {
+            const p = (state.products || []).find(prod => prod.id === it.productId);
+            if (p && p.costPrice != null && p.costPrice > 0) {
+                itemCost = p.costPrice;
+            }
+        }
+        if (itemCost != null && itemCost > 0) {
+            const q = it.qty || it.quantity || 1;
+            totalRecoverableCost += itemCost * q;
+        }
+    });
+
+    if (totalRecoverableCost > 0) {
+        state.budget.currentBalance += totalRecoverableCost;
+        state.budget.totalRecoveredCosts += totalRecoverableCost;
+        order.costRecoveryRecorded = true;
+
+        const newTx = {
+            id: 'tx-rec-' + Date.now(),
+            type: 'SALES_COST_RECOVERY',
+            amount: totalRecoverableCost,
+            description: `Recuperación de costo de adquisición por venta de pedido ${order.orderNumber || order.id}`,
+            referenceId: order.orderNumber || order.id,
+            balanceAfter: state.budget.currentBalance,
+            registeredBy: 'Sistema Merkostore (Venta Confirmada)',
+            createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
+        };
+
+        state.budgetTransactions.unshift(newTx);
+        Storage.set('store_budget', state.budget);
+        Storage.set('budget_transactions', state.budgetTransactions);
+        Storage.set('orders', state.orders);
+
+        if (state.currentAdminSubTab === 'budget') {
+            renderBudgetSubtab();
+        }
+    }
+}
+
+function revertSalesCostRecovery(order) {
+    if (!order || !order.costRecoveryRecorded) return;
+
+    let totalRecoverableCost = 0;
+    (order.items || []).forEach(it => {
+        let itemCost = it.costPrice;
+        if (itemCost == null) {
+            const p = (state.products || []).find(prod => prod.id === it.productId);
+            if (p && p.costPrice != null && p.costPrice > 0) {
+                itemCost = p.costPrice;
+            }
+        }
+        if (itemCost != null && itemCost > 0) {
+            const q = it.qty || it.quantity || 1;
+            totalRecoverableCost += itemCost * q;
+        }
+    });
+
+    if (totalRecoverableCost > 0) {
+        state.budget.currentBalance = Math.max(0, state.budget.currentBalance - totalRecoverableCost);
+        state.budget.totalRecoveredCosts = Math.max(0, state.budget.totalRecoveredCosts - totalRecoverableCost);
+        order.costRecoveryRecorded = false;
+
+        const newTx = {
+            id: 'tx-rev-' + Date.now(),
+            type: 'REFUND_REVERSAL',
+            amount: -totalRecoverableCost,
+            description: `Reversión de costo recuperado por cancelación de pedido ${order.orderNumber || order.id}`,
+            referenceId: order.orderNumber || order.id,
+            balanceAfter: state.budget.currentBalance,
+            registeredBy: 'Sistema Merkostore (Cancelación)',
+            createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
+        };
+
+        state.budgetTransactions.unshift(newTx);
+        Storage.set('store_budget', state.budget);
+        Storage.set('budget_transactions', state.budgetTransactions);
+        Storage.set('orders', state.orders);
+
+        if (state.currentAdminSubTab === 'budget') {
+            renderBudgetSubtab();
+        }
+    }
+}
+
+function recalculateMercadosStock() {
+    (state.products || []).filter(p => p.type === 'MERCADO').forEach(m => {
+        if (m.bundleItems && m.bundleItems.length > 0) {
+            const possibleBundles = m.bundleItems.map(b => {
+                const component = (state.products || []).find(p => p.id === b.productId);
+                const compStock = component ? (component.stock || 0) : 0;
+                return Math.floor(compStock / (b.quantity || 1));
+            });
+            m.stock = Math.min(...possibleBundles);
+        }
+    });
 }
 
 async function loadAdminUsersData() {
@@ -2350,7 +3148,9 @@ function filterAdminInventoryStock(filter) {
         'ALL': 'filterStockAll',
         'IN_STOCK': 'filterStockInStock',
         'SOLD_OUT': 'filterStockSoldOut',
-        'LOW_STOCK': 'filterStockLow'
+        'LOW_STOCK': 'filterStockLow',
+        'WITH_COST': 'filterStockWithCost',
+        'NO_COST': 'filterStockNoCost'
     };
 
     Object.keys(filterBtns).forEach(k => {
@@ -2427,6 +3227,10 @@ function renderAdminProductsTable() {
         list = list.filter(p => p.isAvailable === false || p.stock <= 0);
     } else if (filter === 'LOW_STOCK') {
         list = list.filter(p => p.stock <= 3 && p.stock > 0);
+    } else if (filter === 'WITH_COST') {
+        list = list.filter(p => p.costPrice != null && p.costPrice > 0);
+    } else if (filter === 'NO_COST') {
+        list = list.filter(p => p.costPrice == null || p.costPrice <= 0);
     }
 
     const badge = document.getElementById('adminInventoryCountBadge');
@@ -2467,7 +3271,13 @@ function renderAdminProductsTable() {
                     </div>
                 </td>
                 <td style="font-size:0.85rem; color:#cbd5e1;">${getCategoryName(p.categoryId)}</td>
-                <td style="font-weight:900; color:#fbbf24; font-size:0.92rem;">$ ${(p.discountPrice || p.price).toLocaleString('es-CO')}</td>
+                <td>
+                    <div style="font-weight:900; color:#fbbf24; font-size:0.92rem;">$ ${(p.discountPrice || p.price).toLocaleString('es-CO')}</div>
+                    ${(p.costPrice != null && p.costPrice > 0)
+                        ? `<div style="font-size:0.75rem; color:#10b981; font-weight:700; margin-top:2px;">Costo: $ ${Number(p.costPrice).toLocaleString('es-CO')}</div>`
+                        : `<div style="font-size:0.7rem; color:#f59e0b; background:rgba(245, 158, 11, 0.15); border:1px solid rgba(245, 158, 11, 0.3); border-radius:4px; padding:1px 5px; display:inline-block; font-weight:700; margin-top:2px;">⚠️ Costo Pendiente</div>`
+                    }
+                </td>
                 <td style="font-weight:800; color:#ffffff; font-size:0.95rem;">
                     ${p.stock} ${p.variantInfo ? `<span style="font-size:0.75rem; color:#94a3b8;">(${p.variantInfo})</span>` : ''}
                 </td>
@@ -2568,6 +3378,8 @@ function resetProductEditorForm(userCancelled = false) {
     if (elDisc) elDisc.value = '';
     if (elStock) elStock.value = '';
     if (elImg) elImg.value = '';
+    const elCost = document.getElementById('editorCostPrice');
+    if (elCost) elCost.value = '';
 
     const fileInput = document.getElementById('editorImageFile');
     if (fileInput) fileInput.value = '';
@@ -2619,6 +3431,8 @@ function editProduct(productId) {
     document.getElementById('editorDiscount').value = p.discountPrice || '';
     document.getElementById('editorStock').value = p.stock || 0;
     document.getElementById('editorImage').value = p.imageUrl || '';
+    const elCostEdit = document.getElementById('editorCostPrice');
+    if (elCostEdit) elCostEdit.value = (p.costPrice != null && p.costPrice > 0) ? p.costPrice : '';
 
     const fileInput = document.getElementById('editorImageFile');
     if (fileInput) fileInput.value = '';
@@ -2880,10 +3694,25 @@ function saveProductFromEditor() {
     const discount = parseFloat(document.getElementById('editorDiscount').value) || null;
     const stock = parseInt(document.getElementById('editorStock').value) || 0;
     const image = document.getElementById('editorImage').value.trim() || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500';
+    const costInput = document.getElementById('editorCostPrice')?.value.trim();
+    const costVal = (costInput !== '' && costInput !== undefined && costInput !== null) ? parseFloat(costInput) : null;
 
     if (!name || isNaN(price)) {
         showToast('⚠️ Por favor completa los campos obligatorios (Nombre y Precio Venta).', 'warning', '⚠️');
         return;
+    }
+
+    // Regla de negocio: Precio de adquisición obligatorio, numérico y no negativo para productos nuevos
+    if (!state.editingProductId) {
+        if (costVal === null || isNaN(costVal) || costVal < 0) {
+            showToast('⚠️ El Precio de Adquisición es obligatorio para nuevos productos y no puede ser negativo.', 'warning', '⚠️');
+            return;
+        }
+    } else {
+        if (costVal !== null && (isNaN(costVal) || costVal < 0)) {
+            showToast('⚠️ El Precio de Adquisición debe ser un valor numérico no negativo.', 'warning', '⚠️');
+            return;
+        }
     }
 
     let bundleItems = [];
@@ -2915,6 +3744,7 @@ function saveProductFromEditor() {
                 name: name,
                 unitCalc: unit,
                 price: price,
+                costPrice: (costVal !== null) ? costVal : state.products[existingIndex].costPrice,
                 discountPrice: discount,
                 discountPercent: pct,
                 stock: stock,
@@ -2939,7 +3769,7 @@ function saveProductFromEditor() {
             sku: (type === 'MERCADO' ? 'MER-' : 'SKU-') + Math.floor(100 + Math.random() * 900),
             name: name,
             unitCalc: unit,
-            costPrice: price * 0.7,
+            costPrice: costVal,
             price: price,
             discountPrice: discount,
             discountPercent: pct,
@@ -3366,8 +4196,14 @@ async function advanceActiveOrder(orderId, newStatus) {
         o.status = newStatus;
         if (newStatus === 'DELIVERED') {
             o.paymentStatus = 'PAID';
+            if (typeof recordSalesCostRecovery === 'function') {
+                recordSalesCostRecovery(o);
+            }
             showToast(`✅ Pedido ${o.orderNumber} completado y archivado al Historial`, 'success', '✅');
         } else if (newStatus === 'CANCELLED') {
+            if (typeof revertSalesCostRecovery === 'function') {
+                revertSalesCostRecovery(o);
+            }
             showToast(`❌ Pedido ${o.orderNumber} cancelado y archivado al Historial`, 'info', '❌');
         } else {
             const labels = { PREPARING: 'En Preparación', ON_WAY: 'En Camino', READY: 'Listo Despacho' };
@@ -3923,7 +4759,7 @@ async function loadAdminBackendData() {
                 sku: p.sku || 'SKU-001',
                 name: p.name,
                 unitCalc: p.unit ? `Unidad por ${p.unit}` : 'Unidad',
-                costPrice: p.costPrice || 0,
+                costPrice: (p.costPrice !== undefined && p.costPrice !== null && p.costPrice > 0) ? p.costPrice : null,
                 price: p.price || 0,
                 discountPrice: p.discountPrice || null,
                 discountPercent: p.discountPrice && p.price ? `-${Math.round((1 - p.discountPrice / p.price) * 100)}%` : null,
@@ -3937,6 +4773,7 @@ async function loadAdminBackendData() {
             renderAdminProductsTable();
         }
 
+        await loadBudgetData();
         let ordersData = ordersRes.status === 'fulfilled' ? ordersRes.value?.data : null;
         if (ordersData && Array.isArray(ordersData) && ordersData.length > 0) {
             state.orders = ordersData.map(o => ({

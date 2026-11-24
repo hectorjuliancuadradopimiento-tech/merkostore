@@ -222,6 +222,9 @@
                     <button class="merko-pill-btn" id="tabMerkoOrders" onclick="switchAdminSubTab('orders')">
                         📜 Historial de Ventas
                     </button>
+                    <button class="merko-pill-btn" id="tabMerkoBudget" onclick="switchAdminSubTab('budget')">
+                        💰 Presupuesto del Negocio
+                    </button>
                     <button class="merko-pill-btn" id="tabMerkoProducts" onclick="switchAdminSubTab('products')">
                         🛒 Productos & Inventario
                     </button>
@@ -270,12 +273,17 @@
                         <button class="btn-merko-primary" onclick="switchAdminSubTab('products')">Atender Todos ➔</button>
                     </div>
 
-                    <!-- KPI CARDS GRID (5 CARDS) -->
-                    <div class="merko-kpi-grid">
+                    <!-- KPI CARDS GRID (6 CARDS CON GANANCIAS) -->
+                    <div class="merko-kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
                         <div class="merko-kpi-card emerald-card">
                             <div class="merko-kpi-title">Ventas de Hoy</div>
                             <div class="merko-kpi-val" id="kpiSales">$ 0</div>
                             <div style="font-size:0.75rem; color:var(--brand-secondary); font-weight:800;" id="kpiSalesSubtext">↑ 0 ventas en el día</div>
+                        </div>
+                        <div class="merko-kpi-card" style="border-left:4px solid #10b981; background:linear-gradient(135deg, rgba(16,185,129,0.14), rgba(16,185,129,0.02));">
+                            <div class="merko-kpi-title" style="color:#10b981;">Ganancias de Hoy</div>
+                            <div class="merko-kpi-val" id="kpiGrossProfit" style="color:#10b981;">$ 0</div>
+                            <div style="font-size:0.75rem; color:#34d399; font-weight:800;" id="kpiGrossProfitSubtext">Margen bruto unitario real</div>
                         </div>
                         <div class="merko-kpi-card red-card">
                             <div class="merko-kpi-title">Pedidos Activos</div>
@@ -437,18 +445,29 @@
                                     </div>
                                 </div>
 
-                                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                                    <div class="merko-form-group">
+                                        <label>Precio de Adquisición ($ COP) *</label>
+                                        <input type="number" id="editorCostPrice" value="" placeholder="Ej: 32000" oninput="updateLivePreview()">
+                                        <small style="display:block; font-size:0.72rem; color:var(--admin-text-muted); margin-top:4px;">Valor que paga el administrador al proveedor por adquirir una unidad de este producto.</small>
+                                    </div>
                                     <div class="merko-form-group">
                                         <label>Precio Venta ($ COP) *</label>
                                         <input type="number" id="editorPrice" value="" placeholder="Ej: 48000" oninput="updateLivePreview()">
+                                        <small style="display:block; font-size:0.72rem; color:var(--admin-text-muted); margin-top:4px;">Precio oficial al detal o combo al cliente.</small>
                                     </div>
+                                </div>
+
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
                                     <div class="merko-form-group">
                                         <label>Precio Oferta ($ COP)</label>
                                         <input type="number" id="editorDiscount" value="" placeholder="Opcional" oninput="updateLivePreview()">
+                                        <small style="display:block; font-size:0.72rem; color:var(--admin-text-muted); margin-top:4px;">Precio promocional con descuento aplicado.</small>
                                     </div>
                                     <div class="merko-form-group">
                                         <label id="lblEditorStock">Inventario Inicial *</label>
                                         <input type="number" id="editorStock" value="" placeholder="Ej: 25" oninput="updateLivePreview()">
+                                        <small style="display:block; font-size:0.72rem; color:var(--admin-text-muted); margin-top:4px;">Existencias físicas disponibles en bodega.</small>
                                     </div>
                                 </div>
 
@@ -607,6 +626,8 @@
                                 <button class="periodo-btn" id="filterStockInStock" onclick="filterAdminInventoryStock('IN_STOCK')">En Stock</button>
                                 <button class="periodo-btn" id="filterStockSoldOut" onclick="filterAdminInventoryStock('SOLD_OUT')" style="color:#ef4444;">● Agotados</button>
                                 <button class="periodo-btn" id="filterStockLow" onclick="filterAdminInventoryStock('LOW_STOCK')" style="color:#f59e0b;">● Stock Bajo (≤ 3)</button>
+                                <button class="periodo-btn" id="filterStockWithCost" onclick="filterAdminInventoryStock('WITH_COST')" style="color:#10b981;">💰 Con Costo</button>
+                                <button class="periodo-btn" id="filterStockNoCost" onclick="filterAdminInventoryStock('NO_COST')" style="color:#f87171;">⚠️ Sin Costo (Pendientes)</button>
                             </div>
                             
                             <input type="text" id="adminInventorySearchInput" class="historial-search-input" style="max-width:280px;" placeholder="Buscar producto o kit..." oninput="renderAdminProductsTable()">
@@ -620,7 +641,7 @@
                                         <th>FOTO</th>
                                         <th>NOMBRE & TIPO</th>
                                         <th>CATEGORÍA</th>
-                                        <th>PRECIO</th>
+                                        <th>PRECIO & COSTO</th>
                                         <th>CANTIDAD</th>
                                         <th>ESTADO DE STOCK</th>
                                         <th style="text-align:right;">ACCIONES</th>
@@ -789,6 +810,128 @@
                                     <!-- Rendered dynamically -->
                                 </tbody>
                             </table>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- TAB: PRESUPUESTO DEL NEGOCIO (FONDOS DE REPOSICIÓN Y COMPRAS A PROVEEDORES) -->
+                <div id="subtabBudget" class="subtab-content" style="display:none;">
+                    <div class="admin-card-glass" style="margin-bottom:24px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+                            <div>
+                                <span class="merko-brand-badge" style="background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);">GESTIÓN FINANCIERA • FONDO DE REPOSICIÓN</span>
+                                <h2 style="font-size:1.45rem; font-weight:900; color:#fff; margin-top:8px; margin-bottom:4px;">
+                                    💰 Presupuesto del Negocio y Reposición de Mercancía
+                                </h2>
+                                <p style="font-size:0.85rem; color:var(--admin-text-muted); margin:0;">
+                                    Administra el dinero disponible para adquirir inventario con proveedores y da seguimiento a los costos recuperados de cada venta.
+                                </p>
+                            </div>
+                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                <button class="btn-merko-primary" onclick="openInitBudgetModal()" style="display:inline-flex; align-items:center; gap:8px;">
+                                    ⚙️ Presupuesto Inicial
+                                </button>
+                                <button class="btn-merko-outline" onclick="openAddMoneyModal()" style="color:#10b981; border-color:rgba(16,185,129,0.4); display:inline-flex; align-items:center; gap:8px;">
+                                    💵 Agregar Dinero
+                                </button>
+                                <button class="btn-merko-primary" onclick="openSupplierPurchaseModal()" style="background:linear-gradient(135deg, #10b981, #059669); border:none; display:inline-flex; align-items:center; gap:8px;">
+                                    📦 Comprar Mercancía
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4 KPI CARDS DEL PRESUPUESTO -->
+                    <div class="merko-kpi-grid" style="grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); margin-bottom:24px;">
+                        <div class="merko-kpi-card emerald-card" style="border-left:4px solid #10b981;">
+                            <div class="merko-kpi-title" style="color:#10b981;">Presupuesto Disponible</div>
+                            <div class="merko-kpi-val" id="budgetAvailableBalance" style="color:#10b981;">$ 0</div>
+                            <div style="font-size:0.75rem; color:#34d399; font-weight:800;">Fondo actual para reponer</div>
+                        </div>
+                        <div class="merko-kpi-card" style="border-left:4px solid #f59e0b; background:rgba(245,158,11,0.06);">
+                            <div class="merko-kpi-title" style="color:#f59e0b;">Total Invertido en Compras</div>
+                            <div class="merko-kpi-val" id="budgetTotalPurchases" style="color:#f59e0b;">$ 0</div>
+                            <div style="font-size:0.75rem; color:#fbbf24; font-weight:800;">Salidas por mercancía</div>
+                        </div>
+                        <div class="merko-kpi-card" style="border-left:4px solid #3b82f6; background:rgba(59,130,246,0.06);">
+                            <div class="merko-kpi-title" style="color:#3b82f6;">Costos Recuperados por Ventas</div>
+                            <div class="merko-kpi-val" id="budgetTotalRecovered" style="color:#3b82f6;">$ 0</div>
+                            <div style="font-size:0.75rem; color:#60a5fa; font-weight:800;">Retorno de costo de ventas</div>
+                        </div>
+                        <div class="merko-kpi-card" style="border-left:4px solid #a855f7; background:rgba(168,85,247,0.06);">
+                            <div class="merko-kpi-title" style="color:#c084fc;">Dinero Agregado Manualmente</div>
+                            <div class="merko-kpi-val" id="budgetTotalInjected" style="color:#c084fc;">$ 0</div>
+                            <div style="font-size:0.75rem; color:#e9d5ff; font-weight:800;">Aportes extraordinarios</div>
+                        </div>
+                    </div>
+
+                    <!-- PANELES DE HISTORIAL: MOVIMIENTOS FINANCIEROS Y COMPRAS -->
+                    <div style="display:grid; grid-template-columns:1fr; gap:24px;">
+                        
+                        <!-- PANEL 1: REGISTRO DE COMPRAS A PROVEEDORES -->
+                        <div class="admin-card-glass" style="padding:20px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+                                <div>
+                                    <h3 style="font-size:1.1rem; font-weight:900; color:#fff; margin:0;">
+                                        📦 Historial de Compras de Mercancía a Proveedores
+                                    </h3>
+                                    <p style="font-size:0.78rem; color:var(--admin-text-muted); margin:4px 0 0;">
+                                        Compras registradas con actualización automática de existencias y costo promedio ponderado.
+                                    </p>
+                                </div>
+                                <button class="btn-merko-primary" onclick="openSupplierPurchaseModal()" style="font-size:0.8rem; padding:8px 14px;">
+                                    ➕ Registrar Nueva Compra
+                                </button>
+                            </div>
+                            <div class="luxury-table-container">
+                                <table class="merko-table">
+                                    <thead>
+                                        <tr>
+                                            <th>CÓDIGO / FECHA</th>
+                                            <th>PROVEEDOR</th>
+                                            <th>PRODUCTOS ADQUIRIDOS</th>
+                                            <th>TOTAL INVERTIDO</th>
+                                            <th>IMPACTO EN COSTO PONDERADO</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="supplierPurchasesTableBody">
+                                        <!-- Rendered dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- PANEL 2: HISTORIAL DE MOVIMIENTOS FINANCIEROS -->
+                        <div class="admin-card-glass" style="padding:20px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+                                <div>
+                                    <h3 style="font-size:1.1rem; font-weight:900; color:#fff; margin:0;">
+                                        📜 Historial de Movimientos del Presupuesto
+                                    </h3>
+                                    <p style="font-size:0.78rem; color:var(--admin-text-muted); margin:4px 0 0;">
+                                        Registro inmutable de saldo inicial, compras, costos recuperados de ventas y aportes adicionales.
+                                    </p>
+                                </div>
+                                <span style="font-size:0.75rem; color:#10b981; font-weight:800;" id="budgetTxCountBadge">0 movimientos</span>
+                            </div>
+                            <div class="luxury-table-container">
+                                <table class="merko-table">
+                                    <thead>
+                                        <tr>
+                                            <th>FECHA / HORA</th>
+                                            <th>TIPO DE MOVIMIENTO</th>
+                                            <th>CONCEPTO O DESCRIPCIÓN</th>
+                                            <th>REFERENCIA</th>
+                                            <th style="text-align:right;">MONTO ($ COP)</th>
+                                            <th style="text-align:right;">SALDO POSTERIOR</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="budgetTransactionsTableBody">
+                                        <!-- Rendered dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
 
                     </div>
@@ -1069,10 +1212,16 @@
                                 <input type="number" id="ioStockAzucar" value="28" min="5" style="padding:8px 12px; font-weight:800;">
                             </div>
                             <div class="merko-form-group">
-                                <label style="font-size:0.75rem;">Tiempo Armado (Min)</label>
-                                <input type="number" id="ioTiempoArmado" value="480" min="60" style="padding:8px 12px; font-weight:800;">
+                                <label style="font-size:0.75rem; font-weight:800; color:#FF8F00;">TIEMPO DISPONIBLE DEL ADMINISTRADOR (MIN)</label>
+                                <input type="number" id="ioTiempoArmado" value="480" min="1" style="padding:8px 12px; font-weight:800;" oninput="ejecutarOptimizacionLinealIO()">
+                                <small style="display:block; font-size:0.68rem; color:#cbd5e1; margin-top:4px;">Ingresa los minutos que puedes dedicar hoy a preparar combos. Este valor puede cambiar cada día.</small>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- ALERTA DE COSTOS INCOMPLETOS PARA OPTIMIZACIÓN (FASE 11) -->
+                    <div id="ioCostAlertBox" style="display:none; margin-bottom:20px; background:rgba(239,68,68,0.12); border:1.5px solid rgba(239,68,68,0.4); border-radius:12px; padding:16px;">
+                        <!-- Rendered dynamically if cost is missing -->
                     </div>
 
                     <!-- RESULTS DISPLAY -->
@@ -1083,7 +1232,7 @@
                                 <div style="font-size:0.75rem; color:#10b981; text-transform:uppercase; font-weight:900;">Función Objetivo Óptima (Z*)</div>
                                 <div style="font-size:2rem; font-weight:900; color:#fff; margin-top:4px;" id="ioValorZOptimo">$ 600.520 COP</div>
                                 <div style="font-size:0.75rem; color:#cbd5e1; margin-top:4px;">
-                                    Utilidad neta máxima diaria asegurada matemáticamente
+                                    Margen de contribución máximo estimado según la solución del modelo
                                 </div>
                             </div>
                             <div class="admin-card-glass" style="border-left:4px solid #f59e0b; display:flex; justify-content:space-between; align-items:center;">
@@ -1091,7 +1240,7 @@
                                     <div style="font-size:0.75rem; color:var(--admin-text-muted); text-transform:uppercase; font-weight:800;">Sincronización Web</div>
                                     <div style="font-size:0.85rem; color:#fff; font-weight:700; margin-top:4px;">Aplica esta solución al catálogo de la tienda</div>
                                 </div>
-                                <button class="btn-merko-primary" onclick="aplicarSolucionIOAInventario()" style="font-size:0.85rem; padding:10px 18px;">
+                                <button class="btn-merko-primary" id="btnSyncIoCatalog" onclick="aplicarSolucionIOAInventario()" style="font-size:0.85rem; padding:10px 18px;">
                                     💾 Sincronizar Tienda ➔
                                 </button>
                             </div>
@@ -1181,31 +1330,8 @@
                             <h3 style="font-size:0.95rem; font-weight:900; color:#FF8F00; margin-bottom:14px;">
                                 ⚙️ 3. Diagnóstico de Recursos, Holguras y Cuellos de Botella
                             </h3>
-                            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
-                                <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:8px; padding:12px;">
-                                    <div style="font-size:0.75rem; color:#ef4444; font-weight:900;">🔴 HUEVOS (35/35)</div>
-                                    <div style="font-size:0.8rem; color:#fff; margin-top:2px;">Uso: 100% • Cuello de Botella</div>
-                                </div>
-                                <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:8px; padding:12px;">
-                                    <div style="font-size:0.75rem; color:#ef4444; font-weight:900;">🔴 CAFÉ (20/20)</div>
-                                    <div style="font-size:0.8rem; color:#fff; margin-top:2px;">Uso: 100% • Cuello de Botella</div>
-                                </div>
-                                <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:8px; padding:12px;">
-                                    <div style="font-size:0.75rem; color:#ef4444; font-weight:900;">🔴 HARINA PAN (50/50)</div>
-                                    <div style="font-size:0.8rem; color:#fff; margin-top:2px;">Uso: 100% • Cuello de Botella</div>
-                                </div>
-                                <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:8px; padding:12px;">
-                                    <div style="font-size:0.75rem; color:#ef4444; font-weight:900;">🔴 ACEITE (14/14)</div>
-                                    <div style="font-size:0.8rem; color:#fff; margin-top:2px;">Uso: 100% • Cuello de Botella</div>
-                                </div>
-                                <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:8px; padding:12px;">
-                                    <div style="font-size:0.75rem; color:#ef4444; font-weight:900;">🔴 AZÚCAR (28/28)</div>
-                                    <div style="font-size:0.8rem; color:#fff; margin-top:2px;">Uso: 100% • Cuello de Botella</div>
-                                </div>
-                                <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:8px; padding:12px;">
-                                    <div style="font-size:0.75rem; color:#10b981; font-weight:900;">🟢 TIEMPO OPERARIO (84/480 min)</div>
-                                    <div style="font-size:0.8rem; color:#fff; margin-top:2px;">Holgura: 396 min libres (82.5%)</div>
-                                </div>
+                            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;" id="ioResourceDiagnosticsGrid">
+                                <!-- Dynamic Diagnostic Cards rendered by ejecutarOptimizacionLinealIO() -->
                             </div>
                         </div>
                     </div>
@@ -1304,6 +1430,127 @@
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <button type="button" class="btn-merko-outline" onclick="closeEditCategoryModal()">Cancelar</button>
                     <button type="submit" class="btn-merko-primary">💾 Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 1: REGISTRAR PRESUPUESTO INICIAL (FASE 5) -->
+    <div class="modal-overlay" id="modalInitBudget">
+        <div class="modal-card-luxury" style="max-width:440px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="font-size:1.25rem; font-weight:900; color:#ffffff; margin:0;">⚙️ Presupuesto Inicial</h3>
+                <button class="cart-close-btn" onclick="closeInitBudgetModal()"><span>✕</span></button>
+            </div>
+            <p style="font-size:0.8rem; color:var(--admin-text-muted); margin-bottom:18px;">
+                Ingresa el fondo inicial destinado a la compra y reposición de mercancía.
+            </p>
+            <form onsubmit="handleInitBudgetSubmit(event)">
+                <div class="merko-form-group" style="margin-bottom:20px;">
+                    <label>Monto Inicial ($ COP) *</label>
+                    <input type="number" id="initBudgetAmount" required min="1" placeholder="Ej: 1000000" style="font-size:1.1rem; font-weight:800; color:#10b981;">
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <button type="button" class="btn-merko-outline" onclick="closeInitBudgetModal()">Cancelar</button>
+                    <button type="submit" class="btn-merko-primary">💾 Guardar Presupuesto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: AGREGAR DINERO AL PRESUPUESTO (FASE 5) -->
+    <div class="modal-overlay" id="modalAddMoneyBudget">
+        <div class="modal-card-luxury" style="max-width:460px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="font-size:1.25rem; font-weight:900; color:#ffffff; margin:0;">💵 Agregar Dinero al Presupuesto</h3>
+                <button class="cart-close-btn" onclick="closeAddMoneyModal()"><span>✕</span></button>
+            </div>
+            <p style="font-size:0.8rem; color:var(--admin-text-muted); margin-bottom:18px;">
+                Inyecta capital extraordinario al fondo de reposición. Se registrará un movimiento inmutable en el historial.
+            </p>
+            <form onsubmit="handleAddMoneySubmit(event)">
+                <div class="merko-form-group" style="margin-bottom:14px;">
+                    <label>Valor a Agregar ($ COP) *</label>
+                    <input type="number" id="addMoneyAmount" required min="1" placeholder="Ej: 200000" style="font-size:1.05rem; font-weight:800; color:#10b981;">
+                </div>
+                <div class="merko-form-group" style="margin-bottom:14px;">
+                    <label>Motivo o Descripción *</label>
+                    <input type="text" id="addMoneyDescription" required placeholder="Ej: Inyección de capital propio para quincena">
+                </div>
+                <div class="merko-form-group" style="margin-bottom:20px;">
+                    <label>Fecha del Movimiento *</label>
+                    <input type="datetime-local" id="addMoneyDate" required>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <button type="button" class="btn-merko-outline" onclick="closeAddMoneyModal()">Cancelar</button>
+                    <button type="submit" class="btn-merko-primary">✅ Registrar Aporte</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: REGISTRAR COMPRA A PROVEEDORES (FASE 6) -->
+    <div class="modal-overlay" id="modalSupplierPurchase">
+        <div class="modal-card-luxury" style="max-width:540px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                <h3 style="font-size:1.25rem; font-weight:900; color:#ffffff; margin:0;">📦 Registrar Compra a Proveedor</h3>
+                <button class="cart-close-btn" onclick="closeSupplierPurchaseModal()"><span>✕</span></button>
+            </div>
+            <p style="font-size:0.8rem; color:var(--admin-text-muted); margin-bottom:16px;">
+                Al confirmar la compra, se aumentará el stock físico, se actualizará el costo promedio ponderado y se descontará del presupuesto.
+            </p>
+            <form onsubmit="handleSupplierPurchaseSubmit(event)">
+                <div class="merko-form-group" style="margin-bottom:14px;">
+                    <label>Producto a Reponer *</label>
+                    <select id="purchaseProductId" required onchange="handlePurchaseProductChange()" style="padding:10px; font-weight:700;">
+                        <!-- Rendered dynamically -->
+                    </select>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+                    <div class="merko-form-group">
+                        <label>Cantidad Comprada *</label>
+                        <input type="number" id="purchaseQuantity" required min="1" placeholder="Ej: 10" oninput="calculatePurchaseTotals()">
+                    </div>
+                    <div class="merko-form-group">
+                        <label>Precio Adquisición Unitario ($ COP) *</label>
+                        <input type="number" id="purchaseUnitCost" required min="0" placeholder="Ej: 7500" oninput="calculatePurchaseTotals()">
+                    </div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+                    <div class="merko-form-group">
+                        <label>Nombre del Proveedor (Opcional)</label>
+                        <input type="text" id="purchaseSupplierName" placeholder="Ej: Distribuidora Central">
+                    </div>
+                    <div class="merko-form-group">
+                        <label>Fecha de Compra *</label>
+                        <input type="datetime-local" id="purchaseDate" required>
+                    </div>
+                </div>
+                
+                <!-- Resumen Financiero de la Compra -->
+                <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(230,81,0,0.3); border-radius:10px; padding:12px 16px; margin-bottom:20px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <span style="font-size:0.8rem; color:#cbd5e1;">Costo Total de la Compra:</span>
+                        <strong style="font-size:1.1rem; color:#f59e0b;" id="lblPurchaseTotalCost">$ 0</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <span style="font-size:0.8rem; color:#cbd5e1;">Presupuesto Disponible:</span>
+                        <span style="font-size:0.85rem; color:#10b981; font-weight:800;" id="lblPurchaseAvailableBudget">$ 0</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:0.8rem; color:#cbd5e1;">Nuevo Costo Promedio Ponderado:</span>
+                        <span style="font-size:0.85rem; color:#38bdf8; font-weight:800;" id="lblPurchaseWeightedCost">$ 0</span>
+                    </div>
+                    <div id="purchaseBudgetWarning" style="display:none; margin-top:8px; font-size:0.75rem; color:#ef4444; font-weight:800;">
+                        ⚠️ Saldo insuficiente en el presupuesto para completar esta compra.
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <button type="button" class="btn-merko-outline" onclick="closeSupplierPurchaseModal()">Cancelar</button>
+                    <button type="submit" class="btn-merko-primary" id="btnConfirmPurchase" style="background:linear-gradient(135deg, #10b981, #059669);">
+                        ✅ Confirmar Compra
+                    </button>
                 </div>
             </form>
         </div>

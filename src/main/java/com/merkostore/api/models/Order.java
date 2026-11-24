@@ -40,6 +40,12 @@ public class Order {
     private BigDecimal subtotal;
     private BigDecimal total;
 
+    // Financial & Profit Tracking (Fases 7, 8, 9)
+    private BigDecimal totalCost;
+    private BigDecimal grossProfit;
+    @Builder.Default
+    private Boolean costRecoveryRecorded = false;
+
     private String paymentMethod; // WHATSAPP, NEQUI, PSE, CASH_ON_DELIVERY
     private PaymentStatus paymentStatus; // PENDING, PAID, REFUNDED
     private OrderStatus orderStatus; // RECEIVED, PREPARING, READY, DELIVERED, CANCELLED
@@ -80,5 +86,10 @@ public class Order {
         private Integer quantity;
         private BigDecimal unitPrice;
         private BigDecimal subtotal;
+
+        // Cost & Profit Tracking per Item (Fases 7, 9)
+        private BigDecimal costPrice;
+        private BigDecimal totalCost;
+        private BigDecimal grossProfit;
     }
 }
