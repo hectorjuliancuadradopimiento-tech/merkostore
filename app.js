@@ -117,6 +117,9 @@ const state = {
         fulfillmentType: 'DELIVERY',
         deliveryFee: 3000,
         minimumOrder: 10000,
+        nequiAccount: '3001234567',
+        bancolombiaAccount: '123-456789-01',
+        accountHolder: 'MERKOSTORE S.A.S',
         isStoreOpen: true
     },
     
@@ -872,26 +875,41 @@ function renderDashboardContent() {
                     ✨ No hay pedidos activos en este momento.
                 </div>`;
         } else {
-            activeOrdersContainer.innerHTML = activeOrders.slice(0, 4).map(o => `
-                <div class="dash-order-card">
-                    <div class="dash-order-info">
-                        <div class="dash-order-num">📦 ${o.orderNumber} <span style="font-size:0.75rem; font-weight:600; color:#a1a1aa; margin-left:8px;">${o.createdAt || ''}</span></div>
-                        <div class="dash-order-customer">👤 ${o.customerName} • 📞 ${o.customerPhone}</div>
-                        <div style="font-size:0.78rem; color:#d4d4d8;">${(o.items || []).map(i => `${i.qty}x ${i.name}`).join(', ')}</div>
-                    </div>
-                    <div style="text-align:right; display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
-                        <div class="dash-order-total">$ ${(o.total || 0).toLocaleString('es-CO')}</div>
-                        <div style="display:flex; gap:6px;">
-                            <button class="btn-merko-outline" style="padding:4px 10px; font-size:0.72rem;" onclick="advanceOrderStatusFromDashboard('${o.id}')">
-                                ⏩ Avanzar (${o.status})
-                            </button>
-                            <button class="btn-merko-outline" style="padding:4px 8px; font-size:0.72rem; color:#25D366; border-color:#25D366;" onclick="contactCustomerWhatsApp('${o.customerPhone}', '${o.orderNumber}')">
-                                💬 WA
-                            </button>
+            activeOrdersContainer.innerHTML = activeOrders.slice(0, 5).map(o => {
+                const itemsText = (o.items || []).map(i => `${i.qty || i.quantity || 1}x ${i.name || i.productName || 'Producto'}`).join(', ');
+                const nextStatus = o.status === 'RECEIVED' ? 'PREPARING' : (o.status === 'PREPARING' ? 'ON_WAY' : 'DELIVERED');
+                const confirmLabel = o.status === 'RECEIVED' ? '✓ Confirmar' : (o.status === 'PREPARING' ? '🛵 Despachar' : '✅ Entregar');
+
+                return `
+                <div class="dash-order-card" style="padding:14px; margin-bottom:10px; background:rgba(255,255,255,0.03); border:1px solid rgba(230,81,0,0.25); border-radius:12px;">
+                    <div class="dash-order-info" style="margin-bottom:8px;">
+                        <div class="dash-order-num" style="display:flex; justify-content:space-between; align-items:center;">
+                            <span>📦 <strong>${o.orderNumber}</strong> <span style="font-size:0.75rem; font-weight:600; color:#a1a1aa; margin-left:8px;">${o.createdAt || ''}</span></span>
+                            <span class="dash-order-total" style="font-size:1rem; font-weight:900; color:#10b981;">$ ${(o.total || 0).toLocaleString('es-CO')}</span>
+                        </div>
+                        <div class="dash-order-customer" style="font-size:0.85rem; color:#f4f4f5; margin:4px 0;">
+                            👤 <strong>${o.customerName || 'Cliente'}</strong> • 📞 ${o.customerPhone || 'Sin teléfono'}
+                        </div>
+                        <div style="font-size:0.78rem; color:#fb923c; font-weight:700; margin-bottom:2px;">
+                            📍 ${o.fulfillmentType === 'PICKUP' ? '🏬 Recogida en Local' : '🛵 Domicilio: ' + (o.deliveryAddress || 'Sin dirección')}
+                        </div>
+                        <div style="font-size:0.78rem; color:#d4d4d8; line-height:1.35; margin-top:4px;">
+                            🛒 ${itemsText || 'Sin ítems detallados'}
                         </div>
                     </div>
-                </div>
-            `).join('');
+                    <div style="display:flex; justify-content:flex-end; gap:6px; flex-wrap:wrap; border-top:1px solid rgba(255,255,255,0.06); padding-top:8px;">
+                        <button class="btn-merko-primary" style="padding:5px 12px; font-size:0.75rem; background:#16a34a; border-color:#16a34a;" onclick="advanceActiveOrder('${o.id}', '${nextStatus}')">
+                            ${confirmLabel}
+                        </button>
+                        <button class="btn-merko-outline" style="padding:5px 10px; font-size:0.75rem; color:#ef4444; border-color:#ef4444;" onclick="advanceActiveOrder('${o.id}', 'CANCELLED')">
+                            ✕ Cancelar
+                        </button>
+                        <button class="btn-merko-outline" style="padding:5px 12px; font-size:0.75rem; border-color:#f59e0b; color:#f59e0b;" onclick="openOrderDetailModal('${o.id}')">
+                            📄 Detalle
+                        </button>
+                    </div>
+                </div>`;
+            }).join('');
         }
     }
 
@@ -1056,7 +1074,18 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         state.products = savedProducts;
         state.categories = savedCategories;
-        state.orders = savedOrders;
+        state.orders = (savedOrders || []).map(o => ({
+            ...o,
+            items: (o.items || []).map(it => {
+                const found = (savedProducts || state.products).find(p => p.id === it.productId);
+                const safeName = (it.name && it.name !== 'undefined') ? it.name : (it.productName || (found ? found.name : 'Producto'));
+                return {
+                    ...it,
+                    name: safeName,
+                    qty: it.qty || it.quantity || 1
+                };
+            })
+        }));
     }
 
     recalculateMercadoStocks();
@@ -1413,7 +1442,7 @@ function renderProducts() {
 }
 
 // CART ENGINE & CHECKOUT STEP WIZARD
-let currentPaymentMethod = 'WHATSAPP';
+let currentPaymentMethod = 'TRANSFER_WHATSAPP';
 
 function addToCart(productId, quantity = 1) {
     const prod = state.products.find(p => p.id === productId || String(p.id).toLowerCase() === String(productId).toLowerCase());
@@ -1606,6 +1635,37 @@ function updateCartTotals(subtotal) {
 }
 
 function goToCartStep(step) {
+    const cartIds = Object.keys(state.cart);
+    if (cartIds.length === 0 && step > 1) {
+        showToast('🛒 Tu carrito está vacío. Agrega productos para continuar.', 'warning', '🛒');
+        return;
+    }
+
+    // Validación de Pedido Mínimo ($ 10.000 COP)
+    const subtotal = cartIds.reduce((sum, id) => {
+        const prod = state.products.find(p => p.id === id);
+        return sum + ((prod ? prod.price : 0) * state.cart[id]);
+    }, 0);
+    const minOrder = state.storeConfig.minimumOrder || 10000;
+
+    if (step > 1 && subtotal < minOrder) {
+        showToast(`⚠️ El pedido mínimo para despacho es de $ ${minOrder.toLocaleString('es-CO')} COP. ¡Agrega más productos a tu canasta!`, 'warning', '⚠️');
+        return;
+    }
+
+    // Validación de Campos Obligatorios en Paso 2
+    if (step === 3) {
+        const name = (document.getElementById('custName')?.value || '').trim();
+        const phone = (document.getElementById('custPhone')?.value || '').trim();
+        const address = (document.getElementById('custAddress')?.value || '').trim();
+        const notes = (document.getElementById('custNotes')?.value || '').trim();
+
+        if (!name || !phone || !address || !notes) {
+            showToast('⚠️ Todos los campos de entrega son obligatorios (*): Nombre, Teléfono, Dirección e Indicaciones.', 'warning', '⚠️');
+            return;
+        }
+    }
+
     state.currentCartStep = step;
     
     const subtitles = {
@@ -1679,15 +1739,91 @@ function selectFulfillment(type) {
 }
 
 function selectPaymentMethod(method) {
-    currentPaymentMethod = method;
-    ['WHATSAPP', 'CASH', 'NEQUI'].forEach(m => {
-        const card = document.getElementById('optPay' + m.charAt(0) + m.slice(1).toLowerCase());
-        if (card) {
-            card.classList.toggle('active', m === method);
-            const radio = card.querySelector('input[type="radio"]');
-            if (radio) radio.checked = (m === method);
-        }
-    });
+    currentPaymentMethod = (method === 'CASH') ? 'CASH' : 'TRANSFER_WHATSAPP';
+
+    const cardTransfer = document.getElementById('optPayTransfer');
+    const cardCash = document.getElementById('optPayCash');
+    const radioTransfer = cardTransfer ? cardTransfer.querySelector('input[type="radio"]') : null;
+    const radioCash = cardCash ? cardCash.querySelector('input[type="radio"]') : null;
+
+    const transferBox = document.getElementById('transferAccountsBox');
+    const cashBox = document.getElementById('cashChangeGroup');
+
+    if (currentPaymentMethod === 'TRANSFER_WHATSAPP') {
+        if (cardTransfer) cardTransfer.classList.add('active');
+        if (cardCash) cardCash.classList.remove('active');
+        if (radioTransfer) radioTransfer.checked = true;
+        if (radioCash) radioCash.checked = false;
+        if (transferBox) transferBox.style.display = 'block';
+        if (cashBox) cashBox.style.display = 'none';
+    } else {
+        if (cardCash) cardCash.classList.add('active');
+        if (cardTransfer) cardTransfer.classList.remove('active');
+        if (radioCash) radioCash.checked = true;
+        if (radioTransfer) radioTransfer.checked = false;
+        if (transferBox) transferBox.style.display = 'none';
+        if (cashBox) cashBox.style.display = 'block';
+        calculateCashChange();
+    }
+}
+
+function copyAccount(elementId, accountName) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    const text = el.textContent.trim();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast(`📋 ¡Número ${accountName} (${text}) copiado exitosamente!`, 'success', '📋');
+        }).catch(() => {
+            fallbackCopy(text, accountName);
+        });
+    } else {
+        fallbackCopy(text, accountName);
+    }
+}
+
+function fallbackCopy(text, accountName) {
+    const temp = document.createElement('textarea');
+    temp.value = text;
+    temp.style.position = 'fixed';
+    temp.style.left = '-9999px';
+    document.body.appendChild(temp);
+    temp.focus();
+    temp.select();
+    document.execCommand('copy');
+    document.body.removeChild(temp);
+    showToast(`📋 ¡Número ${accountName} copiado al portapapeles!`, 'success', '📋');
+}
+
+function calculateCashChange() {
+    const input = document.getElementById('custCashAmount');
+    const resultDiv = document.getElementById('cashChangeResult');
+    if (!input || !resultDiv) return;
+
+    const cashVal = parseFloat(input.value) || 0;
+    const cartIds = Object.keys(state.cart);
+    const subtotal = cartIds.reduce((sum, id) => {
+        const prod = state.products.find(p => p.id === id);
+        return sum + ((prod ? prod.price : 0) * state.cart[id]);
+    }, 0);
+    const isFree = subtotal >= 30000;
+    const fee = (state.storeConfig.fulfillmentType === 'DELIVERY' && !isFree) ? (state.storeConfig.deliveryFee || 3000) : 0;
+    const total = subtotal + fee;
+
+    if (cashVal <= 0) {
+        resultDiv.style.display = 'none';
+        return;
+    }
+
+    resultDiv.style.display = 'block';
+    if (cashVal < total) {
+        resultDiv.style.color = '#ef4444';
+        resultDiv.textContent = `⚠️ Con $ ${cashVal.toLocaleString('es-CO')} no alcanza para cubrir el total ($ ${total.toLocaleString('es-CO')}).`;
+    } else {
+        const change = cashVal - total;
+        resultDiv.style.color = '#4ade80';
+        resultDiv.textContent = `✅ El repartidor llevará tu cambio exacto: $ ${change.toLocaleString('es-CO')} COP`;
+    }
 }
 
 function renderTicketPreview(items) {
@@ -1701,8 +1837,8 @@ function renderTicketPreview(items) {
 
     container.innerHTML = items.map(it => `
         <div class="ticket-item-pill">
-            <span>${it.qty}x ${it.name}</span>
-            <strong>$ ${it.subtotal.toLocaleString('es-CO')}</strong>
+            <span>${it.qty || it.quantity || 1}x ${it.name || it.productName || 'Producto'}</span>
+            <strong>$ ${(it.subtotal || 0).toLocaleString('es-CO')}</strong>
         </div>
     `).join('');
 }
@@ -1721,13 +1857,25 @@ async function processWhatsAppCheckout() {
         return;
     }
 
-    const name = document.getElementById('custName')?.value || '';
-    const phone = document.getElementById('custPhone')?.value || '';
-    const address = document.getElementById('custAddress')?.value || '';
-    const notes = document.getElementById('custNotes')?.value || '';
+    const subtotalCalc = cartIds.reduce((sum, id) => {
+        const prod = state.products.find(p => p.id === id);
+        return sum + ((prod ? prod.price : 0) * state.cart[id]);
+    }, 0);
+    const minOrder = state.storeConfig.minimumOrder || 10000;
+    if (subtotalCalc < minOrder) {
+        showToast(`⚠️ El pedido mínimo para despacho a domicilio es de $ ${minOrder.toLocaleString('es-CO')} COP.`, 'warning', '⚠️');
+        return;
+    }
 
-    if (!name || !phone || !address) {
-        showToast('⚠️ Por favor completa tu Nombre, Teléfono y Dirección.', 'warning', '⚠️');
+    const name = (document.getElementById('custName')?.value || '').trim();
+    const phone = (document.getElementById('custPhone')?.value || '').trim();
+    const address = (document.getElementById('custAddress')?.value || '').trim();
+    const notes = (document.getElementById('custNotes')?.value || '').trim();
+    const cashAmountInput = document.getElementById('custCashAmount');
+    const cashVal = cashAmountInput ? (parseFloat(cashAmountInput.value) || 0) : 0;
+
+    if (!name || !phone || !address || !notes) {
+        showToast('⚠️ Por favor completa todos los campos obligatorios (*): Nombre, Teléfono, Dirección e Indicaciones.', 'warning', '⚠️');
         return;
     }
 
@@ -1745,7 +1893,7 @@ async function processWhatsAppCheckout() {
             deliveryAddress: address,
             notes: notes
         },
-        paymentMethod: currentPaymentMethod,
+        paymentMethod: currentPaymentMethod || 'TRANSFER_WHATSAPP',
         fulfillmentType: state.storeConfig.fulfillmentType
     };
 
@@ -1760,19 +1908,48 @@ async function processWhatsAppCheckout() {
             const subtotal = newOrder.subtotal;
             const fee = newOrder.deliveryFee;
 
-            // Save order into local history view
+            // Map order items robustly ensuring name & qty are ALWAYS present (never undefined)
+            const orderItems = (newOrder.items && newOrder.items.length > 0)
+                ? newOrder.items.map(it => {
+                    const found = state.products.find(p => p.id === it.productId);
+                    return {
+                        productId: it.productId,
+                        name: it.productName || it.name || (found ? found.name : 'Producto'),
+                        qty: it.quantity || it.qty || 1,
+                        unitPrice: it.unitPrice || (found ? found.price : 0),
+                        subtotal: it.subtotal || ((found ? found.price : 0) * (it.quantity || 1)),
+                        type: it.type || (it.productId && it.productId.startsWith('CMB') ? 'MERCADO' : 'DETAL')
+                    };
+                })
+                : cartIds.map(id => {
+                    const p = state.products.find(prod => prod.id === id);
+                    const q = state.cart[id];
+                    return {
+                        productId: id,
+                        name: p ? p.name : 'Producto',
+                        qty: q,
+                        unitPrice: p ? p.price : 0,
+                        subtotal: p ? (p.price * q) : 0,
+                        type: p ? p.type : 'DETAL'
+                    };
+                });
+
+            // Save order into local state & storage
             const mappedOrder = {
                 id: newOrder.id,
                 orderNumber: newOrderCode,
                 customerName: name,
                 customerPhone: phone,
                 deliveryAddress: address,
+                notes: notes,
+                customerNotes: notes,
+                cashAmount: cashVal,
                 fulfillmentType: newOrder.fulfillmentType,
-                items: newOrder.items || [],
+                items: orderItems,
                 subtotal: subtotal,
                 deliveryFee: fee,
                 total: total,
-                paymentMethod: currentPaymentMethod,
+                paymentMethod: currentPaymentMethod || 'TRANSFER_WHATSAPP',
                 paymentStatus: 'PENDING',
                 paymentStatusLabel: 'PENDIENTE DE CONFIRMACIÓN',
                 status: 'RECEIVED',
@@ -1793,19 +1970,17 @@ async function processWhatsAppCheckout() {
             showToast('🚀 Pedido confirmado en el servidor. Redirigiendo a WhatsApp...', 'success', '📲');
 
             let itemsText = '';
-            if (newOrder.items) {
-                newOrder.items.forEach(it => {
-                    itemsText += `  • ${it.quantity}x ${it.productName} ($ ${it.subtotal.toLocaleString('es-CO')})\n`;
-                });
-            }
+            orderItems.forEach(it => {
+                itemsText += `  • ${it.qty}x ${it.name} ($ ${it.subtotal.toLocaleString('es-CO')})\n`;
+            });
 
             const typeLabel = state.storeConfig.fulfillmentType === 'DELIVERY' ? '🚚 Domicilio a casa' : '🏬 Recogida en local';
             const paymentLabels = {
-                'WHATSAPP': '📲 Pedido Directo por WhatsApp',
-                'CASH': '💵 Efectivo Contra Entrega',
-                'NEQUI': '📱 Transferencia Nequi / Daviplata'
+                'TRANSFER_WHATSAPP': '📲 Transferencia Nequi / Bancolombia (Adjunto comprobante)',
+                'CASH': `💵 Efectivo Contra Entrega${cashVal > 0 ? ` (Paga con: $ ${cashVal.toLocaleString('es-CO')} - Cambio: $ ${(cashVal - total).toLocaleString('es-CO')})` : ' (Cantidad exacta)'}`,
+                'WHATSAPP': '📲 Transferencia por WhatsApp Directo'
             };
-            const paymentText = paymentLabels[currentPaymentMethod] || '📲 WhatsApp Directo';
+            const paymentText = paymentLabels[currentPaymentMethod] || '📲 Transferencia WhatsApp';
 
             const message = `🛒 *NUEVO PEDIDO EN MERKOSTORE*\n` +
                             `═════════════════════════\n` +
@@ -1814,17 +1989,26 @@ async function processWhatsAppCheckout() {
                             `📱 *Teléfono:* ${phone}\n` +
                             `📍 *Entrega:* ${typeLabel}\n` +
                             `🏠 *Dirección:* ${address}\n` +
-                            `💳 *Pago:* ${paymentText}\n` +
-                            (notes ? `📝 *Nota:* ${notes}\n` : '') +
+                            `📝 *Indicaciones / Notas:* ${notes}\n` +
+                            `💳 *Método de Pago:* ${paymentText}\n` +
                             `═════════════════════════\n` +
                             `📦 *PRODUCTOS SOLICITADOS:*\n${itemsText}` +
                             `═════════════════════════\n` +
                             `💰 *Subtotal Ítems:* $ ${subtotal.toLocaleString('es-CO')}\n` +
                             `🚚 *Costo Domicilio:* ${fee === 0 ? '¡GRATIS!' : '$ ' + fee.toLocaleString('es-CO')}\n` +
-                            `💵 *TOTAL VERIFICADO:* $ ${total.toLocaleString('es-CO')} COP\n\n` +
-                            `¡Hola! Confirmo mi pedido registrado con el código *${newOrderCode}*. Quedo atento a la entrega.`;
+                            `💵 *TOTAL A PAGAR:* $ ${total.toLocaleString('es-CO')} COP\n\n` +
+                            (currentPaymentMethod === 'TRANSFER_WHATSAPP' ? `📎 *Adjunto mi comprobante de transferencia bancaria para validación inmediata.*\n\n` : '') +
+                            `¡Hola! Confirmo mi pedido registrado con código *${newOrderCode}*. Quedo atento al despacho.`;
 
             window.open(`https://wa.me/${state.storeConfig.whatsappPhone}?text=${encodeURIComponent(message)}`, '_blank');
+            loadPublicBackendData();
+        } else {
+            showToast(`❌ No se pudo registrar el pedido: ${response.message || 'Error en el servidor'}`, 'error', '❌');
+        }
+    } catch (err) {
+        showToast(`❌ Error al procesar el pedido: ${err.message}`, 'error', '❌');
+    }
+}
             loadPublicBackendData();
         } else {
             showToast(`❌ No se pudo registrar el pedido: ${response.message || 'Error en el servidor'}`, 'error', '❌');
@@ -2902,7 +3086,7 @@ function renderActiveOrdersTable() {
 
     container.innerHTML = filtered.map(o => {
         const cleanPhone = (o.customerPhone || '').replace(/[^0-9]/g, '');
-        const itemsSummary = (o.items || []).map(it => `${it.qty}x ${it.name}`).join(' • ');
+        const itemsSummary = (o.items || []).map(it => `${it.qty || it.quantity || 1}x ${it.name || it.productName || 'Producto'}`).join(' • ');
         const isDelivery = (o.fulfillmentType || 'DELIVERY') === 'DELIVERY';
 
         let primaryActionButton = '';
@@ -3076,10 +3260,10 @@ function renderHistorialUnificadoTable() {
     if (state.historialSearchQuery) {
         const q = state.historialSearchQuery;
         filtered = filtered.filter(o => 
-            o.orderNumber.toLowerCase().includes(q) ||
-            o.customerName.toLowerCase().includes(q) ||
-            o.customerPhone.toLowerCase().includes(q) ||
-            o.items.some(it => it.name.toLowerCase().includes(q))
+            (o.orderNumber || '').toLowerCase().includes(q) ||
+            (o.customerName || '').toLowerCase().includes(q) ||
+            (o.customerPhone || '').toLowerCase().includes(q) ||
+            (o.items || []).some(it => (it.name || it.productName || '').toLowerCase().includes(q))
         );
     }
 
@@ -3096,7 +3280,7 @@ function renderHistorialUnificadoTable() {
     if (filtered.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="7" style="text-align:center; padding:32px; color:#a1a1aa;">
+                <td colspan="6" style="text-align:center; padding:32px; color:#a1a1aa;">
                     No hay registros de pedidos o compras para los filtros seleccionados.
                 </td>
             </tr>
@@ -3105,20 +3289,20 @@ function renderHistorialUnificadoTable() {
     }
 
     tbody.innerHTML = filtered.map(o => {
-        const itemsListText = o.items.map(it => `${it.name}`).join(', ');
+        const itemsListText = (o.items || []).map(it => `${it.qty || it.quantity || 1}x ${it.name || it.productName || 'Producto'}`).join(', ');
         const isPaid = o.paymentStatus === 'PAID';
         
         return `
             <tr>
                 <td>
                     <div class="code-badge-gold">${o.orderNumber}</div>
-                    <div class="client-name-bold">${o.customerName}</div>
-                    <div class="client-phone-sub">${o.customerPhone}</div>
+                    <div class="client-name-bold">${o.customerName || 'Cliente'}</div>
+                    <div class="client-phone-sub">${o.customerPhone || 'Sin teléfono'}</div>
                 </td>
-                <td style="max-width:260px;">
-                    <div class="items-solicitud-text">${itemsListText}</div>
+                <td style="max-width:280px;">
+                    <div class="items-solicitud-text">${itemsListText || 'Sin ítems'}</div>
                     <div style="margin-top:4px;">
-                        ${o.items.map(it => `
+                        ${(o.items || []).map(it => `
                             <span class="card-type-badge ${it.type === 'MERCADO' ? 'mercado' : 'detal'}" style="position:static; font-size:0.6rem; padding:1px 6px;">
                                 ${it.type === 'MERCADO' ? 'MERCADO' : 'PRODUCTO'}
                             </span>
@@ -3126,26 +3310,23 @@ function renderHistorialUnificadoTable() {
                     </div>
                 </td>
                 <td>
-                    <div style="font-size:0.8rem; font-weight:700;">Registro:${o.createdAt || o.dateOnly}</div>
+                    <div style="font-size:0.8rem; font-weight:700;">Registro: ${o.createdAt || o.dateOnly || 'Hoy'}</div>
                     <div style="font-size:0.75rem; color:#f59e0b; margin-top:2px;">
                         ${o.fulfillmentType === 'DELIVERY' ? '🚚 Envío a domicilio' : '🏬 Recogida local'}
                     </div>
                 </td>
                 <td style="font-weight:900; color:#10b981; font-size:0.95rem;">
-                    $ ${o.total.toLocaleString('es-CO')}
+                    $ ${(o.total || 0).toLocaleString('es-CO')}
                 </td>
                 <td>
                     <div class="method-tag-pill">
-                        💳 ${o.paymentMethod || 'Wompi - Automático'}
+                        💳 ${o.paymentMethod || 'Transferencia'}
                     </div>
                     <div>
                         <span class="status-tag-pill ${isPaid ? 'delivered' : 'preparing'}">
-                            ${isPaid ? '✓ PAGADO' : 'PENDIENTE'}
+                            ${isPaid ? '✓ PAGADO' : (o.status === 'DELIVERED' ? '✓ ENTREGADO' : (o.status === 'CANCELLED' ? '✕ CANCELADO' : 'PENDIENTE'))}
                         </span>
                     </div>
-                </td>
-                <td style="font-size:0.78rem; color:#a1a1aa;">
-                    ${o.archivedDate || o.dateOnly}
                 </td>
                 <td>
                     <div style="display:flex; gap:6px;">
@@ -3162,7 +3343,7 @@ function renderHistorialUnificadoTable() {
     }).join('');
 }
 
-// ORDER DETAIL MODAL (MATCHING IMAGE 2 EXACTLY)
+// ORDER DETAIL MODAL
 function openOrderDetailModal(orderId) {
     const o = state.orders.find(ord => ord.id === orderId);
     if (!o) return;
@@ -3175,11 +3356,11 @@ function openOrderDetailModal(orderId) {
 
     // Steps 1 to 5 mapping
     const steps = [
-        { key: 'RECEIVED', num: '1', label: '1. Pagado', icon: '💳' },
-        { key: 'PREPARING', num: '2', label: '2. En prep.', icon: '📦' },
-        { key: 'READY', num: '3', label: '3. Listo envío', icon: '🏬' },
-        { key: 'ON_WAY', num: '4', label: '4. En camino', icon: '🚚' },
-        { key: 'DELIVERED', num: '5', label: '5. Entregado', icon: '✓' }
+        { key: 'RECEIVED', num: '1', label: '1. Recibido', icon: '🔔' },
+        { key: 'PREPARING', num: '2', label: '2. En prep.', icon: '👨‍🍳' },
+        { key: 'READY', num: '3', label: '3. Listo despacho', icon: '📦' },
+        { key: 'ON_WAY', num: '4', label: '4. En camino', icon: '🛵' },
+        { key: 'DELIVERED', num: '5', label: '5. Entregado', icon: '✅' }
     ];
 
     const currentStepIndex = steps.findIndex(s => s.key === o.status);
@@ -3191,19 +3372,19 @@ function openOrderDetailModal(orderId) {
                 <div class="order-code-title">
                     <span>${o.orderNumber}</span>
                     <span class="status-tag-pill ${isDelivered ? 'delivered' : 'preparing'}" style="font-size:0.75rem;">
-                        ${o.status === 'DELIVERED' ? 'Entregado' : 'En proceso'}
+                        ${o.status === 'DELIVERED' ? 'Entregado' : (o.status === 'CANCELLED' ? 'Cancelado' : 'En proceso')}
                     </span>
                 </div>
                 <div class="order-client-sub">
-                    ${o.customerName} • ${o.cityNeighborhood || 'Cartagena - Barrio El Prado'}
+                    👤 ${o.customerName || 'Cliente'} • 📞 ${o.customerPhone || 'Sin teléfono'}
                 </div>
             </div>
             <button class="order-close-btn" onclick="closeOrderDetailModal()" title="Cerrar modal">✕</button>
         </div>
 
-        <!-- Progreso del Pedido Stepper (Image 2) -->
+        <!-- Progreso del Pedido Stepper -->
         <div class="order-progreso-box">
-            <div class="progreso-box-title">PROGRESO DEL PEDIDO</div>
+            <div class="progreso-box-title">CAMBIAR O PROGRESAR ESTADO DEL PEDIDO</div>
             <div class="progreso-steps-grid">
                 ${steps.map((s, idx) => {
                     const isDone = idx <= currentStepIndex;
@@ -3222,45 +3403,54 @@ function openOrderDetailModal(orderId) {
         <div class="order-info-card">
             <div class="info-grid-2col">
                 <div>
-                    <div class="info-label">Fecha de Registro</div>
-                    <div class="info-val">${o.createdAt || '2026-09-12'}</div>
+                    <div class="info-label">Fecha y Hora de Registro</div>
+                    <div class="info-val">${o.createdAt || 'Hoy'}</div>
                 </div>
                 <div>
-                    <div class="info-label">Teléfono / WhatsApp</div>
-                    <div class="info-val">${o.customerPhone}</div>
+                    <div class="info-label">Teléfono WhatsApp de Contacto</div>
+                    <div class="info-val">${o.customerPhone || 'Sin teléfono'}</div>
                 </div>
             </div>
 
             <div>
-                <div class="info-label">Correo Electrónico</div>
-                <div class="info-val">${o.customerEmail || 'yuriwayne15@gmail.com'}</div>
+                <div class="info-label">Modalidad de Entrega</div>
+                <div class="info-val" style="color:#f59e0b; font-size:0.86rem; margin-top:2px;">
+                    ${o.fulfillmentType === 'PICKUP' ? '🏬 Recogida en Local' : '🛵 Envío a Domicilio'}
+                </div>
             </div>
 
             <div>
-                <div class="info-label">Entrega</div>
-                <div class="info-val" style="color:#f59e0b; font-size:0.86rem; margin-top:2px;">
-                    🚚 Envío a domicilio: <span style="color:#ffffff;">${o.deliveryAddress}</span>
+                <div class="info-label">Dirección Exacta de Entrega</div>
+                <div class="info-val" style="color:#ffffff; font-size:0.88rem; margin-top:2px;">
+                    📍 ${o.deliveryAddress || 'No especificada'}
+                </div>
+            </div>
+
+            <div>
+                <div class="info-label">Indicaciones o Notas de Entrega</div>
+                <div class="info-val" style="color:#38bdf8; font-size:0.86rem; margin-top:2px; font-weight:700;">
+                    📝 ${o.notes || o.customerNotes || 'Sin notas adicionales'}
                 </div>
             </div>
         </div>
 
         <!-- Productos Solicitados Section -->
         <div style="display:flex; flex-direction:column; gap:10px;">
-            <div style="font-size:0.75rem; font-weight:900; color:#d4d4d8; text-transform:uppercase;">PRODUCTOS SOLICITADOS</div>
+            <div style="font-size:0.75rem; font-weight:900; color:#d4d4d8; text-transform:uppercase;">PRODUCTOS SOLICITADOS (${(o.items || []).length} ÍTEMS)</div>
             <div class="items-solicitados-list">
-                ${o.items.map(it => `
+                ${(o.items || []).map(it => `
                     <div class="order-item-detail-card">
                         <div class="item-thumb-name">
                             <img src="${it.imageUrl || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500'}" class="item-thumb-img">
                             <div>
                                 <div style="display:flex; align-items:center; gap:6px;">
-                                    <strong style="color:#fff; font-size:0.9rem;">${it.name}</strong>
+                                    <strong style="color:#fff; font-size:0.9rem;">${it.name || it.productName || 'Producto'}</strong>
                                     <span class="card-type-badge ${it.type === 'MERCADO' ? 'mercado' : 'detal'}" style="position:static; font-size:0.6rem; padding:1px 6px;">
                                         ${it.type === 'MERCADO' ? 'MERCADO' : 'PRODUCTO'}
                                     </span>
                                 </div>
                                 <div style="font-size:0.75rem; color:#a1a1aa; margin-top:2px;">
-                                    Cantidad: ${it.qty} • $ ${(it.unitPrice || 0).toLocaleString('es-CO')} c/u
+                                    Cantidad: ${it.qty || it.quantity || 1} • $ ${(it.unitPrice || 0).toLocaleString('es-CO')} c/u
                                 </div>
                             </div>
                         </div>
@@ -3275,25 +3465,34 @@ function openOrderDetailModal(orderId) {
         <!-- Payment Details Summary Box -->
         <div class="payment-summary-box">
             <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem;">
-                <span style="color:#a1a1aa;">Método de Pago:</span>
-                <strong style="color:#fff;">${o.paymentMethod || 'Pasarela Wompi Bancolombia'}</strong>
+                <span style="color:#a1a1aa;">Método de Pago Seleccionado:</span>
+                <strong style="color:#fff;">${o.paymentMethod || 'Transferencia WhatsApp'}</strong>
             </div>
+            ${o.cashAmount ? `
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; border-top:1px solid #27272a; padding-top:8px;">
+                    <span style="color:#a1a1aa;">Paga en Efectivo con:</span>
+                    <strong style="color:#4ade80;">$ ${o.cashAmount.toLocaleString('es-CO')} (Cambio: $ ${(o.cashAmount - (o.total || 0)).toLocaleString('es-CO')})</strong>
+                </div>
+            ` : ''}
             <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; border-top:1px solid #27272a; padding-top:8px;">
-                <span style="color:#a1a1aa;">Estado del Pago:</span>
+                <span style="color:#a1a1aa;">Estado del Pedido:</span>
                 <span class="status-tag-pill ${isPaid ? 'delivered' : 'preparing'}">
-                    ${o.paymentStatusLabel || 'APROBADO & COBRADO'}
+                    ${o.status}
                 </span>
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center; font-size:1.05rem; font-weight:900; border-top:1px dashed #27272a; padding-top:10px; margin-top:4px;">
-                <span>Total Pagado:</span>
-                <span style="color:#f59e0b; font-size:1.25rem;">$ ${o.total.toLocaleString('es-CO')}</span>
+                <span>Total a Cobrar:</span>
+                <span style="color:#f59e0b; font-size:1.25rem;">$ ${(o.total || 0).toLocaleString('es-CO')} COP</span>
             </div>
         </div>
 
-        <!-- Bottom Action Button: WhatsApp -->
-        <div style="display:flex; justify-content:flex-end;">
-            <button class="btn-whatsapp-modal" onclick="contactCustomerWhatsApp('${o.customerPhone}', '${o.orderNumber}')">
-                <span>💬 WhatsApp</span>
+        <!-- Bottom Action Buttons: WhatsApp Verification & Close -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px; flex-wrap:wrap; gap:10px;">
+            <button class="btn-merko-outline" style="padding:10px 18px; font-size:0.85rem;" onclick="closeOrderDetailModal()">
+                ✕ Cerrar Ventana
+            </button>
+            <button class="btn-merko-primary" style="background:#25D366; border-color:#25D366; color:#ffffff; padding:10px 20px; font-weight:800; display:inline-flex; align-items:center; gap:8px;" onclick="contactCustomerWhatsApp('${o.customerPhone}', '${o.orderNumber}')">
+                <span>💬 Verificar Comprobante por WhatsApp</span>
             </button>
         </div>
     `;
@@ -3318,9 +3517,10 @@ async function setOrderStatus(orderId, newStatus) {
             o.status = newStatus;
         }
 
-        const statusLabels = { RECEIVED: '1. Pagado/Recibido', PREPARING: '2. En Preparación', READY: '3. Listo Envío', ON_WAY: '4. En Camino', DELIVERED: '5. Entregado', CANCELLED: 'Cancelado' };
+        const statusLabels = { RECEIVED: '1. Recibido', PREPARING: '2. En Preparación', READY: '3. Listo Envío', ON_WAY: '4. En Camino', DELIVERED: '5. Entregado', CANCELLED: 'Cancelado' };
 
         renderHistorialUnificadoTable();
+        renderActiveOrdersTable();
         openOrderDetailModal(orderId);
         showToast(`📦 Estado de pedido ${o.orderNumber} cambiado a: ${statusLabels[newStatus] || newStatus}`, 'success', '📦');
     } catch (e) {
@@ -3330,7 +3530,7 @@ async function setOrderStatus(orderId, newStatus) {
 
 function contactCustomerWhatsApp(phone, orderCode) {
     const num = phone ? phone.replace(/[^0-9]/g, '') : '573001234567';
-    const msg = `¡Hola! Te contactamos de Merkostore sobre tu pedido *${orderCode}*.`;
+    const msg = `¡Hola! Te contactamos de MERKOSTORE sobre tu pedido *${orderCode}*. ¿Nos podrías confirmar tu pedido o enviar tu comprobante de pago?`;
     window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
@@ -3365,6 +3565,14 @@ async function saveStoreConfig() {
     if (minInput) state.storeConfig.minimumOrder = parseFloat(minInput.value);
     const addrInput = document.getElementById('cfgAddress');
     if (addrInput) state.storeConfig.address = addrInput.value;
+    const nequiInput = document.getElementById('cfgNequiAccount');
+    if (nequiInput) state.storeConfig.nequiAccount = nequiInput.value;
+    const bancoInput = document.getElementById('cfgBancolombiaAccount');
+    if (bancoInput) state.storeConfig.bancolombiaAccount = bancoInput.value;
+    const holderInput = document.getElementById('cfgAccountHolder');
+    if (holderInput) state.storeConfig.accountHolder = holderInput.value;
+
+    Storage.set('storeConfig', state.storeConfig);
 
     try {
         await API.put('/api/v1/admin/store-config', {
@@ -3377,9 +3585,10 @@ async function saveStoreConfig() {
             isStoreOpen: true
         });
         syncStoreConfigUI();
-        showToast('⚙️ ¡Configuración del negocio guardada exitosamente en el servidor!', 'success', '⚙️');
+        showToast('⚙️ ¡Configuración del negocio guardada exitosamente!', 'success', '⚙️');
     } catch (e) {
-        showToast(`❌ Error al guardar configuración: ${e.message}`, 'error', '❌');
+        syncStoreConfigUI();
+        showToast('⚙️ Configuración guardada localmente.', 'success', '⚙️');
     }
 }
 
@@ -3394,6 +3603,36 @@ function syncStoreConfigUI() {
     const storeNameEl = document.getElementById('navStoreName');
     if (storeNameEl) storeNameEl.textContent = 'MERKOSTORE';
 
+    const dispNequi = document.getElementById('dispNequiNumber');
+    if (dispNequi) dispNequi.textContent = state.storeConfig.nequiAccount || '3001234567';
+
+    const dispBanco = document.getElementById('dispBancolombiaNumber');
+    if (dispBanco) dispBanco.textContent = state.storeConfig.bancolombiaAccount || '123-456789-01';
+
+    const dispHolder = document.getElementById('dispHolderName');
+    if (dispHolder) dispHolder.textContent = `Titular: ${state.storeConfig.accountHolder || 'MERKOSTORE S.A.S'}`;
+
+    const cfgNequi = document.getElementById('cfgNequiAccount');
+    if (cfgNequi && state.storeConfig.nequiAccount) cfgNequi.value = state.storeConfig.nequiAccount;
+
+    const cfgBanco = document.getElementById('cfgBancolombiaAccount');
+    if (cfgBanco && state.storeConfig.bancolombiaAccount) cfgBanco.value = state.storeConfig.bancolombiaAccount;
+
+    const cfgHolder = document.getElementById('cfgAccountHolder');
+    if (cfgHolder && state.storeConfig.accountHolder) cfgHolder.value = state.storeConfig.accountHolder;
+
+    const cfgMin = document.getElementById('cfgMinOrder');
+    if (cfgMin && state.storeConfig.minimumOrder) cfgMin.value = state.storeConfig.minimumOrder;
+
+    const cfgFee = document.getElementById('cfgDeliveryFee');
+    if (cfgFee && state.storeConfig.deliveryFee) cfgFee.value = state.storeConfig.deliveryFee;
+
+    const cfgAddr = document.getElementById('cfgAddress');
+    if (cfgAddr && state.storeConfig.address) cfgAddr.value = state.storeConfig.address;
+
+    const cfgWa = document.getElementById('cfgWhatsappPhone');
+    if (cfgWa && state.storeConfig.whatsappPhone) cfgWa.value = state.storeConfig.whatsappPhone;
+
     const topBarPhoneEl = document.getElementById('topBarPhone');
     if (topBarPhoneEl) topBarPhoneEl.textContent = `📲 WhatsApp Tienda: ${state.storeConfig.whatsappPhone}`;
 
@@ -3404,7 +3643,7 @@ function syncStoreConfigUI() {
     }
 
     const feeEl = document.getElementById('lblDeliveryFee');
-    if (feeEl) feeEl.textContent = `$ ${state.storeConfig.deliveryFee.toLocaleString('es-CO')} COP`;
+    if (feeEl) feeEl.textContent = `$ ${(state.storeConfig.deliveryFee || 3000).toLocaleString('es-CO')} COP`;
 }
 
 // ==========================================
@@ -3523,10 +3762,12 @@ async function loadAdminBackendData() {
                 customerName: o.customer ? o.customer.name : 'Cliente',
                 customerPhone: o.customer ? o.customer.phone : '',
                 deliveryAddress: o.customer ? o.customer.deliveryAddress : '',
+                notes: o.customer ? (o.customer.notes || '') : '',
+                customerNotes: o.customer ? (o.customer.notes || '') : '',
                 fulfillmentType: o.fulfillmentType || 'DELIVERY',
                 items: (o.items || []).map(it => ({
                     productId: it.productId,
-                    name: it.productName || it.name,
+                    name: it.productName || it.name || (state.products.find(p => p.id === it.productId)?.name || 'Producto'),
                     qty: it.quantity || it.qty || 1,
                     unitPrice: it.unitPrice || 0,
                     subtotal: it.subtotal || 0,

@@ -29,13 +29,19 @@
         <div class="ambient-item item-14" onmousedown="startDragEmoji(event, this)" ontouchstart="startDragEmoji(event, this)" title="¡Arrástrame!">☕</div>
     </div>
 
-    <!-- TOP NOTIFICATION BAR -->
+    <!-- TOP NOTIFICATION BAR (DINÁMICA, ANIMADA Y REGLA DE PEDIDO MÍNIMO) -->
     <div class="top-bar">
         <div class="top-bar-notice">
-            <span>🔥 VÁLIDO HOY:</span> Envíos express en 15-25 min • Domicilio GRATIS en compras mayores a $ 30.000 COP
+            <span class="top-bar-badge-fire">🔥 EN VIVO</span>
+            <span class="top-bar-item">🛵 Envíos express en <strong>15-25 min</strong></span>
+            <span class="top-bar-sep">•</span>
+            <span class="top-bar-item top-bar-free-delivery">🎉 Domicilio <strong>GRATIS</strong> desde $ 30.000 COP</span>
+            <span class="top-bar-sep">•</span>
+            <span class="top-bar-badge-minorder">⚠️ Pedido Mínimo: $ 10.000 COP</span>
         </div>
-        <div style="font-size:0.78rem; font-weight:800; color:#f59e0b; display:flex; gap:12px; align-items:center;">
-            <span>⚡ Atención Inmediata</span>
+        <div class="top-bar-right-info">
+            <span class="top-bar-pulse-dot"></span>
+            <span>⚡ Atención Inmediata WhatsApp</span>
         </div>
     </div>
 
@@ -698,7 +704,6 @@
                                         <th>REGISTRO / ENTREGA</th>
                                         <th>TOTAL DE COMPRA</th>
                                         <th>MÉTODO & ESTADO</th>
-                                        <th>ARCHIVADO</th>
                                         <th>ACCIÓN</th>
                                     </tr>
                                 </thead>
@@ -810,6 +815,22 @@
                                 <label>PEDIDO MÍNIMO ($ COP)</label>
                                 <input type="number" id="cfgMinOrder" value="10000">
                             </div>
+                        </div>
+
+                        <div style="font-size:1rem; font-weight:900; color:var(--brand-primary); margin-top:16px; margin-bottom:8px;">💳 C. Cuentas de Transferencia (Nequi y Bancolombia)</div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                            <div class="merko-form-group">
+                                <label>NÚMERO CUENTA NEQUI</label>
+                                <input type="text" id="cfgNequiAccount" value="3001234567" placeholder="Ej: 3001234567">
+                            </div>
+                            <div class="merko-form-group">
+                                <label>NÚMERO CUENTA BANCOLOMBIA</label>
+                                <input type="text" id="cfgBancolombiaAccount" value="123-456789-01" placeholder="Ej: 123-456789-01 (Ahorros)">
+                            </div>
+                        </div>
+                        <div class="merko-form-group" style="margin-top:12px;">
+                            <label>TITULAR DE LAS CUENTAS (NOMBRE/EMPRESA)</label>
+                            <input type="text" id="cfgAccountHolder" value="MERKOSTORE S.A.S" placeholder="Ej: MERKOSTORE S.A.S">
                         </div>
 
                         <button class="btn-merko-primary" style="margin-top:20px; justify-content:center;" onclick="saveStoreConfig()">
@@ -1380,10 +1401,10 @@
                     </div>
 
                     <div class="checkout-form-group">
-                        <label class="checkout-label">Indicaciones o Notas Adicionales (Opcional)</label>
+                        <label class="checkout-label">Indicaciones o Notas de Entrega *</label>
                         <div class="input-with-icon">
                             <span class="input-icon">📝</span>
-                            <input type="text" id="custNotes" placeholder="Ej: Apto 302 / Timbre rojo / Entregar en portería" class="merko-input-luxury">
+                            <input type="text" id="custNotes" placeholder="Ej: Apto 302 / Timbre rojo / Dejar en portería" class="merko-input-luxury" required>
                         </div>
                     </div>
                 </div>
@@ -1409,20 +1430,22 @@
                 </div>
 
                 <div class="checkout-options-grid">
-                    <label class="checkout-option-card active" id="optPayWhatsapp" onclick="selectPaymentMethod('WHATSAPP')">
+                    <!-- Opción 1: Transferencia / WhatsApp -->
+                    <label class="checkout-option-card active" id="optPayTransfer" onclick="selectPaymentMethod('TRANSFER_WHATSAPP')">
                         <div class="option-radio-wrap">
-                            <input type="radio" name="paymentMethod" value="WHATSAPP" checked>
+                            <input type="radio" name="paymentMethod" value="TRANSFER_WHATSAPP" checked>
                             <span class="custom-radio"></span>
                         </div>
                         <div class="option-details">
                             <div class="option-title-row">
-                                <span class="option-title">📲 Pedido por WhatsApp Directo</span>
+                                <span class="option-title">📲 Pago por Transferencia / WhatsApp</span>
                                 <span class="option-badge-recommended">RECOMENDADO</span>
                             </div>
-                            <div class="option-subtext">Acuerdas el pago directo por chat con el tiendero.</div>
+                            <div class="option-subtext">Transfiere por Nequi o Bancolombia y valida tu pedido en 1 minuto.</div>
                         </div>
                     </label>
 
+                    <!-- Opción 2: Efectivo Contra Entrega -->
                     <label class="checkout-option-card" id="optPayCash" onclick="selectPaymentMethod('CASH')">
                         <div class="option-radio-wrap">
                             <input type="radio" name="paymentMethod" value="CASH">
@@ -1430,34 +1453,81 @@
                         </div>
                         <div class="option-details">
                             <div class="option-title-row">
-                                <span class="option-title">💵 Efectivo Contra Entrega</span>
+                                <span class="option-title">💵 Pago en Efectivo Contra Entrega</span>
                             </div>
-                            <div class="option-subtext">Pagas exacto o indicas el vuelto al repartidor al recibir.</div>
-                        </div>
-                    </label>
-
-                    <label class="checkout-option-card" id="optPayNequi" onclick="selectPaymentMethod('NEQUI')">
-                        <div class="option-radio-wrap">
-                            <input type="radio" name="paymentMethod" value="NEQUI">
-                            <span class="custom-radio"></span>
-                        </div>
-                        <div class="option-details">
-                            <div class="option-title-row">
-                                <span class="option-title">📱 Nequi / Daviplata</span>
-                            </div>
-                            <div class="option-subtext">Envías el comprobante por WhatsApp al 300 123 4567.</div>
+                            <div class="option-subtext">Paga en efectivo al recibir tu pedido en la puerta de tu casa.</div>
                         </div>
                     </label>
                 </div>
 
-                <!-- CASH CHANGE CALCULATOR FIELD -->
-                <div id="cashChangeGroup" style="display:none; margin-top:12px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:12px;">
-                    <label class="checkout-label" style="font-size:0.85rem; font-weight:800; color:#0f172a;">💵 ¿Con cuánto vas a pagar en efectivo? (Opcional para llevar vuelto)</label>
-                    <div class="input-with-icon" style="margin-top:6px;">
-                        <span class="input-icon">💵</span>
-                        <input type="number" id="custCashAmount" placeholder="Ej: 50000" class="merko-input-luxury" oninput="calculateCashChange()">
+                <!-- BLOQUE DE CUENTAS DE TRANSFERENCIA (NEQUI / BANCOLOMBIA) -->
+                <div id="transferAccountsBox" class="transfer-accounts-box" style="margin-top:14px; background:linear-gradient(135deg, #18181b, #111113); border:1.5px solid rgba(230,81,0,0.35); border-radius:14px; padding:16px; box-shadow:0 6px 20px rgba(0,0,0,0.25);">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">
+                        <span style="font-size:0.85rem; font-weight:900; color:#FF8F00; display:flex; align-items:center; gap:6px;">
+                            🏦 Cuentas Oficiales para Transferir
+                        </span>
+                        <span id="dispHolderName" style="font-size:0.75rem; color:#a1a1aa; font-weight:700;">Titular: MERKOSTORE S.A.S</span>
                     </div>
-                    <div id="cashChangeResult" style="font-size:0.82rem; font-weight:800; color:#059669; margin-top:6px; display:none;"></div>
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+                        <!-- Nequi Card -->
+                        <div class="account-item-card" style="background:#201026; border:1px solid #c026d3; border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <div style="font-size:0.75rem; font-weight:800; color:#e879f9; display:flex; align-items:center; gap:4px;">
+                                    <span>🟣</span> NEQUI
+                                </div>
+                                <div id="dispNequiNumber" style="font-size:0.95rem; font-weight:900; color:#ffffff; letter-spacing:0.5px; margin-top:2px;">3001234567</div>
+                            </div>
+                            <button type="button" class="btn-copy-account" onclick="copyAccount('dispNequiNumber', 'Nequi')" title="Copiar número Nequi">
+                                📋 Copiar
+                            </button>
+                        </div>
+
+                        <!-- Bancolombia Card -->
+                        <div class="account-item-card" style="background:#0f1d24; border:1px solid #0284c7; border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <div style="font-size:0.75rem; font-weight:800; color:#38bdf8; display:flex; align-items:center; gap:4px;">
+                                    <span>🟡</span> BANCOLOMBIA (Ahorros)
+                                </div>
+                                <div id="dispBancolombiaNumber" style="font-size:0.95rem; font-weight:900; color:#ffffff; letter-spacing:0.5px; margin-top:2px;">123-456789-01</div>
+                            </div>
+                            <button type="button" class="btn-copy-account" onclick="copyAccount('dispBancolombiaNumber', 'Bancolombia')" title="Copiar número Bancolombia">
+                                📋 Copiar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Instrucciones para que la solicitud sea válida -->
+                    <div style="background:rgba(230,81,0,0.08); border-left:3px solid #FF8F00; border-radius:6px; padding:10px 12px; font-size:0.78rem; color:#e4e4e7; line-height:1.45;">
+                        <strong style="color:#FF8F00;">📌 Instrucciones para validar tu solicitud:</strong>
+                        <ol style="margin:4px 0 0 16px; padding:0;">
+                            <li>Copia el número y transfiere el total exacto desde tu app de Nequi o Bancolombia.</li>
+                            <li>Toma captura de pantalla al comprobante exitoso de transferencia.</li>
+                            <li>Al hacer clic abajo en <strong>"Confirmar Pedido por WhatsApp"</strong>, adjunta tu comprobante en el chat para que el pedido sea validado y despachado de inmediato.</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- BLOQUE DE PAGO EN EFECTIVO CON CAMBIO EXACTO -->
+                <div id="cashChangeGroup" style="display:none; margin-top:14px; background:#1c1917; border:1.5px solid rgba(34,197,94,0.35); border-radius:14px; padding:16px;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                        <span style="font-size:1.2rem;">💵</span>
+                        <div>
+                            <div style="font-size:0.86rem; font-weight:900; color:#4ade80;">Pago Contra Entrega en Efectivo</div>
+                            <div style="font-size:0.76rem; color:#a1a1aa;">Por favor procura tener la cantidad exacta al recibir tu pedido.</div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top:10px;">
+                        <label class="checkout-label" style="font-size:0.82rem; font-weight:800; color:#ffffff;">
+                            ¿Con cuánto dinero vas a pagar? (Para que el domiciliario lleve tu cambio exacto)
+                        </label>
+                        <div class="input-with-icon" style="margin-top:6px;">
+                            <span class="input-icon">💵</span>
+                            <input type="number" id="custCashAmount" placeholder="Ej: 50000" class="merko-input-luxury" oninput="calculateCashChange()">
+                        </div>
+                        <div id="cashChangeResult" style="font-size:0.84rem; font-weight:800; color:#4ade80; margin-top:8px; display:none;"></div>
+                    </div>
                 </div>
 
                 <!-- Executive Order Receipt Ticket -->

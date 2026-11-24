@@ -263,7 +263,7 @@ body::before {
    ========================================================================== */
 
 .top-bar {
-    background: #1B100B;
+    background: linear-gradient(90deg, #130a06 0%, #240d04 45%, #190903 100%);
     color: #FFFDF9;
     font-size: 0.8rem;
     padding: 8px 24px;
@@ -272,7 +272,124 @@ body::before {
     align-items: center;
     position: relative;
     z-index: 101;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    border-bottom: 1.5px solid rgba(230, 81, 0, 0.4);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.top-bar::-webkit-scrollbar {
+    height: 0px;
+}
+
+.top-bar-notice {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #e4e4e7;
+}
+
+.top-bar-badge-fire {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: linear-gradient(135deg, #ef4444, #f59e0b);
+    color: #ffffff;
+    font-size: 0.68rem;
+    font-weight: 900;
+    padding: 2px 8px;
+    border-radius: 12px;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+    animation: topBarPulse 2s infinite ease-in-out;
+    letter-spacing: 0.5px;
+}
+
+.top-bar-free-delivery {
+    color: #4ade80;
+    font-weight: 700;
+}
+
+.top-bar-badge-minorder {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(245, 158, 11, 0.18);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.5);
+    padding: 3px 10px;
+    border-radius: 14px;
+    font-weight: 800;
+    font-size: 0.76rem;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.25);
+    animation: topBarGlowMinOrder 3s infinite alternate;
+}
+
+.top-bar-sep {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.7rem;
+}
+
+.top-bar-right-info {
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #f59e0b;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-left: 16px;
+}
+
+.top-bar-pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 10px #22c55e;
+    display: inline-block;
+    animation: dotPulseAnim 1.8s infinite;
+}
+
+@keyframes topBarPulse {
+    0%, 100% { transform: scale(1); filter: brightness(1); }
+    50% { transform: scale(1.05); filter: brightness(1.2); }
+}
+
+@keyframes topBarGlowMinOrder {
+    0% { border-color: rgba(245, 158, 11, 0.4); box-shadow: 0 0 4px rgba(245, 158, 11, 0.2); }
+    100% { border-color: rgba(245, 158, 11, 0.9); box-shadow: 0 0 14px rgba(245, 158, 11, 0.45); }
+}
+
+@keyframes dotPulseAnim {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.btn-copy-account {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-copy-account:hover {
+    background: #FF6F00;
+    border-color: #FF8F00;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(230, 81, 0, 0.4);
+}
+
+.btn-copy-account:active {
+    transform: scale(0.96);
 }
 
 .app-header {
