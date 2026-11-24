@@ -42,8 +42,8 @@
     <!-- MAIN NAVBAR (SUPERMERCADO RETAIL STYLE) -->
     <header class="app-header" id="appHeader">
         <div class="main-nav">
-            <!-- Brand Logo (Official Reflective Emblem) -->
-            <div class="brand-logo" onclick="switchView('storefront')" title="Ir a la Tienda Merkostore">
+            <!-- Brand Logo (Acceso Secreto Administrador con 5 clics consecutivos) -->
+            <div class="brand-logo" onclick="handleBrandLogoClick(event)" title="MERKOSTORE - Tu Supermercado Digital">
                 <div class="reflective-logo-wrap">
                     <img src="logo.png" alt="Merkostore Logo" class="reflective-logo-img">
                     <div class="reflective-shimmer-sweep"></div>
@@ -171,15 +171,13 @@
                 <!-- Animated Light Glow Separator Bar -->
                 <div class="footer-glow-bar"></div>
 
-                <!-- Footer Bottom Bar (Discreet Plain Text Admin Access) -->
+                <!-- Footer Bottom Bar -->
                 <div class="footer-bottom-bar">
                     <div>
-                        © 2026 Merkostore. Productos y Mercados diseñados para ti.
+                        © 2026 MERKOSTORE. Calidad, frescura y precios justos en tu barrio.
                     </div>
-                    <div>
-                        <span class="footer-admin-link" onclick="openAdminLoginModal()" title="Acceso a panel de administración">
-                            🔐 Acceso Panel Administración
-                        </span>
+                    <div style="font-size:0.75rem; color:var(--text-muted); opacity:0.8;">
+                        <span>🛒 Merkostore Express • Domicilios rápidos en 15-25 min</span>
                     </div>
                 </div>
             </footer>
@@ -212,14 +210,17 @@
                     <button class="merko-pill-btn active" id="tabMerkoDashboard" onclick="switchAdminSubTab('dashboard')">
                         📊 Dashboard
                     </button>
+                    <button class="merko-pill-btn" id="tabMerkoActiveOrders" onclick="switchAdminSubTab('activeOrders')">
+                        🛵 Pedidos en Proceso <span class="merko-pill-badge" id="activeOrdersTabBadge">0</span>
+                    </button>
+                    <button class="merko-pill-btn" id="tabMerkoOrders" onclick="switchAdminSubTab('orders')">
+                        📜 Historial de Ventas
+                    </button>
                     <button class="merko-pill-btn" id="tabMerkoProducts" onclick="switchAdminSubTab('products')">
                         🛒 Productos & Kits
                     </button>
                     <button class="merko-pill-btn" id="tabMerkoEditor" onclick="switchAdminSubTab('productEditor')">
                         ➕ Crear Producto
-                    </button>
-                    <button class="merko-pill-btn" id="tabMerkoOrders" onclick="switchAdminSubTab('orders')">
-                        📜 Historial / Pedidos
                     </button>
                     <button class="merko-pill-btn" id="tabMerkoCategories" onclick="switchAdminSubTab('categories')">
                         🏷️ Categorías
@@ -307,7 +308,7 @@
                                         <div class="dashboard-panel-title">🛒 PEDIDOS ACTIVOS EN VIVO</div>
                                         <div class="dashboard-panel-subtitle">Control operativo de pedidos recibidos en tiempo real</div>
                                     </div>
-                                    <button class="dashboard-panel-link" onclick="switchAdminSubTab('orders')">Ver todos los pedidos ➔</button>
+                                    <button class="dashboard-panel-link" onclick="switchAdminSubTab('activeOrders')">Gestionar Pedidos en Proceso ➔</button>
                                 </div>
                                 <div id="dashActiveOrdersList">
                                     <!-- Dynamic Active Orders List -->
@@ -547,7 +548,72 @@
                     </div>
                 </div>
 
-                <!-- TAB 4: CONTROL DE PEDIDOS & HISTORIAL UNIFICADO (MATCHING REFERENCE IMAGE 1) -->
+                <!-- TAB: PEDIDOS EN PROCESO (CONTROL OPERATIVO DE DESPACHOS) -->
+                <div id="subtabActiveOrders" class="subtab-content" style="display:none;">
+                    <div class="historial-unificado-container">
+                        <!-- Header -->
+                        <div class="historial-header-bar">
+                            <div>
+                                <div class="historial-title">
+                                    <span>🛵 CONTROL DE PEDIDOS EN PROCESO & DESPACHOS</span>
+                                </div>
+                                <div class="historial-subtitle">
+                                    Monitoreo en vivo de pedidos por confirmar, en preparación o en camino. Al completar un pedido pasará automáticamente al Historial.
+                                </div>
+                            </div>
+                            <button class="periodo-btn active" onclick="renderActiveOrdersTable()" title="Actualizar datos">
+                                🔄 Actualizar
+                            </button>
+                        </div>
+
+                        <!-- Metric Summary Badges -->
+                        <div class="historial-kpi-grid" style="margin-bottom: 20px;">
+                            <div class="historial-kpi-card">
+                                <span class="kpi-label">TOTAL EN PROCESO</span>
+                                <span class="kpi-val" id="activeKpiTotal" style="color:var(--brand-primary);">0</span>
+                            </div>
+                            <div class="historial-kpi-card">
+                                <span class="kpi-label">🔔 POR CONFIRMAR</span>
+                                <span class="kpi-val" id="activeKpiReceived" style="color:#f59e0b;">0</span>
+                            </div>
+                            <div class="historial-kpi-card">
+                                <span class="kpi-label">👨‍🍳 EN PREPARACIÓN</span>
+                                <span class="kpi-val" id="activeKpiPreparing" style="color:#3b82f6;">0</span>
+                            </div>
+                            <div class="historial-kpi-card">
+                                <span class="kpi-label">🛵 EN CAMINO / LISTO</span>
+                                <span class="kpi-val" id="activeKpiOnWay" style="color:#10b981;">0</span>
+                            </div>
+                        </div>
+
+                        <!-- Filters Row -->
+                        <div class="historial-filters-row">
+                            <div class="tipo-filter-group">
+                                <span class="tipo-filter-label">Estado:</span>
+                                <button class="tipo-pill-btn active" id="btnActiveFilterAll" onclick="filterActiveOrdersStatus('ALL')">Todos</button>
+                                <button class="tipo-pill-btn" id="btnActiveFilterReceived" onclick="filterActiveOrdersStatus('RECEIVED')">🔔 Por Confirmar</button>
+                                <button class="tipo-pill-btn" id="btnActiveFilterPreparing" onclick="filterActiveOrdersStatus('PREPARING')">👨‍🍳 En Preparación</button>
+                                <button class="tipo-pill-btn" id="btnActiveFilterOnWay" onclick="filterActiveOrdersStatus('READY_ON_WAY')">🛵 En Camino</button>
+                            </div>
+
+                            <div class="tipo-filter-group">
+                                <span class="tipo-filter-label">Entrega:</span>
+                                <button class="tipo-pill-btn active" id="btnActiveDeliveryAll" onclick="filterActiveOrdersFulfillment('ALL')">Todos</button>
+                                <button class="tipo-pill-btn" id="btnActiveDeliveryOnly" onclick="filterActiveOrdersFulfillment('DELIVERY')">🛵 Domicilio</button>
+                                <button class="tipo-pill-btn" id="btnActivePickupOnly" onclick="filterActiveOrdersFulfillment('PICKUP')">🏬 Recogida</button>
+                            </div>
+
+                            <input type="text" id="activeOrdersSearchInput" class="historial-search-input" placeholder="Buscar cliente, teléfono o código..." oninput="filterActiveOrdersSearch(this.value)">
+                        </div>
+
+                        <!-- Active Orders Container -->
+                        <div id="activeOrdersCardsContainer" class="active-orders-grid" style="display:flex; flex-direction:column; gap:14px; margin-top:16px;">
+                            <!-- Dynamic Active Order Cards -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: HISTORIAL DE VENTAS & PEDIDOS COMPLETADOS -->
                 <div id="subtabOrders" class="subtab-content" style="display:none;">
                     
                     <div class="historial-unificado-container">
@@ -555,13 +621,16 @@
                         <div class="historial-header-bar">
                             <div>
                                 <div class="historial-title">
-                                    <span>🔄 HISTORIAL UNIFICADO DE COMPRAS Y CONTROL DE PEDIDOS</span>
+                                    <span>📜 HISTORIAL DE PEDIDOS & VENTAS COMPLETADAS</span>
                                 </div>
                                 <div class="historial-subtitle">
-                                    Registro histórico completo de pedidos recibidos, en proceso, entregados y cancelaciones.
+                                    Registro de pedidos entregados, cobros completados y auditoría histórica del negocio.
                                 </div>
                             </div>
                             <button class="periodo-btn active" onclick="renderHistorialUnificadoTable()" title="Actualizar datos">
+                                🔄 Actualizar
+                            </button>
+                        </div>
                                 🔄 Actualizar
                             </button>
                         </div>

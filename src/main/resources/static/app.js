@@ -37,10 +37,15 @@ const API = {
             const response = await fetch(url, config);
             if (response.status === 401 || response.status === 403) {
                 if (endpoint.includes('/admin/')) {
+                    const wasAdminSession = state.isAdminLoggedIn && !!this.getToken();
                     this.setToken(null);
                     state.isAdminLoggedIn = false;
-                    switchView('storefront');
-                    showToast('🔒 Sesión expirada o no autorizada.', 'error', '🔒');
+                    if (state.currentView === 'admin') {
+                        switchView('storefront');
+                    }
+                    if (wasAdminSession) {
+                        showToast('🔒 Sesión expirada o no autorizada.', 'warning', '🔒');
+                    }
                 }
             }
 
@@ -98,6 +103,11 @@ const state = {
     historialStatusFilter: 'ALL', // 'ALL' | 'RECEIVED' | 'PREPARING' | 'READY' | 'ON_WAY' | 'DELIVERED' | 'CANCELLED'
     historialPeriodFilter: 'ALL', // 'ALL' | 'TODAY' | 'YESTERDAY' | 'WEEK' | 'MONTH' | '30DAYS'
     historialSearchQuery: '',
+
+    // Active Orders (En Proceso) Filters State
+    activeOrdersFilterStatus: 'ALL', // 'ALL' | 'RECEIVED' | 'PREPARING' | 'READY_ON_WAY'
+    activeOrdersFilterFulfillment: 'ALL', // 'ALL' | 'DELIVERY' | 'PICKUP'
+    activeOrdersSearchQuery: '',
 
     // Store Configuration
     storeConfig: {
@@ -1012,10 +1022,8 @@ function advanceOrderStatusFromDashboard(orderId) {
     };
 
     if (transitions[order.status]) {
-        order.status = transitions[order.status];
-        updateDashboardKPIs();
-        renderHistorialUnificadoTable();
-        showToast(`📦 Pedido ${order.orderNumber} avanzado a "${order.status}"`, 'success', '📦');
+        const nextStatus = transitions[order.status];
+        advanceActiveOrder(orderId, nextStatus);
     }
 }
 
@@ -1059,16 +1067,22 @@ document.addEventListener('DOMContentLoaded', () => {
     updateLivePreview();
     renderAdminProductsTable();
     renderAdminCategoriesTable();
+    renderActiveOrdersTable();
     renderHistorialUnificadoTable();
     updateDashboardKPIs();
     syncStoreConfigUI();
     renderMercadoItemsChecklist();
 });
 
-// FLOATING TOAST NOTIFICATION ENGINE (ULTRA-LUXURY)
+// FLOATING TOAST NOTIFICATION ENGINE (ULTRA-LIVIANO, ÁGIL Y NO INVASIVO)
 function showToast(message, type = 'success', icon = null) {
     const container = document.getElementById('toastContainer');
     if (!container) return;
+
+    // Solo permitir 1 notificación activa para no saturar ni trabar la pantalla móvil
+    while (container.firstChild) {
+        container.removeChild(container.firstChild);
+    }
 
     let defaultIcon = '✅';
     if (type === 'info') defaultIcon = 'ℹ️';
@@ -1080,19 +1094,16 @@ function showToast(message, type = 'success', icon = null) {
     const toast = document.createElement('div');
     toast.className = `merko-toast toast-${type}`;
     toast.innerHTML = `
-        <div class="toast-icon-badge">${toastIcon}</div>
-        <div class="toast-content">
-            <div class="toast-title">${message}</div>
-        </div>
-        <button class="toast-close" onclick="closeToast(this.parentElement)" title="Cerrar notificación">✕</button>
-        <div class="toast-progress"></div>
+        <span class="toast-icon-badge">${toastIcon}</span>
+        <span class="toast-title">${message}</span>
+        <button class="toast-close" onclick="closeToast(this.parentElement)" title="Cerrar">✕</button>
     `;
 
     container.appendChild(toast);
 
     const timer = setTimeout(() => {
         closeToast(toast);
-    }, 3500);
+    }, 2800);
 
     toast._toastTimer = timer;
 }
@@ -1102,8 +1113,8 @@ function closeToast(toast) {
     if (toast._toastTimer) clearTimeout(toast._toastTimer);
     toast.classList.add('toast-exit');
     setTimeout(() => {
-        if (toast.parentNode) toast.remove();
-    }, 380);
+        if (toast && toast.parentNode) toast.remove();
+    }, 220);
 }
 
 // FLUID DRAGGABLE FLOATING EMOJIS (MOUSE & TOUCH DRAG ENGINE)
@@ -1217,6 +1228,31 @@ function switchView(view) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// BRAND LOGO SECRET ADMIN ACCESS (5 CLICS CONSECUTIVOS)
+let brandLogoClickCount = 0;
+let brandLogoClickTimer = null;
+
+function handleBrandLogoClick(e) {
+    brandLogoClickCount++;
+    if (brandLogoClickTimer) clearTimeout(brandLogoClickTimer);
+
+    if (brandLogoClickCount >= 5) {
+        brandLogoClickCount = 0;
+        openAdminLoginModal();
+        return;
+    }
+
+    brandLogoClickTimer = setTimeout(() => {
+        brandLogoClickCount = 0;
+    }, 2500);
+
+    if (state.currentView !== 'storefront') {
+        switchView('storefront');
+    } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
+
 // ADMIN AUTHENTICATION MODAL
 function openAdminLoginModal() {
     if (state.isAdminLoggedIn) {
@@ -1245,9 +1281,11 @@ async function handleAdminLogin(e) {
             API.setToken(response.data.token);
             state.isAdminLoggedIn = true;
             closeAdminLoginModal();
+            // Cambio instantáneo de pantalla sin retraso
             switchView('admin');
-            await loadAdminBackendData();
-            showToast('🔓 ¡Sesión iniciada exitosamente como Administrador!', 'success', '🔓');
+            showToast('🔓 ¡Bienvenido al Panel Administrador!', 'success', '🔓');
+            // Carga asíncrona de datos en segundo plano
+            loadAdminBackendData();
         } else {
             showToast('❌ Credenciales incorrectas.', 'error', '❌');
         }
@@ -1395,12 +1433,8 @@ function updateCartQuantity(productId, newQty) {
 
     if (newQty <= 0) {
         delete state.cart[productId];
-        if (prod) showToast(`🗑️ ${prod.name} eliminado del carrito`, 'info', '🗑️');
     } else {
         state.cart[productId] = newQty;
-        if (prod && newQty > oldQty) {
-            showToast(`🛒 ${prod.name} agregado al carrito`, 'success', '🛒');
-        }
     }
     renderProducts();
     renderCart();
@@ -1807,9 +1841,14 @@ async function processWhatsAppCheckout() {
 function switchAdminSubTab(tab) {
     state.currentAdminSubTab = tab;
 
-    ['dashboard', 'products', 'productEditor', 'orders', 'categories', 'config', 'users', 'bi', 'io'].forEach(t => {
-        const btnId = 'tabMerko' + (t === 'bi' ? 'Bi' : (t === 'io' ? 'Io' : t.charAt(0).toUpperCase() + t.slice(1)));
-        const contentId = 'subtab' + (t === 'bi' ? 'Bi' : (t === 'io' ? 'Io' : t.charAt(0).toUpperCase() + t.slice(1)));
+    ['dashboard', 'activeOrders', 'products', 'productEditor', 'orders', 'categories', 'config', 'users', 'bi', 'io'].forEach(t => {
+        let suffix = t.charAt(0).toUpperCase() + t.slice(1);
+        if (t === 'bi') suffix = 'Bi';
+        if (t === 'io') suffix = 'Io';
+        if (t === 'activeOrders') suffix = 'ActiveOrders';
+
+        const btnId = 'tabMerko' + suffix;
+        const contentId = 'subtab' + suffix;
         const btn = document.getElementById(btnId);
         const content = document.getElementById(contentId);
         if (btn) btn.classList.toggle('active', t === tab);
@@ -1817,6 +1856,7 @@ function switchAdminSubTab(tab) {
     });
 
     if (tab === 'dashboard') { updateDashboardKPIs(); renderDashboardContent(); }
+    if (tab === 'activeOrders') renderActiveOrdersTable();
     if (tab === 'products') renderAdminProductsTable();
     if (tab === 'productEditor') {
         renderMercadoItemsChecklist();
@@ -2749,6 +2789,235 @@ async function deleteCategory(catId) {
 }
 
 // ==========================================================================
+// CONTROL DE PEDIDOS EN PROCESO & DESPACHOS ENGINE
+// ==========================================================================
+
+function filterActiveOrdersStatus(status) {
+    state.activeOrdersFilterStatus = status;
+    const mapping = {
+        'ALL': 'btnActiveFilterAll',
+        'RECEIVED': 'btnActiveFilterReceived',
+        'PREPARING': 'btnActiveFilterPreparing',
+        'READY_ON_WAY': 'btnActiveFilterOnWay'
+    };
+    Object.keys(mapping).forEach(k => {
+        const btn = document.getElementById(mapping[k]);
+        if (btn) btn.classList.toggle('active', k === status);
+    });
+    renderActiveOrdersTable();
+}
+
+function filterActiveOrdersFulfillment(type) {
+    state.activeOrdersFilterFulfillment = type;
+    const mapping = {
+        'ALL': 'btnActiveDeliveryAll',
+        'DELIVERY': 'btnActiveDeliveryOnly',
+        'PICKUP': 'btnActivePickupOnly'
+    };
+    Object.keys(mapping).forEach(k => {
+        const btn = document.getElementById(mapping[k]);
+        if (btn) btn.classList.toggle('active', k === type);
+    });
+    renderActiveOrdersTable();
+}
+
+function filterActiveOrdersSearch(query) {
+    state.activeOrdersSearchQuery = (query || '').toLowerCase().trim();
+    renderActiveOrdersTable();
+}
+
+function updateActiveOrdersCountBadge() {
+    const activeCount = state.orders.filter(o => ['RECEIVED', 'PREPARING', 'READY', 'ON_WAY'].includes(o.status)).length;
+    const badge = document.getElementById('activeOrdersTabBadge');
+    if (badge) {
+        badge.textContent = activeCount;
+        badge.style.display = activeCount > 0 ? 'inline-block' : 'none';
+    }
+}
+
+function renderActiveOrdersTable() {
+    updateActiveOrdersCountBadge();
+    updateDashboardKPIs();
+    const container = document.getElementById('activeOrdersCardsContainer');
+    if (!container) return;
+
+    const allActive = state.orders.filter(o => ['RECEIVED', 'PREPARING', 'READY', 'ON_WAY'].includes(o.status));
+
+    // Update KPI badges in active orders subtab
+    const kpiTotal = document.getElementById('activeKpiTotal');
+    const kpiRec = document.getElementById('activeKpiReceived');
+    const kpiPrep = document.getElementById('activeKpiPreparing');
+    const kpiOnWay = document.getElementById('activeKpiOnWay');
+
+    if (kpiTotal) kpiTotal.textContent = allActive.length;
+    if (kpiRec) kpiRec.textContent = allActive.filter(o => o.status === 'RECEIVED').length;
+    if (kpiPrep) kpiPrep.textContent = allActive.filter(o => o.status === 'PREPARING').length;
+    if (kpiOnWay) kpiOnWay.textContent = allActive.filter(o => o.status === 'READY' || o.status === 'ON_WAY').length;
+
+    let filtered = [...allActive];
+
+    // Status filter
+    if (state.activeOrdersFilterStatus === 'RECEIVED') {
+        filtered = filtered.filter(o => o.status === 'RECEIVED');
+    } else if (state.activeOrdersFilterStatus === 'PREPARING') {
+        filtered = filtered.filter(o => o.status === 'PREPARING');
+    } else if (state.activeOrdersFilterStatus === 'READY_ON_WAY') {
+        filtered = filtered.filter(o => o.status === 'READY' || o.status === 'ON_WAY');
+    }
+
+    // Fulfillment filter
+    if (state.activeOrdersFilterFulfillment !== 'ALL') {
+        filtered = filtered.filter(o => (o.fulfillmentType || 'DELIVERY') === state.activeOrdersFilterFulfillment);
+    }
+
+    // Search query
+    if (state.activeOrdersSearchQuery) {
+        const q = state.activeOrdersSearchQuery;
+        filtered = filtered.filter(o =>
+            (o.orderNumber || '').toLowerCase().includes(q) ||
+            (o.customerName || '').toLowerCase().includes(q) ||
+            (o.customerPhone || '').toLowerCase().includes(q) ||
+            (o.deliveryAddress || '').toLowerCase().includes(q) ||
+            (o.items || []).some(it => (it.name || '').toLowerCase().includes(q))
+        );
+    }
+
+    if (filtered.length === 0) {
+        container.innerHTML = `
+            <div style="text-align:center; padding:45px 20px; background:rgba(255,255,255,0.02); border:1.5px dashed var(--admin-border); border-radius:18px;">
+                <div style="font-size:2.5rem; margin-bottom:10px;">🎉</div>
+                <h4 style="font-size:1.1rem; font-weight:900; color:#ffffff; margin-bottom:6px;">¡Todo al día! No hay pedidos pendientes con estos filtros</h4>
+                <p style="font-size:0.85rem; color:var(--admin-text-muted);">Los nuevos pedidos que ingresen por WhatsApp o la tienda se listarán aquí en tiempo real.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const statusBadges = {
+        'RECEIVED': '<span class="status-badge-merko status-received" style="animation:waBtnGlow 2s infinite;">🔔 Por Confirmar</span>',
+        'PREPARING': '<span class="status-badge-merko status-preparing">👨‍🍳 En Preparación</span>',
+        'READY': '<span class="status-badge-merko status-ready">📦 Listo Despacho</span>',
+        'ON_WAY': '<span class="status-badge-merko status-onway">🛵 En Camino</span>'
+    };
+
+    container.innerHTML = filtered.map(o => {
+        const cleanPhone = (o.customerPhone || '').replace(/[^0-9]/g, '');
+        const itemsSummary = (o.items || []).map(it => `${it.qty}x ${it.name}`).join(' • ');
+        const isDelivery = (o.fulfillmentType || 'DELIVERY') === 'DELIVERY';
+
+        let primaryActionButton = '';
+        if (o.status === 'RECEIVED') {
+            primaryActionButton = `
+                <button class="btn-merko-primary" style="padding:8px 14px; font-size:0.8rem; background:linear-gradient(135deg, #FF6F00, #E65100);" onclick="advanceActiveOrder('${o.id}', 'PREPARING')">
+                    👨‍🍳 Confirmar y Preparar
+                </button>
+            `;
+        } else if (o.status === 'PREPARING') {
+            primaryActionButton = `
+                <button class="btn-merko-primary" style="padding:8px 14px; font-size:0.8rem; background:linear-gradient(135deg, #2563eb, #1d4ed8);" onclick="advanceActiveOrder('${o.id}', 'ON_WAY')">
+                    🛵 Despachar (En Camino)
+                </button>
+            `;
+        } else if (o.status === 'READY' || o.status === 'ON_WAY') {
+            primaryActionButton = `
+                <button class="btn-merko-primary" style="padding:8px 14px; font-size:0.8rem; background:linear-gradient(135deg, #10b981, #059669);" onclick="advanceActiveOrder('${o.id}', 'DELIVERED')">
+                    ✅ Marcar como Entregado
+                </button>
+            `;
+        }
+
+        return `
+            <div class="active-order-card">
+                <div class="active-order-top">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span class="code-badge-gold" style="font-size:0.9rem; padding:4px 10px;">${o.orderNumber}</span>
+                        ${statusBadges[o.status] || ''}
+                        <span style="font-size:0.75rem; color:var(--admin-text-muted);">🕒 ${o.createdAt || 'Hoy'}</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:0.8rem; font-weight:800; color:${isDelivery ? '#f59e0b' : '#38bdf8'};">
+                            ${isDelivery ? '🛵 Domicilio' : '🏬 Recogida en Local'}
+                        </span>
+                        <span style="font-size:1.05rem; font-weight:900; color:#10b981; margin-left:8px;">
+                            $ ${(o.total || 0).toLocaleString('es-CO')} COP
+                        </span>
+                    </div>
+                </div>
+
+                <div class="active-order-body">
+                    <div>
+                        <div style="font-weight:900; color:#ffffff; font-size:0.95rem; margin-bottom:2px;">
+                            👤 ${o.customerName || 'Cliente'}
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                            <span style="font-size:0.8rem; color:var(--admin-text-muted);">📞 ${o.customerPhone || 'Sin teléfono'}</span>
+                            ${cleanPhone ? `
+                                <a href="https://wa.me/${cleanPhone}?text=Hola%20${encodeURIComponent(o.customerName || '')},%20te%20escribimos%20de%20Merkostore%20sobre%20tu%20pedido%20${o.orderNumber}" target="_blank" style="text-decoration:none; background:rgba(37,211,102,0.18); color:#25d366; font-size:0.72rem; font-weight:800; padding:2px 8px; border-radius:12px; border:1px solid rgba(37,211,102,0.35);">
+                                    💬 WhatsApp
+                                </a>
+                            ` : ''}
+                        </div>
+                        ${isDelivery && o.deliveryAddress ? `
+                            <div style="font-size:0.8rem; color:#fde68a;">
+                                📍 ${o.deliveryAddress}
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:10px 12px;">
+                        <div style="font-size:0.72rem; font-weight:800; color:var(--brand-primary); text-transform:uppercase; margin-bottom:3px;">
+                            🛒 Ítems (${(o.items || []).length}):
+                        </div>
+                        <div style="font-size:0.82rem; color:#e2e8f0; line-height:1.35; max-height:48px; overflow-y:auto;">
+                            ${itemsSummary || 'Sin productos'}
+                        </div>
+                    </div>
+
+                    <div class="active-order-actions">
+                        ${primaryActionButton}
+                        <button class="btn-merko-outline" style="padding:8px 12px; font-size:0.78rem;" onclick="openOrderDetailModal('${o.id}')">
+                            📄 Detalle
+                        </button>
+                        <button class="btn-merko-outline" style="padding:8px 10px; font-size:0.78rem; color:#ef4444; border-color:rgba(239,68,68,0.4);" onclick="advanceActiveOrder('${o.id}', 'CANCELLED')" title="Cancelar Pedido">
+                            ✕ Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+async function advanceActiveOrder(orderId, newStatus) {
+    const o = state.orders.find(ord => ord.id === orderId);
+    if (!o) return;
+
+    try {
+        if (API.getToken()) {
+            await API.patch(`/api/v1/admin/orders/${orderId}/status`, { status: newStatus }).catch(() => null);
+        }
+        o.status = newStatus;
+        if (newStatus === 'DELIVERED') {
+            o.paymentStatus = 'PAID';
+            showToast(`✅ Pedido ${o.orderNumber} completado y archivado al Historial`, 'success', '✅');
+        } else if (newStatus === 'CANCELLED') {
+            showToast(`❌ Pedido ${o.orderNumber} cancelado y archivado al Historial`, 'info', '❌');
+        } else {
+            const labels = { PREPARING: 'En Preparación', ON_WAY: 'En Camino', READY: 'Listo Despacho' };
+            showToast(`📦 Pedido ${o.orderNumber} pasó a: ${labels[newStatus] || newStatus}`, 'success', '📦');
+        }
+
+        Storage.set('orders', state.orders);
+        renderActiveOrdersTable();
+        renderHistorialUnificadoTable();
+        updateDashboardKPIs();
+        renderDashboardContent();
+    } catch (e) {
+        showToast(`❌ Error al actualizar estado: ${e.message}`, 'error', '❌');
+    }
+}
+
+// ==========================================================================
 // CONTROL DE PEDIDOS & HISTORIAL UNIFICADO ENGINE (MATCHING IMAGE 1 & 2)
 // ==========================================================================
 
@@ -2781,20 +3050,26 @@ function filterHistorialTable() {
 }
 
 function renderHistorialUnificadoTable() {
+    updateActiveOrdersCountBadge();
     updateDashboardKPIs();
     const tbody = document.getElementById('historialUnificadoTableBody');
     if (!tbody) return;
 
-    let filtered = [...state.orders];
+    // Por defecto el Historial muestra pedidos cerrados (DELIVERED y CANCELLED)
+    let filtered = state.orders.filter(o => o.status === 'DELIVERED' || o.status === 'CANCELLED');
 
     // Filter by Tipo (if order contains product or mercado)
     if (state.historialTypeFilter !== 'ALL') {
         filtered = filtered.filter(o => o.items.some(it => it.type === state.historialTypeFilter));
     }
 
-    // Filter by Status
+    // Filter by Status (si el usuario elige un filtro específico en el selector)
     if (state.historialStatusFilter !== 'ALL') {
-        filtered = filtered.filter(o => o.status === state.historialStatusFilter);
+        if (state.historialStatusFilter === 'ALL_INCLUDING_ACTIVE') {
+            filtered = [...state.orders];
+        } else {
+            filtered = state.orders.filter(o => o.status === state.historialStatusFilter);
+        }
     }
 
     // Filter by Search Query
@@ -3174,18 +3449,20 @@ async function loadPublicBackendData() {
             renderAdminProductsTable();
         }
 
-        const cfgRes = await API.get('/api/v1/admin/store-config').catch(() => null);
-        if (cfgRes && cfgRes.data) {
-            state.storeConfig = {
-                storeName: 'MERKOSTORE',
-                whatsappPhone: cfgRes.data.whatsappPhone || '573001234567',
-                address: cfgRes.data.address || 'Calle 45 # 23 - 10 Barrio El Prado',
-                fulfillmentType: 'DELIVERY',
-                deliveryFee: cfgRes.data.deliveryFee || 3000,
-                minimumOrder: cfgRes.data.minimumOrder || 10000,
-                isStoreOpen: cfgRes.data.isStoreOpen !== false
-            };
-            syncStoreConfigUI();
+        if (API.getToken()) {
+            const cfgRes = await API.get('/api/v1/admin/store-config').catch(() => null);
+            if (cfgRes && cfgRes.data) {
+                state.storeConfig = {
+                    storeName: 'MERKOSTORE',
+                    whatsappPhone: cfgRes.data.whatsappPhone || '573001234567',
+                    address: cfgRes.data.address || 'Calle 45 # 23 - 10 Barrio El Prado',
+                    fulfillmentType: 'DELIVERY',
+                    deliveryFee: cfgRes.data.deliveryFee || 3000,
+                    minimumOrder: cfgRes.data.minimumOrder || 10000,
+                    isStoreOpen: cfgRes.data.isStoreOpen !== false
+                };
+                syncStoreConfigUI();
+            }
         }
     } catch (e) {
         console.log('Utilizando estado local por defecto:', e);
@@ -3194,9 +3471,14 @@ async function loadPublicBackendData() {
 
 async function loadAdminBackendData() {
     try {
-        const adminCatsRes = await API.get('/api/v1/admin/categories').catch(() => null);
-        if (adminCatsRes && adminCatsRes.data && Array.isArray(adminCatsRes.data) && adminCatsRes.data.length > 0) {
-            const fetched = adminCatsRes.data.map(c => ({
+        const [catsRes, prodsRes, ordersRes] = await Promise.allSettled([
+            API.get('/api/v1/admin/categories'),
+            API.get('/api/v1/admin/products'),
+            API.get('/api/v1/admin/orders')
+        ]);
+
+        if (catsRes.status === 'fulfilled' && catsRes.value?.data && Array.isArray(catsRes.value.data) && catsRes.value.data.length > 0) {
+            const fetched = catsRes.value.data.map(c => ({
                 id: c.id,
                 name: c.name,
                 icon: c.icon || '🏷️',
@@ -3211,9 +3493,8 @@ async function loadAdminBackendData() {
             renderAdminCategoriesTable();
         }
 
-        const adminProdsRes = await API.get('/api/v1/admin/products').catch(() => null);
-        if (adminProdsRes && adminProdsRes.data && Array.isArray(adminProdsRes.data) && adminProdsRes.data.length > 0) {
-            state.products = adminProdsRes.data.map(p => ({
+        if (prodsRes.status === 'fulfilled' && prodsRes.value?.data && Array.isArray(prodsRes.value.data) && prodsRes.value.data.length > 0) {
+            state.products = prodsRes.value.data.map(p => ({
                 id: p.id,
                 type: p.bundleItems && p.bundleItems.length > 0 ? 'MERCADO' : 'DETAL',
                 categoryId: p.categoryId || 'cat1',
@@ -3234,20 +3515,9 @@ async function loadAdminBackendData() {
             renderAdminProductsTable();
         }
 
-        let ordersRes = await API.get('/api/v1/admin/orders').catch(() => null);
-        // Check if database contains outdated MS- orders or is missing PED-001
-        if (ordersRes && ordersRes.data && Array.isArray(ordersRes.data)) {
-            const hasOutdatedOrders = ordersRes.data.some(o => (o.orderNumber && o.orderNumber.startsWith('MS-')));
-            const hasPbiOrders = ordersRes.data.some(o => (o.orderNumber && o.orderNumber.startsWith('PED-')));
-            if (hasOutdatedOrders || !hasPbiOrders || ordersRes.data.length < 20) {
-                console.log('Detectadas órdenes desactualizadas en MongoDB. Sincronizando con Power BI...');
-                await API.post('/api/v1/admin/dashboard/sync-pbi-data', {}).catch(() => null);
-                ordersRes = await API.get('/api/v1/admin/orders').catch(() => null);
-            }
-        }
-
-        if (ordersRes && ordersRes.data && Array.isArray(ordersRes.data) && ordersRes.data.length > 0) {
-            state.orders = ordersRes.data.map(o => ({
+        let ordersData = ordersRes.status === 'fulfilled' ? ordersRes.value?.data : null;
+        if (ordersData && Array.isArray(ordersData) && ordersData.length > 0) {
+            state.orders = ordersData.map(o => ({
                 id: o.id,
                 orderNumber: o.orderNumber || 'PED-000',
                 customerName: o.customer ? o.customer.name : 'Cliente',
@@ -3271,9 +3541,11 @@ async function loadAdminBackendData() {
                 createdAt: o.createdAt ? o.createdAt.toString().slice(0, 16).replace('T', ' ') : ''
             }));
             Storage.set('orders', state.orders);
+            renderActiveOrdersTable();
             renderHistorialUnificadoTable();
             updateDashboardKPIs();
         } else {
+            renderActiveOrdersTable();
             updateDashboardKPIs();
         }
     } catch (e) {
