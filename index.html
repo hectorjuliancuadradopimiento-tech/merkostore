@@ -223,10 +223,7 @@
                         📜 Historial de Ventas
                     </button>
                     <button class="merko-pill-btn" id="tabMerkoProducts" onclick="switchAdminSubTab('products')">
-                        🛒 Productos & Kits
-                    </button>
-                    <button class="merko-pill-btn" id="tabMerkoEditor" onclick="switchAdminSubTab('productEditor')">
-                        ➕ Crear Producto
+                        🛒 Productos & Inventario
                     </button>
                     <button class="merko-pill-btn" id="tabMerkoCategories" onclick="switchAdminSubTab('categories')">
                         🏷️ Categorías
@@ -390,10 +387,206 @@
 
                 </div>
 
-                <!-- TAB 2: FULL PRODUCTS LIST & INVENTORY (MATCHING IMAGE 1) -->
+                <!-- TAB 2: PRODUCTOS & INVENTARIO UNIFICADO (CREAR ARRIBA, INVENTARIO ABAJO) -->
                 <div id="subtabProducts" class="subtab-content" style="display:none;">
-                    <div style="background:var(--admin-card-bg); border:1.5px solid var(--admin-border); border-radius:20px; padding:24px; box-shadow:0 12px 35px rgba(0,0,0,0.45);">
+                    
+                    <!-- 1. CREAR / EDITAR PRODUCTO O MERCADO (ARRIBA) -->
+                    <div id="productEditorCard" style="background:var(--admin-card-bg); border:1.5px solid var(--admin-border); border-radius:20px; padding:24px; box-shadow:0 12px 35px rgba(0,0,0,0.45); margin-bottom:28px;">
+                        <h2 id="editorSubtabTitle" style="font-size:1.25rem; font-weight:900; color:#ffffff; margin-top:0; margin-bottom:20px;">➕ CREAR PRODUCTO O MERCADO</h2>
                         
+                        <div class="merko-editor-grid">
+                            <div class="merko-form-card">
+                                <!-- Tipo de Ítem Selector -->
+                                <div class="merko-form-group">
+                                    <label>Tipo de Ítem a Crear *</label>
+                                    <select id="editorType" onchange="toggleMercadoCompositionForm(); updateLivePreview();">
+                                        <option value="DETAL">🛍️ Producto Detal (Ítem Individual)</option>
+                                        <option value="MERCADO">📦 Mercado (Combo / Kit con Productos Detal)</option>
+                                    </select>
+                                </div>
+
+                                <div class="merko-form-group">
+                                    <label>Nombre del Producto / Mercado *</label>
+                                    <input type="text" id="editorName" placeholder="Ej: Mercado Familiar Semanal / Harina Pan 1kg" value="" oninput="updateLivePreview()">
+                                </div>
+
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                                    <div class="merko-form-group">
+                                        <label>Categoría</label>
+                                        <select id="editorCategory" onchange="updateLivePreview()">
+                                            <option value="cat4">🌾 Abarrotes y Granos</option>
+                                            <option value="cat2">🥛 Lácteos y Huevos</option>
+                                            <option value="cat3">🍺 Cervezas y Licores</option>
+                                            <option value="cat1">🔴 Precios Rojos</option>
+                                        </select>
+                                    </div>
+                                    <div class="merko-form-group">
+                                        <label>Unidad / Descripción Corta</label>
+                                        <input type="text" id="editorUnit" placeholder="Ej: Combo 6 Productos / Gramo a $ 3.60" value="" oninput="updateLivePreview()">
+                                    </div>
+                                </div>
+
+                                <!-- COMPOSICIÓN DE MERCADO (SOLO CUANDO ES MERCADO) -->
+                                <div id="mercadoItemsContainer" style="display:none; background:#0f172a; border:1px solid #f59e0b; border-radius:12px; padding:16px; margin-top:4px;">
+                                    <div style="font-size:0.85rem; font-weight:900; color:#f59e0b; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                                        <span>📦 COMPOSICIÓN DEL MERCADO (PRODUCTOS INCLUIDOS):</span>
+                                        <span style="font-size:0.72rem; color:#94a3b8; font-weight:600;">Se restarán del stock al vender</span>
+                                    </div>
+                                    <div id="mercadoItemsChecklist" style="display:flex; flex-direction:column; gap:8px; max-height:180px; overflow-y:auto; padding-right:6px;">
+                                        <!-- Dynamic product options with qty inputs -->
+                                    </div>
+                                </div>
+
+                                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+                                    <div class="merko-form-group">
+                                        <label>Precio Venta ($ COP) *</label>
+                                        <input type="number" id="editorPrice" value="" placeholder="Ej: 48000" oninput="updateLivePreview()">
+                                    </div>
+                                    <div class="merko-form-group">
+                                        <label>Precio Oferta ($ COP)</label>
+                                        <input type="number" id="editorDiscount" value="" placeholder="Opcional" oninput="updateLivePreview()">
+                                    </div>
+                                    <div class="merko-form-group">
+                                        <label id="lblEditorStock">Inventario Inicial *</label>
+                                        <input type="number" id="editorStock" value="" placeholder="Ej: 25" oninput="updateLivePreview()">
+                                    </div>
+                                </div>
+
+                                <div class="merko-form-group">
+                                    <label>Imagen del Producto / Mercado *</label>
+                                    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; background:#181210; border:1.5px dashed var(--admin-border); padding:12px 16px; border-radius:12px;">
+                                        <label for="editorImageFile" class="btn-merko-outline" style="cursor:pointer; font-size:0.85rem; padding:8px 16px; margin:0; display:inline-flex; align-items:center; gap:8px;">
+                                            📁 Seleccionar Archivo...
+                                        </label>
+                                        <input type="file" id="editorImageFile" accept="image/*" style="display:none;" onchange="handleProductImageUpload(event)">
+                                        <span id="editorImageFileName" style="font-size:0.82rem; color:#94a3b8; font-style:italic;">Ningún archivo seleccionado</span>
+                                    </div>
+                                    <input type="hidden" id="editorImage" value="">
+                                </div>
+
+                                <!-- 📐 ENCUADRE DE IMAGEN EN TARJETA (PC & MÓVIL POR INDEPENDIENTE) -->
+                                <div class="image-framing-box" style="margin-top:18px; background:#120c0a; border:1.5px solid rgba(230,81,0,0.35); border-radius:14px; padding:18px;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:6px;">
+                                        <div>
+                                            <span style="font-size:0.92rem; font-weight:900; color:#FF8F00; display:flex; align-items:center; gap:6px;">
+                                                📐 ENCUADRE DE IMAGEN EN TARJETA
+                                            </span>
+                                            <p style="font-size:0.75rem; color:var(--admin-text-muted); margin:2px 0 0;">
+                                                Ajusta el modo de encuadre, zoom y posición de cada foto para que luzca impecable en la tarjeta y en la galería.
+                                            </p>
+                                        </div>
+                                        <div style="display:flex; align-items:center; gap:8px;">
+                                            <span style="font-size:0.75rem; color:#d4d4d8; font-weight:700;">📷 Configurar encuadre:</span>
+                                            <div class="framing-device-toggles" style="display:flex; gap:6px; background:rgba(255,255,255,0.06); padding:3px; border-radius:20px; border:1px solid rgba(255,255,255,0.12);">
+                                                <button type="button" class="btn-framing-device active" id="btnDevicePc" onclick="switchFramingDevice('PC')" style="padding:4px 12px; font-size:0.76rem; border-radius:16px; border:none; cursor:pointer; font-weight:800; background:linear-gradient(135deg, #FF6F00, #E65100); color:#fff;">
+                                                    💻 Modo PC
+                                                </button>
+                                                <button type="button" class="btn-framing-device" id="btnDeviceMobile" onclick="switchFramingDevice('MOBILE')" style="padding:4px 12px; font-size:0.76rem; border-radius:16px; border:none; cursor:pointer; font-weight:800; background:transparent; color:#a1a1aa;">
+                                                    📱 Modo Móvil
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Dropdown Mode & Zoom Slider -->
+                                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:14px;">
+                                        <div class="merko-form-group">
+                                            <label style="font-size:0.78rem; font-weight:800; color:#e4e4e7;">Modo de Ajuste</label>
+                                            <select id="imgFitMode" onchange="updateFramingSetting('fit', this.value)" style="padding:8px 12px; font-size:0.82rem;">
+                                                <option value="cover">Cubrir Marco (Cover - Fotos de Estudio)</option>
+                                                <option value="contain">Contener Completo (Contain - Sin Recortes)</option>
+                                                <option value="fill">Relleno Total (Fill)</option>
+                                            </select>
+                                        </div>
+                                        <div class="merko-form-group">
+                                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                                <label style="font-size:0.78rem; font-weight:800; color:#e4e4e7;">Zoom/Escala (0.7x – 3.0x)</label>
+                                                <span id="lblImgZoom" style="font-size:0.78rem; font-weight:900; color:#FF8F00;">1.00x</span>
+                                            </div>
+                                            <input type="range" id="imgZoomRange" min="0.7" max="3.0" step="0.05" value="1.0" oninput="updateFramingSetting('zoom', this.value)" style="margin-top:8px;">
+                                        </div>
+                                    </div>
+
+                                    <!-- Position Sliders -->
+                                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:8px;">
+                                        <div class="merko-form-group">
+                                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                                <label style="font-size:0.78rem; font-weight:800; color:#e4e4e7;">Posición Horizontal (X)</label>
+                                                <span id="lblImgPosX" style="font-size:0.78rem; font-weight:900; color:#FF8F00;">50%</span>
+                                            </div>
+                                            <input type="range" id="imgPosXRange" min="0" max="100" step="1" value="50" oninput="updateFramingSetting('posX', this.value)" style="margin-top:8px;">
+                                        </div>
+                                        <div class="merko-form-group">
+                                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                                <label style="font-size:0.78rem; font-weight:800; color:#e4e4e7;">Posición Vertical (Y)</label>
+                                                <span id="lblImgPosY" style="font-size:0.78rem; font-weight:900; color:#FF8F00;">50%</span>
+                                            </div>
+                                            <input type="range" id="imgPosYRange" min="0" max="100" step="1" value="50" oninput="updateFramingSetting('posY', this.value)" style="margin-top:8px;">
+                                        </div>
+                                    </div>
+
+                                    <!-- Action Presets -->
+                                    <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
+                                        <button type="button" class="btn-merko-outline" style="padding:6px 14px; font-size:0.75rem; display:inline-flex; align-items:center; gap:6px;" onclick="applyFramingPreset('full')">
+                                            📦 Producto Completo
+                                        </button>
+                                        <button type="button" class="btn-merko-outline" style="padding:6px 14px; font-size:0.75rem; display:inline-flex; align-items:center; gap:6px;" onclick="applyFramingPreset('cover')">
+                                            🔍 Cubrir Marco
+                                        </button>
+                                        <button type="button" class="btn-merko-outline" style="padding:6px 14px; font-size:0.75rem; color:#ef4444; border-color:rgba(239,68,68,0.4);" onclick="applyFramingPreset('reset')">
+                                            Restablecer
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div style="display:flex; gap:12px; margin-top:16px;">
+                                    <button class="btn-merko-primary" id="btnSaveProductEditor" style="flex:1; justify-content:center;" onclick="saveProductFromEditor()">
+                                        💾 Guardar en el Catálogo
+                                    </button>
+                                    <button class="btn-merko-outline" id="btnCancelProductEditor" style="display:none; color:#ef4444; border-color:rgba(239,68,68,0.4); background:rgba(239,68,68,0.15);" onclick="resetProductEditorForm(true)">
+                                        ❌ Cancelar Edición
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Live Card Preview (Matching Reference Image) -->
+                            <div class="preview-column-card" style="background:var(--admin-surface); border:1px solid var(--admin-border); border-radius:14px; padding:20px; display:flex; flex-direction:column; align-items:center;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+                                    <span style="font-size:0.75rem; font-weight:900; color:var(--brand-primary); letter-spacing:1px;">👁️ VISTA PREVIA</span>
+                                    <div style="display:flex; gap:6px; background:rgba(255,255,255,0.06); padding:3px; border-radius:18px; border:1px solid rgba(255,255,255,0.1);">
+                                        <button type="button" class="btn-prev-mode active" id="btnPrevPc" onclick="switchFramingDevice('PC')" style="padding:3px 10px; font-size:0.72rem; border-radius:14px; border:none; cursor:pointer; font-weight:800; background:linear-gradient(135deg, #FF6F00, #E65100); color:#fff;">
+                                            💻 PC
+                                        </button>
+                                        <button type="button" class="btn-prev-mode" id="btnPrevMobile" onclick="switchFramingDevice('MOBILE')" style="padding:3px 10px; font-size:0.72rem; border-radius:14px; border:none; cursor:pointer; font-weight:800; background:transparent; color:#a1a1aa;">
+                                            📱 Móvil
+                                        </button>
+                                    </div>
+                                    <span id="prevMatchBadge" style="font-size:0.68rem; font-weight:800; background:rgba(16,185,129,0.18); color:#10b981; border:1px solid rgba(16,185,129,0.3); padding:2px 8px; border-radius:12px;">100% IDÉNTICA PC</span>
+                                </div>
+
+                                <div class="product-card-bright" id="liveCardPreview" style="width:100%; max-width:240px; transition:max-width 0.3s ease;">
+                                    <div class="card-img-wrap" id="prevImgWrap" style="overflow:hidden; position:relative; border-radius:10px 10px 0 0; height:180px;">
+                                        <span class="discount-tag" id="prevDiscountTag" style="display:none;">-20%</span>
+                                        <span class="card-type-badge mercado" id="prevTypeBadge">📦 MERCADO</span>
+                                        <button type="button" class="fav-heart-btn">♡</button>
+                                        <img id="prevImg" src="https://images.unsplash.com/photo-1542838132-92c53300491e?w=500" alt="Preview" style="width:100%; height:100%; display:block; transition:transform 0.15s ease;">
+                                    </div>
+                                    <div class="card-details">
+                                        <span class="card-unit-info" id="prevUnit">Combo 6 Productos Esenciales</span>
+                                        <h3 class="card-product-title" id="prevName">Mercado Familiar Quincenal</h3>
+                                        <div class="card-price-block">
+                                            <div style="font-size:0.72rem; color:var(--text-secondary);" id="prevUnitCalc">Combo 6 Productos Esenciales</div>
+                                            <div class="card-sale-price discounted" id="prevSalePrice">$ 39.900 <span class="card-old-price" id="prevOldPrice">$ 48.000</span></div>
+                                        </div>
+                                        <button type="button" class="card-add-btn">🛒 Agregar al Carrito</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. INVENTARIO DE PRODUCTOS & KITS (ABAJO) -->
+                    <div id="productInventoryCard" style="background:var(--admin-card-bg); border:1.5px solid var(--admin-border); border-radius:20px; padding:24px; box-shadow:0 12px 35px rgba(0,0,0,0.45);">
                         <!-- Header Title & Subtitle -->
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
                             <div>
@@ -402,12 +595,9 @@
                                     <span class="merko-brand-badge" id="adminInventoryCountBadge" style="margin:0; font-size:0.75rem;">0 de 0</span>
                                 </h3>
                                 <p style="font-size:0.8rem; color:var(--admin-text-muted); margin:4px 0 0;">
-                                    Haz clic en <strong style="color:#10b981;">Stock</strong> para alternar disponibilidad en vivo o en <strong style="color:#f59e0b;">Editar</strong> para reponer inventario.
+                                    Haz clic en <strong style="color:#10b981;">Stock</strong> para alternar disponibilidad en vivo o en <strong style="color:#f59e0b;">Editar</strong> para reponer inventario arriba.
                                 </p>
                             </div>
-                            <button class="btn-merko-primary" onclick="switchAdminSubTab('productEditor')">
-                                ➕ Crear Producto o Mercado
-                            </button>
                         </div>
 
                         <!-- Filter Pills & Search Row -->
@@ -440,115 +630,6 @@
                                     <!-- Dynamic Rows -->
                                 </tbody>
                             </table>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- TAB 3: CREATE PRODUCT OR MERCADO WITH LIVE CARD PREVIEW -->
-                <div id="subtabProductEditor" class="subtab-content" style="display:none;">
-                    <h2 id="editorSubtabTitle" style="font-size:1.25rem; font-weight:900; color:#ffffff; margin-bottom:20px;">➕ CREAR PRODUCTO O MERCADO</h2>
-                    
-                    <div class="merko-editor-grid">
-                        <div class="merko-form-card">
-                            <!-- Tipo de Ítem Selector -->
-                            <div class="merko-form-group">
-                                <label>Tipo de Ítem a Crear *</label>
-                                <select id="editorType" onchange="toggleMercadoCompositionForm(); updateLivePreview();">
-                                    <option value="DETAL">🛍️ Producto Detal (Ítem Individual)</option>
-                                    <option value="MERCADO">📦 Mercado (Combo / Kit con Productos Detal)</option>
-                                </select>
-                            </div>
-
-                            <div class="merko-form-group">
-                                <label>Nombre del Producto / Mercado *</label>
-                                <input type="text" id="editorName" placeholder="Ej: Mercado Familiar Semanal / Harina Pan 1kg" value="" oninput="updateLivePreview()">
-                            </div>
-
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-                                <div class="merko-form-group">
-                                    <label>Categoría</label>
-                                    <select id="editorCategory" onchange="updateLivePreview()">
-                                        <option value="cat4">🌾 Abarrotes y Granos</option>
-                                        <option value="cat2">🥛 Lácteos y Huevos</option>
-                                        <option value="cat3">🍺 Cervezas y Licores</option>
-                                        <option value="cat1">🔴 Precios Rojos</option>
-                                    </select>
-                                </div>
-                                <div class="merko-form-group">
-                                    <label>Unidad / Descripción Corta</label>
-                                    <input type="text" id="editorUnit" placeholder="Ej: Combo 6 Productos / Gramo a $ 3.60" value="" oninput="updateLivePreview()">
-                                </div>
-                            </div>
-
-                            <!-- COMPOSICIÓN DE MERCADO (SOLO CUANDO ES MERCADO) -->
-                            <div id="mercadoItemsContainer" style="display:none; background:#0f172a; border:1px solid #f59e0b; border-radius:12px; padding:16px; margin-top:4px;">
-                                <div style="font-size:0.85rem; font-weight:900; color:#f59e0b; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-                                    <span>📦 COMPOSICIÓN DEL MERCADO (PRODUCTOS INCLUIDOS):</span>
-                                    <span style="font-size:0.72rem; color:#94a3b8; font-weight:600;">Se restarán del stock al vender</span>
-                                </div>
-                                <div id="mercadoItemsChecklist" style="display:flex; flex-direction:column; gap:8px; max-height:180px; overflow-y:auto; padding-right:6px;">
-                                    <!-- Dynamic product options with qty inputs -->
-                                </div>
-                            </div>
-
-                            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
-                                <div class="merko-form-group">
-                                    <label>Precio Venta ($ COP) *</label>
-                                    <input type="number" id="editorPrice" value="" placeholder="Ej: 48000" oninput="updateLivePreview()">
-                                </div>
-                                <div class="merko-form-group">
-                                    <label>Precio Oferta ($ COP)</label>
-                                    <input type="number" id="editorDiscount" value="" placeholder="Opcional" oninput="updateLivePreview()">
-                                </div>
-                                <div class="merko-form-group">
-                                    <label id="lblEditorStock">Inventario Inicial *</label>
-                                    <input type="number" id="editorStock" value="" placeholder="Ej: 25" oninput="updateLivePreview()">
-                                </div>
-                            </div>
-
-                            <div class="merko-form-group">
-                                <label>Imagen del Producto / Mercado *</label>
-                                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; background:#181210; border:1.5px dashed var(--admin-border); padding:12px 16px; border-radius:12px;">
-                                    <label for="editorImageFile" class="btn-merko-outline" style="cursor:pointer; font-size:0.85rem; padding:8px 16px; margin:0; display:inline-flex; align-items:center; gap:8px;">
-                                        📁 Seleccionar Archivo...
-                                    </label>
-                                    <input type="file" id="editorImageFile" accept="image/*" style="display:none;" onchange="handleProductImageUpload(event)">
-                                    <span id="editorImageFileName" style="font-size:0.82rem; color:#94a3b8; font-style:italic;">Ningún archivo seleccionado</span>
-                                </div>
-                                <input type="hidden" id="editorImage" value="">
-                            </div>
-
-                            <div style="display:flex; gap:12px; margin-top:10px;">
-                                <button class="btn-merko-primary" id="btnSaveProductEditor" style="flex:1; justify-content:center;" onclick="saveProductFromEditor()">
-                                    💾 Guardar en el Catálogo
-                                </button>
-                                <button class="btn-merko-outline" id="btnCancelProductEditor" style="display:none; color:#ef4444; border-color:rgba(239,68,68,0.4); background:rgba(239,68,68,0.15);" onclick="resetProductEditorForm(true)">
-                                    ❌ Cancelar Edición
-                                </button>
-                            </div>
-                        </div>
-
-                        <div style="background:var(--admin-surface); border:1px solid var(--admin-border); border-radius:14px; padding:24px; display:flex; flex-direction:column; align-items:center;">
-                            <span style="font-size:0.75rem; font-weight:900; color:var(--brand-primary); letter-spacing:1px; margin-bottom:18px;">✨ VISTA PREVIA EN TARJETA CLIENTE</span>
-                            
-                            <div class="product-card-bright" id="liveCardPreview" style="width:100%; max-width:240px;">
-                                <div class="card-img-wrap">
-                                    <span class="discount-tag" id="prevDiscountTag" style="display:none;">-20%</span>
-                                    <span class="card-type-badge mercado" id="prevTypeBadge">📦 MERCADO</span>
-                                    <button class="fav-heart-btn">♡</button>
-                                    <img id="prevImg" src="https://images.unsplash.com/photo-1542838132-92c53300491e?w=500" alt="Preview">
-                                </div>
-                                <div class="card-details">
-                                    <span class="card-unit-info" id="prevUnit">Combo 6 Productos Esenciales</span>
-                                    <h3 class="card-product-title" id="prevName">Mercado Familiar Quincenal</h3>
-                                    <div class="card-price-block">
-                                        <div style="font-size:0.72rem; color:var(--text-secondary);" id="prevUnitCalc">Combo 6 Productos Esenciales</div>
-                                        <div class="card-sale-price discounted" id="prevSalePrice">$ 39.900 <span class="card-old-price" id="prevOldPrice">$ 48.000</span></div>
-                                    </div>
-                                    <button class="card-add-btn">🛒 Agregar al Carrito</button>
-                                </div>
-                            </div>
                         </div>
 
                     </div>

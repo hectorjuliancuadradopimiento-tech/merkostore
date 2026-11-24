@@ -109,6 +109,13 @@ const state = {
     activeOrdersFilterFulfillment: 'ALL', // 'ALL' | 'DELIVERY' | 'PICKUP'
     activeOrdersSearchQuery: '',
 
+    // Image Framing Editor State (Independent PC & Mobile)
+    currentFramingDevice: 'PC', // 'PC' | 'MOBILE'
+    currentProductFraming: {
+        pc: { fit: 'cover', zoom: 1.0, posX: 50, posY: 50 },
+        mobile: { fit: 'cover', zoom: 1.0, posX: 50, posY: 50 }
+    },
+
     // Store Configuration
     storeConfig: {
         storeName: 'MERKOSTORE',
@@ -1400,9 +1407,9 @@ function renderProducts() {
 
         return `
             <div class="product-card-bright ${isSoldOut ? 'sold-out' : ''}">
-                <div class="card-img-wrap">
+                <div class="card-img-wrap" style="--img-fit-pc:${p.imageFitPc || 'cover'}; --img-zoom-pc:${p.imageZoomPc || 1}; --img-pos-pc:${p.imagePosX_Pc !== undefined ? p.imagePosX_Pc : 50}% ${p.imagePosY_Pc !== undefined ? p.imagePosY_Pc : 50}%; --img-fit-mob:${p.imageFitMobile || p.imageFitPc || 'cover'}; --img-zoom-mob:${p.imageZoomMobile || p.imageZoomPc || 1}; --img-pos-mob:${p.imagePosX_Mobile !== undefined ? p.imagePosX_Mobile : (p.imagePosX_Pc !== undefined ? p.imagePosX_Pc : 50)}% ${p.imagePosY_Mobile !== undefined ? p.imagePosY_Mobile : (p.imagePosY_Pc !== undefined ? p.imagePosY_Pc : 50)}%;">
                     ${isSoldOut ? `<span class="stock-status-badge" style="background:#ef4444; color:#fff; top:10px; left:10px; position:absolute; border-radius:6px; padding:3px 8px; font-size:0.72rem; font-weight:800; z-index:2;">Agotado</span>` : ''}
-                    <img src="${p.imageUrl}" alt="${p.name}" loading="lazy">
+                    <img src="${p.imageUrl}" alt="${p.name}" class="product-framed-img" loading="lazy">
                 </div>
                 <div class="card-details">
                     <span class="card-unit-info">${p.unitCalc || (isMercado ? 'Combo Mercado' : 'Unidad detal')}</span>
@@ -2015,9 +2022,10 @@ async function processWhatsAppCheckout() {
 // ==========================================================================
 
 function switchAdminSubTab(tab) {
+    if (tab === 'productEditor') tab = 'products';
     state.currentAdminSubTab = tab;
 
-    ['dashboard', 'activeOrders', 'products', 'productEditor', 'orders', 'categories', 'config', 'users', 'bi', 'io'].forEach(t => {
+    ['dashboard', 'activeOrders', 'products', 'orders', 'categories', 'config', 'users', 'bi', 'io'].forEach(t => {
         let suffix = t.charAt(0).toUpperCase() + t.slice(1);
         if (t === 'bi') suffix = 'Bi';
         if (t === 'io') suffix = 'Io';
@@ -2033,8 +2041,8 @@ function switchAdminSubTab(tab) {
 
     if (tab === 'dashboard') { updateDashboardKPIs(); renderDashboardContent(); }
     if (tab === 'activeOrders') renderActiveOrdersTable();
-    if (tab === 'products') renderAdminProductsTable();
-    if (tab === 'productEditor') {
+    if (tab === 'products') {
+        renderAdminProductsTable();
         renderMercadoItemsChecklist();
         if (!state.editingProductId) {
             resetProductEditorForm(false);
@@ -2576,6 +2584,11 @@ function resetProductEditorForm(userCancelled = false) {
     if (btnCancel) btnCancel.style.display = 'none';
 
     toggleMercadoCompositionForm();
+    state.currentProductFraming = {
+        pc: { fit: 'cover', zoom: 1.0, posX: 50, posY: 50 },
+        mobile: { fit: 'cover', zoom: 1.0, posX: 50, posY: 50 }
+    };
+    switchFramingDevice('PC');
     updateLivePreview();
 
     if (userCancelled) {
@@ -2625,8 +2638,27 @@ function editProduct(productId) {
         });
     }
 
+    state.currentProductFraming = {
+        pc: {
+            fit: p.imageFitPc || 'cover',
+            zoom: p.imageZoomPc !== undefined ? p.imageZoomPc : 1.0,
+            posX: p.imagePosX_Pc !== undefined ? p.imagePosX_Pc : 50,
+            posY: p.imagePosY_Pc !== undefined ? p.imagePosY_Pc : 50
+        },
+        mobile: {
+            fit: p.imageFitMobile || p.imageFitPc || 'cover',
+            zoom: p.imageZoomMobile !== undefined ? p.imageZoomMobile : (p.imageZoomPc !== undefined ? p.imageZoomPc : 1.0),
+            posX: p.imagePosX_Mobile !== undefined ? p.imagePosX_Mobile : (p.imagePosX_Pc !== undefined ? p.imagePosX_Pc : 50),
+            posY: p.imagePosY_Mobile !== undefined ? p.imagePosY_Mobile : (p.imagePosY_Pc !== undefined ? p.imagePosY_Pc : 50)
+        }
+    };
+    switchFramingDevice('PC');
+
     updateLivePreview();
-    switchAdminSubTab('productEditor');
+    switchAdminSubTab('products');
+    setTimeout(() => {
+        document.getElementById('productEditorCard')?.scrollIntoView({ behavior: 'smooth' });
+    }, 50);
 }
 
 async function toggleProductActivation(productId) {
@@ -2664,6 +2696,144 @@ function deleteProduct(productId) {
     toggleProductActivation(productId);
 }
 
+// ==========================================================================
+// IMAGE FRAMING CONTROLS (INDEPENDENT PC & MOBILE)
+// ==========================================================================
+
+function switchFramingDevice(device) {
+    state.currentFramingDevice = device;
+    const isPc = device === 'PC';
+
+    // Buttons framing config
+    const btnPc = document.getElementById('btnDevicePc');
+    const btnMob = document.getElementById('btnDeviceMobile');
+    if (btnPc && btnMob) {
+        if (isPc) {
+            btnPc.classList.add('active');
+            btnPc.style.background = 'linear-gradient(135deg, #FF6F00, #E65100)';
+            btnPc.style.color = '#fff';
+            btnMob.classList.remove('active');
+            btnMob.style.background = 'transparent';
+            btnMob.style.color = '#a1a1aa';
+        } else {
+            btnMob.classList.add('active');
+            btnMob.style.background = 'linear-gradient(135deg, #FF6F00, #E65100)';
+            btnMob.style.color = '#fff';
+            btnPc.classList.remove('active');
+            btnPc.style.background = 'transparent';
+            btnPc.style.color = '#a1a1aa';
+        }
+    }
+
+    // Buttons preview mode
+    const prevPc = document.getElementById('btnPrevPc');
+    const prevMob = document.getElementById('btnPrevMobile');
+    if (prevPc && prevMob) {
+        if (isPc) {
+            prevPc.classList.add('active');
+            prevPc.style.background = 'linear-gradient(135deg, #FF6F00, #E65100)';
+            prevPc.style.color = '#fff';
+            prevMob.classList.remove('active');
+            prevMob.style.background = 'transparent';
+            prevMob.style.color = '#a1a1aa';
+        } else {
+            prevMob.classList.add('active');
+            prevMob.style.background = 'linear-gradient(135deg, #FF6F00, #E65100)';
+            prevMob.style.color = '#fff';
+            prevPc.classList.remove('active');
+            prevPc.style.background = 'transparent';
+            prevPc.style.color = '#a1a1aa';
+        }
+    }
+
+    // Badge
+    const badge = document.getElementById('prevMatchBadge');
+    if (badge) {
+        badge.textContent = isPc ? '100% IDÉNTICA PC' : '100% IDÉNTICA MÓVIL';
+    }
+
+    // Card width in preview
+    const liveCard = document.getElementById('liveCardPreview');
+    if (liveCard) {
+        liveCard.style.maxWidth = isPc ? '240px' : '185px';
+    }
+
+    // Sync input controls with selected device framing
+    const devKey = device.toLowerCase();
+    const conf = state.currentProductFraming[devKey] || { fit: 'cover', zoom: 1.0, posX: 50, posY: 50 };
+    
+    const fitSelect = document.getElementById('imgFitMode');
+    if (fitSelect) fitSelect.value = conf.fit || 'cover';
+
+    const zoomRange = document.getElementById('imgZoomRange');
+    const lblZoom = document.getElementById('lblImgZoom');
+    if (zoomRange) zoomRange.value = conf.zoom || 1.0;
+    if (lblZoom) lblZoom.textContent = Number(conf.zoom || 1.0).toFixed(2) + 'x';
+
+    const posXRange = document.getElementById('imgPosXRange');
+    const lblPosX = document.getElementById('lblImgPosX');
+    if (posXRange) posXRange.value = conf.posX !== undefined ? conf.posX : 50;
+    if (lblPosX) lblPosX.textContent = (conf.posX !== undefined ? conf.posX : 50) + '%';
+
+    const posYRange = document.getElementById('imgPosYRange');
+    const lblPosY = document.getElementById('lblImgPosY');
+    if (posYRange) posYRange.value = conf.posY !== undefined ? conf.posY : 50;
+    if (lblPosY) lblPosY.textContent = (conf.posY !== undefined ? conf.posY : 50) + '%';
+
+    updateFramingPreview();
+}
+
+function updateFramingSetting(prop, val) {
+    const devKey = (state.currentFramingDevice || 'PC').toLowerCase();
+    if (!state.currentProductFraming[devKey]) {
+        state.currentProductFraming[devKey] = { fit: 'cover', zoom: 1.0, posX: 50, posY: 50 };
+    }
+
+    if (prop === 'fit') {
+        state.currentProductFraming[devKey].fit = val;
+    } else if (prop === 'zoom') {
+        const num = parseFloat(val) || 1.0;
+        state.currentProductFraming[devKey].zoom = num;
+        const lbl = document.getElementById('lblImgZoom');
+        if (lbl) lbl.textContent = num.toFixed(2) + 'x';
+    } else if (prop === 'posX') {
+        const num = parseInt(val) || 0;
+        state.currentProductFraming[devKey].posX = num;
+        const lbl = document.getElementById('lblImgPosX');
+        if (lbl) lbl.textContent = num + '%';
+    } else if (prop === 'posY') {
+        const num = parseInt(val) || 0;
+        state.currentProductFraming[devKey].posY = num;
+        const lbl = document.getElementById('lblImgPosY');
+        if (lbl) lbl.textContent = num + '%';
+    }
+
+    updateFramingPreview();
+}
+
+function applyFramingPreset(preset) {
+    const devKey = (state.currentFramingDevice || 'PC').toLowerCase();
+    if (preset === 'full') {
+        state.currentProductFraming[devKey] = { fit: 'contain', zoom: 1.0, posX: 50, posY: 50 };
+    } else if (preset === 'cover') {
+        state.currentProductFraming[devKey] = { fit: 'cover', zoom: 1.0, posX: 50, posY: 50 };
+    } else if (preset === 'reset') {
+        state.currentProductFraming[devKey] = { fit: 'cover', zoom: 1.0, posX: 50, posY: 50 };
+    }
+    switchFramingDevice(state.currentFramingDevice || 'PC');
+}
+
+function updateFramingPreview() {
+    const devKey = (state.currentFramingDevice || 'PC').toLowerCase();
+    const conf = state.currentProductFraming[devKey] || { fit: 'cover', zoom: 1.0, posX: 50, posY: 50 };
+    const img = document.getElementById('prevImg');
+    if (img) {
+        img.style.objectFit = conf.fit || 'cover';
+        img.style.objectPosition = `${conf.posX !== undefined ? conf.posX : 50}% ${conf.posY !== undefined ? conf.posY : 50}%`;
+        img.style.transform = `scale(${conf.zoom || 1.0})`;
+    }
+}
+
 function updateLivePreview() {
     const type = document.getElementById('editorType')?.value || 'DETAL';
     const name = document.getElementById('editorName')?.value || 'Nombre del Ítem';
@@ -2697,6 +2867,8 @@ function updateLivePreview() {
         salePrice.className = 'card-sale-price';
         salePrice.textContent = `$ ${price.toLocaleString('es-CO')}`;
     }
+
+    updateFramingPreview();
 }
 
 function saveProductFromEditor() {
@@ -2730,6 +2902,9 @@ function saveProductFromEditor() {
         pct = `-${Math.round(((price - discount) / price) * 100)}%`;
     }
 
+    const framingPc = state.currentProductFraming.pc || { fit: 'cover', zoom: 1.0, posX: 50, posY: 50 };
+    const framingMobile = state.currentProductFraming.mobile || { fit: 'cover', zoom: 1.0, posX: 50, posY: 50 };
+
     if (state.editingProductId) {
         const existingIndex = state.products.findIndex(p => p.id === state.editingProductId);
         if (existingIndex !== -1) {
@@ -2744,7 +2919,15 @@ function saveProductFromEditor() {
                 discountPercent: pct,
                 stock: stock,
                 imageUrl: image,
-                bundleItems: bundleItems
+                bundleItems: bundleItems,
+                imageFitPc: framingPc.fit,
+                imageZoomPc: framingPc.zoom,
+                imagePosX_Pc: framingPc.posX,
+                imagePosY_Pc: framingPc.posY,
+                imageFitMobile: framingMobile.fit,
+                imageZoomMobile: framingMobile.zoom,
+                imagePosX_Mobile: framingMobile.posX,
+                imagePosY_Mobile: framingMobile.posY
             };
             showToast(`✅ ¡"${name}" actualizado exitosamente!`, 'success', '💾');
         }
@@ -2763,7 +2946,15 @@ function saveProductFromEditor() {
             stock: stock,
             imageUrl: image,
             isAvailable: true,
-            bundleItems: bundleItems
+            bundleItems: bundleItems,
+            imageFitPc: framingPc.fit,
+            imageZoomPc: framingPc.zoom,
+            imagePosX_Pc: framingPc.posX,
+            imagePosY_Pc: framingPc.posY,
+            imageFitMobile: framingMobile.fit,
+            imageZoomMobile: framingMobile.zoom,
+            imagePosX_Mobile: framingMobile.posX,
+            imagePosY_Mobile: framingMobile.posY
         };
         state.products.unshift(newProd);
         showToast(`✅ ¡${type === 'MERCADO' ? 'Mercado Combo' : 'Producto Detal'} guardado exitosamente!`, 'success', '💾');

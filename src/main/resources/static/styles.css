@@ -802,8 +802,35 @@ body::before {
     will-change: transform;
 }
 
+.card-img-wrap img.product-framed-img {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: var(--img-fit-pc, cover) !important;
+    object-position: var(--img-pos-pc, 50% 50%) !important;
+    transform: scale(var(--img-zoom-pc, 1)) !important;
+    transition: transform 0.25s ease;
+    will-change: transform;
+}
+
 .product-card-bright:hover .card-img-wrap img {
     transform: scale(1.08);
+}
+
+.product-card-bright:hover .card-img-wrap img.product-framed-img {
+    transform: scale(calc(var(--img-zoom-pc, 1) * 1.05)) !important;
+}
+
+@media (max-width: 768px) {
+    .card-img-wrap img.product-framed-img {
+        object-fit: var(--img-fit-mob, cover) !important;
+        object-position: var(--img-pos-mob, 50% 50%) !important;
+        transform: scale(var(--img-zoom-mob, 1)) !important;
+    }
+    .product-card-bright:hover .card-img-wrap img.product-framed-img {
+        transform: scale(calc(var(--img-zoom-mob, 1) * 1.05)) !important;
+    }
 }
 
 .discount-tag {
