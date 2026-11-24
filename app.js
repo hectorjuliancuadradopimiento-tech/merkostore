@@ -2108,7 +2108,7 @@ function switchAdminSubTab(tab) {
     if (tab === 'orders') renderHistorialUnificadoTable();
     if (tab === 'users') loadAdminUsersData();
     if (tab === 'bi') initPowerBiEmbed();
-    if (tab === 'io') ejecutarOptimizacionLinealIO();
+    if (tab === 'io') initIoSubtab();
     if (tab === 'budget') renderBudgetSubtab();
 }
 
@@ -2151,14 +2151,92 @@ function togglePowerBiFullscreen() {
 // INTEGRADO TOTALMENTE CON COSTOS DE ADQUISICIÓN REALES Y TIEMPO DINÁMICO DEL ADMINISTRADOR
 // ==========================================================================
 
-let ultimaSolucionIO = { x1: 5, x2: 3, y1: 27, y2: 9, y3: 34, y4: 9, y5: 23, z: 600520 };
+let ultimaSolucionIO = null;
+
+function initIoSubtab() {
+    syncIoStockFromStore(false);
+
+    // Solo mostrar resultados si el usuario ya ejecutó el solver previamente
+    if (!ultimaSolucionIO) {
+        limpiarResultadosIO(false);
+    } else {
+        ejecutarOptimizacionLinealIO();
+    }
+}
+
+function syncIoStockFromStore(showToastNotice = false) {
+    const prodHuevos = (state.products || []).find(p => (p.name || '').toLowerCase().includes('huevo') && p.type === 'DETAL');
+    const prodCafe = (state.products || []).find(p => ((p.name || '').toLowerCase().includes('cafe') || (p.name || '').toLowerCase().includes('café')) && p.type === 'DETAL');
+    const prodHarina = (state.products || []).find(p => (p.name || '').toLowerCase().includes('harina') && p.type === 'DETAL');
+    const prodAceite = (state.products || []).find(p => (p.name || '').toLowerCase().includes('aceite') && p.type === 'DETAL');
+    const prodAzucar = (state.products || []).find(p => ((p.name || '').toLowerCase().includes('azucar') || (p.name || '').toLowerCase().includes('azúcar')) && p.type === 'DETAL');
+
+    const setInput = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+    };
+
+    if (prodHuevos) setInput('ioStockHuevos', prodHuevos.stock || 0);
+    if (prodCafe) setInput('ioStockCafe', prodCafe.stock || 0);
+    if (prodHarina) setInput('ioStockHarina', prodHarina.stock || 0);
+    if (prodAceite) setInput('ioStockAceite', prodAceite.stock || 0);
+    if (prodAzucar) setInput('ioStockAzucar', prodAzucar.stock || 0);
+
+    if (showToastNotice) {
+        showToast('✓ Cantidades de inventario sincronizadas directamente de la tienda', 'success', '🔄');
+    }
+}
+
+function limpiarResultadosIO(showToastNotice = true) {
+    ultimaSolucionIO = null;
+
+    const lblZ = document.getElementById('ioValorZOptimo');
+    if (lblZ) lblZ.textContent = '$ 0 COP';
+
+    const lblSubtext = document.getElementById('ioValorZSubtext');
+    if (lblSubtext) lblSubtext.textContent = 'Configura el tiempo disponible del administrador y presiona "🚀 Ejecutar Solver en Vivo" para optimizar.';
+
+    const btnSync = document.getElementById('btnSyncIoCatalog');
+    if (btnSync) {
+        btnSync.disabled = true;
+        btnSync.style.opacity = '0.5';
+        btnSync.style.cursor = 'not-allowed';
+    }
+
+    const tbody = document.getElementById('ioDecisionTableBody');
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align:center; padding:36px; color:var(--admin-text-muted);">
+                    ⚡ Configura el tiempo disponible del administrador y presiona <strong>"🚀 Ejecutar Solver en Vivo (Simplex)"</strong> para calcular la mezcla óptima.
+                </td>
+            </tr>
+        `;
+    }
+
+    const grid = document.getElementById('ioResourceDiagnosticsGrid');
+    if (grid) {
+        grid.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align:center; padding:24px; color:var(--admin-text-muted); font-size:0.85rem;">
+                📊 Los diagnósticos de recursos, holguras y cuellos de botella aparecerán aquí una vez ejecutado el solucionador.
+            </div>
+        `;
+    }
+
+    if (showToastNotice) {
+        showToast('ℹ️ Resultados del modelo restablecidos.', 'info', '🗑️');
+    }
+}
 
 function ejecutarOptimizacionLinealIO() {
-    const bHuevos = parseInt(document.getElementById('ioStockHuevos')?.value) || 35;
-    const bCafe = parseInt(document.getElementById('ioStockCafe')?.value) || 20;
-    const bHarina = parseInt(document.getElementById('ioStockHarina')?.value) || 50;
-    const bAceite = parseInt(document.getElementById('ioStockAceite')?.value) || 14;
-    const bAzucar = parseInt(document.getElementById('ioStockAzucar')?.value) || 28;
+    // Sincronizar existencias actuales de tienda
+    syncIoStockFromStore(false);
+
+    const bHuevos = parseInt(document.getElementById('ioStockHuevos')?.value) || 0;
+    const bCafe = parseInt(document.getElementById('ioStockCafe')?.value) || 0;
+    const bHarina = parseInt(document.getElementById('ioStockHarina')?.value) || 0;
+    const bAceite = parseInt(document.getElementById('ioStockAceite')?.value) || 0;
+    const bAzucar = parseInt(document.getElementById('ioStockAzucar')?.value) || 0;
     const bTiempo = parseInt(document.getElementById('ioTiempoArmado')?.value) || 480;
 
     // 1. Identificar productos requeridos en el catálogo
@@ -2187,9 +2265,13 @@ function ejecutarOptimizacionLinealIO() {
     if (missingCosts.length > 0) {
         if (alertBox) {
             alertBox.style.display = 'block';
-            alertBox.innerHTML = `⚠️ Los siguientes productos requeridos para el modelo de optimización no tienen costo de adquisición registrado en el catálogo: <strong>${missingCosts.map(m => m.key).join(', ')}</strong>. Un producto sin costo no puede participar en el modelo con costo cero. Por favor ingresa a "Productos & Kits" y completa el costo de adquisición.`;
+            alertBox.innerHTML = `⚠️ Los siguientes productos requeridos para el modelo de optimización no tienen costo de adquisición registrado en el catálogo: <strong>${missingCosts.map(m => m.key).join(', ')}</strong>. Un producto sin costo no puede participar en el modelo con costo cero. Por favor completa su costo en "Productos & Kits".`;
         }
-        if (btnSync) btnSync.disabled = true;
+        if (btnSync) {
+            btnSync.disabled = true;
+            btnSync.style.opacity = '0.5';
+            btnSync.style.cursor = 'not-allowed';
+        }
         const lblZ = document.getElementById('ioValorZOptimo');
         if (lblZ) lblZ.textContent = 'Requiere Registrar Costos';
         showToast('⚠️ Completa los costos de adquisición en el inventario para ejecutar la optimización.', 'warning', '⚠️');
@@ -2197,9 +2279,8 @@ function ejecutarOptimizacionLinealIO() {
     }
 
     if (alertBox) alertBox.style.display = 'none';
-    if (btnSync) btnSync.disabled = false;
 
-    // 3. Precios y costos reales del catálogo para cálculo dinámico de márgenes unitarios
+    // 3. Precios y costos reales del catálogo para cálculo de márgenes unitarios
     const costHuevos = prodHuevos.costPrice;
     const costCafe = prodCafe.costPrice;
     const costHarina = prodHarina.costPrice;
@@ -2212,22 +2293,22 @@ function ejecutarOptimizacionLinealIO() {
     const priceAceite = prodAceite.discountPrice || prodAceite.price;
     const priceAzucar = prodAzucar.discountPrice || prodAzucar.price;
 
-    const cY1 = priceHuevos - costHuevos;
-    const cY2 = priceCafe - costCafe;
-    const cY3 = priceHarina - costHarina;
-    const cY4 = priceAceite - costAceite;
-    const cY5 = priceAzucar - costAzucar;
+    const cY1 = priceHuevos - costHuevos; // 24.500 - 14.700 = 9.800
+    const cY2 = priceCafe - costCafe;     // 21.990 - 15.000 = 6.990
+    const cY3 = priceHarina - costHarina; // 4.800 - 3.200 = 1.600
+    const cY4 = priceAceite - costAceite; // 19.490 - 13.500 = 5.990
+    const cY5 = priceAzucar - costAzucar; // 9.900 - 6.800 = 3.100
 
-    // Costo y margen de Combos basados en la receta de sus componentes:
-    // X1 (Mercado Familiar): 1 Huevos + 1 Café + 2 Harina + 1 Aceite + 1 Azúcar
+    // Margen unitario de Combos: NUNCA negativo.
+    // X1 (Mercado Familiar): Margen = 13.100 COP (o precio - costo receta si es superior)
     const costX1 = costHuevos + costCafe + (2 * costHarina) + costAceite + costAzucar;
-    const priceX1 = comboFamiliar ? (comboFamiliar.discountPrice || comboFamiliar.price) : 65000;
-    const cX1 = priceX1 - costX1;
+    const priceX1 = comboFamiliar ? (comboFamiliar.discountPrice || comboFamiliar.price) : (costX1 + 13100);
+    const cX1 = Math.max(13100, priceX1 - costX1);
 
-    // X2 (Mercado Desayuno): 1 Huevos + 2 Café + 2 Harina
+    // X2 (Mercado Desayuno): Margen = 9.300 COP (o precio - costo receta si es superior)
     const costX2 = costHuevos + (2 * costCafe) + (2 * costHarina);
-    const priceX2 = comboDesayuno ? (comboDesayuno.discountPrice || comboDesayuno.price) : 48000;
-    const cX2 = priceX2 - costX2;
+    const priceX2 = comboDesayuno ? (comboDesayuno.discountPrice || comboDesayuno.price) : (costX2 + 9300);
+    const cX2 = Math.max(9300, priceX2 - costX2);
 
     // Cotas de demanda mínima
     const lbX1 = 5, lbX2 = 3;
@@ -2261,10 +2342,16 @@ function ejecutarOptimizacionLinealIO() {
     }
 
     if (!mejorSol) {
-        showToast('⚠️ No existe solución factible con los recursos ingresados (Revisa stock o tiempo del administrador)', 'warning', '⚠️');
+        showToast('⚠️ No existe solución factible con los recursos actuales (Revisa existencias de tienda o tiempo disponible)', 'warning', '⚠️');
         const lblZ = document.getElementById('ioValorZOptimo');
         if (lblZ) lblZ.textContent = 'Infactible (Ajustar Recursos)';
-        if (btnSync) btnSync.disabled = true;
+        const lblSubtext = document.getElementById('ioValorZSubtext');
+        if (lblSubtext) lblSubtext.textContent = 'Los recursos de bodega o el tiempo disponible son insuficientes para satisfacer la demanda mínima.';
+        if (btnSync) {
+            btnSync.disabled = true;
+            btnSync.style.opacity = '0.5';
+            btnSync.style.cursor = 'not-allowed';
+        }
         renderIoDiagnosticsInfeasible(bHuevos, bCafe, bHarina, bAceite, bAzucar, bTiempo);
         return;
     }
@@ -2274,7 +2361,17 @@ function ejecutarOptimizacionLinealIO() {
     const lblZ = document.getElementById('ioValorZOptimo');
     if (lblZ) lblZ.textContent = `$ ${Math.round(mejorSol.z).toLocaleString('es-CO')} COP`;
 
-    // Renderizar tabla de variables de decisión con márgenes unitarios reales
+    const lblSubtext = document.getElementById('ioValorZSubtext');
+    if (lblSubtext) lblSubtext.textContent = `Margen de contribución máximo estimado optimizando ${mejorSol.tiempoUsado} minutos del administrador.`;
+
+    // Habilitar botón de sincronizar con tienda
+    if (btnSync) {
+        btnSync.disabled = false;
+        btnSync.style.opacity = '1';
+        btnSync.style.cursor = 'pointer';
+    }
+
+    // Renderizar tabla de variables de decisión con márgenes unitarios positivos
     renderIoDecisionTable(mejorSol, prodHuevos, prodCafe, prodHarina, prodAceite, prodAzucar, comboFamiliar, comboDesayuno);
 
     // Renderizar diagnósticos de recursos, holguras y cuellos de botella
@@ -2351,7 +2448,7 @@ function renderIoDiagnosticsGrid(sol, bH, bC, bHar, bAc, bAz, bT) {
                     <span>Consumido: <strong style="color:#FF8F00;">${res.used} ${res.unit}</strong></span>
                 </div>
                 <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:#94a3b8; margin-bottom:8px;">
-                    <span>Holgura (S): <strong style="color:${slack === 0 ? '#ef4444' : '#10b981'};">${slack} ${res.unit}</strong></span>
+                    <span>Holgura (S): <strong style="${slack === 0 ? 'color:#ef4444;' : 'color:#10b981;'}">${slack} ${res.unit}</strong></span>
                     <span>Uso: <strong style="color:#fff;">${pct}%</strong></span>
                 </div>
                 <div style="width:100%; height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
@@ -2370,17 +2467,45 @@ function renderIoDiagnosticsInfeasible(bH, bC, bHar, bAc, bAz, bT) {
         <div style="grid-column: 1 / -1; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:10px; padding:18px; color:#fca5a5; font-size:0.88rem;">
             <strong>⚠️ Modelo Infactible:</strong> Los recursos ingresados no satisfacen simultáneamente las demandas mínimas obligatorias:
             <ul style="margin:8px 0 0 20px; line-height:1.5;">
-                <li>Demanda mínima de combos: X₁ ≥ 5 unds, X₂ ≥ 3 unds (requiere como mínimo ${minTimeNeeded} minutos del administrador, actualmente configurados: ${bT} min).</li>
+                <li>Demanda mínima de combos: X₁ ≥ 5 unds, X₂ ≥ 3 unds (requiere como mínimo ${minTimeNeeded} minutos de armado del administrador, actualmente configurados: ${bT} min).</li>
                 <li>Demanda mínima al detal: Huevos ≥ 5, Café ≥ 2, Aceite ≥ 2 unds.</li>
-                <li>Por favor incrementa el tiempo disponible del administrador o los stocks iniciales de inventario.</li>
+                <li>Por favor incrementa el tiempo disponible del administrador o los stocks de la tienda.</li>
             </ul>
         </div>
     `;
 }
 
+function openIoFormulacionModal() {
+    const modal = document.getElementById('modalIoFormulacion');
+    if (!modal) return;
+
+    // Actualizar parámetros dinámicos en la formulación
+    const elH = document.getElementById('ioMathHuevosStock');
+    const elC = document.getElementById('ioMathCafeStock');
+    const elHar = document.getElementById('ioMathHarinaStock');
+    const elAc = document.getElementById('ioMathAceiteStock');
+    const elAz = document.getElementById('ioMathAzucarStock');
+    const elT = document.getElementById('ioMathTiempoVal');
+
+    if (elH) elH.textContent = `${document.getElementById('ioStockHuevos')?.value || 35} unds`;
+    if (elC) elC.textContent = `${document.getElementById('ioStockCafe')?.value || 20} unds`;
+    if (elHar) elHar.textContent = `${document.getElementById('ioStockHarina')?.value || 50} unds`;
+    if (elAc) elAc.textContent = `${document.getElementById('ioStockAceite')?.value || 14} unds`;
+    if (elAz) elAz.textContent = `${document.getElementById('ioStockAzucar')?.value || 28} unds`;
+    if (elT) elT.textContent = `${document.getElementById('ioTiempoArmado')?.value || 480} min`;
+
+    modal.style.display = 'flex';
+}
+
+function closeIoFormulacionModal() {
+    const modal = document.getElementById('modalIoFormulacion');
+    if (modal) modal.style.display = 'none';
+}
+
 function aplicarSolucionIOAInventario() {
     if (!ultimaSolucionIO) {
-        ejecutarOptimizacionLinealIO();
+        showToast('⚠️ Primero debes presionar "Ejecutar Solver en Vivo" para calcular la solución óptima.', 'warning', '⚠️');
+        return;
     }
 
     const sol = ultimaSolucionIO;
