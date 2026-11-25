@@ -3838,6 +3838,9 @@ function resetProductEditorForm(userCancelled = false) {
     const btnCancel = document.getElementById('btnCancelProductEditor');
     if (btnCancel) btnCancel.style.display = 'none';
 
+    const warnBox = document.getElementById('editorBudgetWarning');
+    if (warnBox) warnBox.style.display = 'none';
+
     toggleMercadoCompositionForm();
     state.currentProductFraming = {
         pc: { fit: 'cover', zoom: 1.0, posX: 50, posY: 50 },
@@ -4242,6 +4245,40 @@ function updateLivePreview() {
     }
 
     updateFramingPreview();
+
+    // Verificación en vivo de Presupuesto Disponible vs Costo de Compra
+    const warnBox = document.getElementById('editorBudgetWarning');
+    const msgSpan = document.getElementById('editorBudgetMessage');
+    const costInputVal = document.getElementById('editorCostPrice')?.value.trim();
+    const liveCost = (costInputVal !== '' && costInputVal !== undefined && costInputVal !== null) ? parseFloat(costInputVal) : 0;
+    const liveStock = parseInt(document.getElementById('editorStock')?.value) || 0;
+
+    let deltaUnits = liveStock;
+    if (state.editingProductId) {
+        const curProd = state.products.find(p => p.id === state.editingProductId);
+        const oldUnits = curProd ? (curProd.stock || 0) : 0;
+        deltaUnits = Math.max(0, liveStock - oldUnits);
+    }
+
+    const availableBudget = (state.budget && state.budget.currentBalance !== undefined && state.budget.currentBalance !== null)
+        ? Number(state.budget.currentBalance)
+        : 0;
+
+    if (deltaUnits > 0 && liveCost > 0) {
+        const requiredCost = deltaUnits * liveCost;
+        if (availableBudget < requiredCost) {
+            if (warnBox) {
+                warnBox.style.display = 'flex';
+                if (msgSpan) {
+                    msgSpan.innerHTML = `Presupuesto insuficiente. La compra de <strong>${deltaUnits} unds</strong> cuesta <strong>$ ${requiredCost.toLocaleString('es-CO')} COP</strong> y tu presupuesto disponible es de solo <strong>$ ${availableBudget.toLocaleString('es-CO')} COP</strong>. No se permitirá realizar la compra.`;
+                }
+            }
+        } else {
+            if (warnBox) warnBox.style.display = 'none';
+        }
+    } else {
+        if (warnBox) warnBox.style.display = 'none';
+    }
 }
 
 function saveProductFromEditor() {
@@ -4304,13 +4341,27 @@ function saveProductFromEditor() {
             // Si se incrementó el stock físico y tiene costo de adquisición, registrar compra automática con costo ponderado
             if (deltaStock > 0 && costVal && costVal > 0) {
                 const totalCost = deltaStock * costVal;
+                const availableBudget = (state.budget && state.budget.currentBalance !== undefined && state.budget.currentBalance !== null)
+                    ? Number(state.budget.currentBalance)
+                    : 0;
+
+                if (availableBudget < totalCost) {
+                    showToast(`⚠️ Presupuesto insuficiente. Saldo disponible: $ ${availableBudget.toLocaleString('es-CO')} COP | Costo compra: $ ${totalCost.toLocaleString('es-CO')} COP`, 'warning', '💰');
+                    const warnBox = document.getElementById('editorBudgetWarning');
+                    if (warnBox) {
+                        warnBox.style.display = 'flex';
+                        warnBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    return;
+                }
+
                 const oldTotalValue = oldStock * (oldProd.costPrice || costVal);
                 const newTotalValue = oldTotalValue + totalCost;
                 finalCostPrice = Math.round((newTotalValue / stock) * 100) / 100;
 
                 // 1. Descontar del presupuesto
                 if (!state.budget) {
-                    state.budget = { initialBudget: 1000000, currentBalance: 1000000, totalPurchases: 0, totalRecoveredCosts: 0, totalManualInjections: 0, isInitialized: true };
+                    state.budget = { initialBudget: 0, currentBalance: 0, totalPurchases: 0, totalRecoveredCosts: 0, totalManualInjections: 0, isInitialized: false };
                 }
                 state.budget.currentBalance -= totalCost;
                 state.budget.totalPurchases += totalCost;
@@ -4407,8 +4458,22 @@ function saveProductFromEditor() {
         // Si se crea con inventario inicial > 0 y costo de adquisición > 0, registrar compra automática y descontar de presupuesto
         if (stock > 0 && costVal && costVal > 0) {
             const totalCost = stock * costVal;
+            const availableBudget = (state.budget && state.budget.currentBalance !== undefined && state.budget.currentBalance !== null)
+                ? Number(state.budget.currentBalance)
+                : 0;
+
+            if (availableBudget < totalCost) {
+                showToast(`⚠️ Presupuesto insuficiente. Saldo disponible: $ ${availableBudget.toLocaleString('es-CO')} COP | Costo compra: $ ${totalCost.toLocaleString('es-CO')} COP`, 'warning', '💰');
+                const warnBox = document.getElementById('editorBudgetWarning');
+                if (warnBox) {
+                    warnBox.style.display = 'flex';
+                    warnBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                return;
+            }
+
             if (!state.budget) {
-                state.budget = { initialBudget: 1000000, currentBalance: 1000000, totalPurchases: 0, totalRecoveredCosts: 0, totalManualInjections: 0, isInitialized: true };
+                state.budget = { initialBudget: 0, currentBalance: 0, totalPurchases: 0, totalRecoveredCosts: 0, totalManualInjections: 0, isInitialized: false };
             }
             state.budget.currentBalance -= totalCost;
             state.budget.totalPurchases += totalCost;
