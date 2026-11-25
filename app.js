@@ -1467,12 +1467,15 @@ function startDragEmoji(e, element) {
 function recalculateMercadoStocks() {
     state.products.forEach(p => {
         if (p.type === 'MERCADO' && p.bundleItems && p.bundleItems.length > 0) {
-            const possibleCombos = p.bundleItems.map(item => {
-                const detal = state.products.find(d => d.id === item.productId && d.type === 'DETAL');
-                if (!detal) return 0;
-                return Math.floor(detal.stock / item.quantity);
-            });
-            p.stock = Math.min(...possibleCombos);
+            // Si el combo no tiene stock definido manualmente por el administrador, calcularlo automáticamente
+            if (p.stock === undefined || p.stock === null) {
+                const possibleCombos = p.bundleItems.map(item => {
+                    const detal = state.products.find(d => d.id === item.productId && d.type === 'DETAL');
+                    if (!detal) return 0;
+                    return Math.floor(detal.stock / item.quantity);
+                });
+                p.stock = Math.min(...possibleCombos);
+            }
         }
     });
 }
@@ -3801,13 +3804,13 @@ function toggleMercadoCompositionForm() {
 
     if (type === 'MERCADO') {
         if (container) container.style.display = 'block';
-        if (lblStock) lblStock.textContent = 'Inventario (Calculado Automáticamente)';
-        if (subStock) subStock.textContent = 'Se calcula a partir de los productos en bodega que componen el mercado.';
+        if (lblStock) lblStock.textContent = 'Cantidad de Combos en Inventario *';
+        if (subStock) subStock.textContent = 'Existencias físicas disponibles de este combo.';
         if (costGroup) costGroup.style.display = 'none';
         if (pricesGrid) pricesGrid.style.gridTemplateColumns = '1fr';
         if (stockInput) {
-            stockInput.readOnly = true;
-            stockInput.placeholder = 'Automático según componentes';
+            stockInput.readOnly = false;
+            stockInput.placeholder = 'Ej: 5';
         }
         if (warnBox) warnBox.style.display = 'none';
         renderMercadoItemsChecklist();
