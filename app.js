@@ -1588,6 +1588,10 @@ let currentPaymentMethod = 'TRANSFER_WHATSAPP';
 function addToCart(productId, quantity = 1) {
     const prod = state.products.find(p => p.id === productId || String(p.id).toLowerCase() === String(productId).toLowerCase());
     if (!prod) return;
+    if (prod.isAvailable === false) {
+        showToast(`⚠️ "${prod.name}" se encuentra actualmente inactivo en la tienda.`, 'warning', '🚫');
+        return;
+    }
     const currentQty = state.cart[prod.id] || 0;
     updateCartQuantity(prod.id, currentQty + quantity);
 }
@@ -2248,7 +2252,7 @@ function renderIoProductInputs(syncStocks = false) {
     const grid = document.getElementById('ioProductInputsGrid');
     const emptyBanner = document.getElementById('ioEmptyProductsBanner');
     // Tomar todos los productos individuales que NO sean combos
-    const detalProducts = (state.products || []).filter(p => p.type !== 'MERCADO');
+    const detalProducts = (state.products || []).filter(p => p.type !== 'MERCADO' && p.isAvailable !== false);
 
     if (detalProducts.length === 0) {
         if (emptyBanner) emptyBanner.style.display = 'block';
@@ -2312,7 +2316,7 @@ async function syncIoStockFromStore(showToastNotice = true) {
     }
 
     // Renderizado inmediato para respuesta instantánea (0ms)
-    let detalProducts = (state.products || []).filter(p => p.type !== 'MERCADO');
+    let detalProducts = (state.products || []).filter(p => p.type !== 'MERCADO' && p.isAvailable !== false);
     const emptyBanner = document.getElementById('ioEmptyProductsBanner');
 
     if (detalProducts.length === 0) {
@@ -2401,7 +2405,7 @@ function limpiarResultadosIO(showToastNotice = true) {
 
 // SOLVER DINÁMICO UNIVERSAL (MILP): ADAPTA TODOS LOS PRODUCTOS Y COMBOS DEL INVENTARIO
 function ejecutarOptimizacionLinealIO() {
-    const detalProducts = (state.products || []).filter(p => p.type !== 'MERCADO');
+    const detalProducts = (state.products || []).filter(p => p.type !== 'MERCADO' && p.isAvailable !== false);
     const emptyBanner = document.getElementById('ioEmptyProductsBanner');
 
     if (detalProducts.length === 0) {
@@ -2444,7 +2448,7 @@ function ejecutarOptimizacionLinealIO() {
     const bTiempo = parseInt(document.getElementById('ioTiempoArmado')?.value) || 480;
 
     // 3. Extraer todos los combos configurados en la tienda
-    const combos = (state.products || []).filter(p => p.type === 'MERCADO' || (p.bundleItems && p.bundleItems.length > 0));
+    const combos = (state.products || []).filter(p => (p.type === 'MERCADO' || (p.bundleItems && p.bundleItems.length > 0)) && p.isAvailable !== false);
 
     // Calcular margen y tiempo de ensamblaje para cada combo
     combos.forEach((c, idx) => {
@@ -2711,8 +2715,8 @@ function openIoFormulacionModal() {
     const modal = document.getElementById('modalIoFormulacion');
     if (!modal) return;
 
-    const detalProducts = (state.products || []).filter(p => p.type !== 'MERCADO');
-    const combos = (state.products || []).filter(p => p.type === 'MERCADO' || (p.bundleItems && p.bundleItems.length > 0));
+    const detalProducts = (state.products || []).filter(p => p.type !== 'MERCADO' && p.isAvailable !== false);
+    const combos = (state.products || []).filter(p => (p.type === 'MERCADO' || (p.bundleItems && p.bundleItems.length > 0)) && p.isAvailable !== false);
     const bTiempo = parseInt(document.getElementById('ioTiempoArmado')?.value) || 480;
 
     // Calcular márgenes de detal y stocks actuales ingresados
@@ -3575,8 +3579,11 @@ function renderAdminProductsTable() {
                 <td style="text-align:right;">
                     <div style="display:flex; justify-content:flex-end; gap:6px;">
                         <button class="btn-merko-outline" style="padding:5px 12px; font-size:0.75rem; background:#332924;" onclick="editProduct('${p.id}')">✏️ Editar</button>
-                        <button class="btn-merko-outline" style="padding:5px 12px; font-size:0.75rem; ${isActive ? 'color:#f87171; border-color:rgba(239, 68, 68, 0.4); background:rgba(239, 68, 68, 0.15);' : 'color:#4ade80; border-color:rgba(74, 222, 128, 0.4); background:rgba(74, 222, 128, 0.15);'}" onclick="toggleProductActivation('${p.id}')" title="${isActive ? 'Inactivar del catálogo (registro preservado)' : 'Activar en catálogo'}">
+                        <button class="btn-merko-outline" style="padding:5px 12px; font-size:0.75rem; ${isActive ? 'color:#f87171; border-color:rgba(239, 68, 68, 0.4); background:rgba(239, 68, 68, 0.15);' : 'color:#4ade80; border-color:rgba(74, 222, 128, 0.4); background:rgba(74, 222, 128, 0.15);'}" onclick="toggleProductActivation('${p.id}')" title="${isActive ? 'Inactivar de la vista del cliente y optimización IO' : 'Activar en tienda y optimización IO'}">
                             ${isActive ? '🚫 Inactivar' : '✅ Activar'}
+                        </button>
+                        <button class="btn-merko-outline" style="padding:5px 12px; font-size:0.75rem; color:#ef4444; border-color:rgba(239, 68, 68, 0.5); background:rgba(239, 68, 68, 0.12);" onclick="deleteProductPermanently('${p.id}')" title="Eliminar permanentemente del inventario y base de datos">
+                            🗑️ Eliminar
                         </button>
                     </div>
                 </td>
@@ -3609,7 +3616,8 @@ function renderMercadoItemsChecklist() {
     const container = document.getElementById('mercadoItemsChecklist');
     if (!container) return;
 
-    const detalProducts = state.products.filter(p => p.type === 'DETAL');
+    // Solo permitir armar combos con productos detal activos
+    const detalProducts = state.products.filter(p => p.type !== 'MERCADO' && p.isAvailable !== false);
     container.innerHTML = detalProducts.map(p => `
         <div style="display:flex; align-items:center; justify-space-between; background:#18181b; padding:8px 12px; border-radius:8px;">
             <label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; color:#ffffff; cursor:pointer;">
@@ -3766,8 +3774,8 @@ async function toggleProductActivation(productId) {
     if (!p) return;
     const currentlyActive = p.isAvailable !== false;
     const confirmPrompt = currentlyActive 
-        ? `¿Deseas inactivar "${p.name}"? El producto no se eliminará de la base de datos, solo se ocultará a los clientes.`
-        : `¿Deseas reactivar "${p.name}" en la tienda?`;
+        ? `¿Deseas inactivar "${p.name}"?\n\nAl inactivarlo, el producto se ocultará de la vista de los clientes, del módulo de Investigación de Operaciones (Simplex/MILP) y de la creación de combos.`
+        : `¿Deseas reactivar "${p.name}" en la tienda?\n\nVolverá a estar visible para los clientes y disponible en Investigación de Operaciones e inventario.`;
 
     if (!confirm(confirmPrompt)) return;
 
@@ -3775,7 +3783,7 @@ async function toggleProductActivation(productId) {
     Storage.set('products', state.products);
 
     try {
-        if (API.getToken()) {
+        if (typeof API !== 'undefined' && API.getToken && API.getToken()) {
             await API.patch(`/api/v1/admin/products/${productId}/toggle-availability`).catch(() => {});
         }
     } catch (e) {}
@@ -3783,17 +3791,75 @@ async function toggleProductActivation(productId) {
     recalculateMercadoStocks();
     renderProducts();
     renderAdminProductsTable();
+    renderMercadoItemsChecklist();
+    if (typeof renderIoProductInputs === 'function') {
+        renderIoProductInputs(true);
+        limpiarResultadosIO(false);
+    }
     if (typeof updateDashboardKPIs === 'function') updateDashboardKPIs();
 
     showToast(
-        p.isAvailable ? `✅ "${p.name}" activado correctamente` : `🚫 "${p.name}" inactivado (registro preservado)`,
+        p.isAvailable ? `✅ "${p.name}" activado (visible en tienda y en optimización IO)` : `🚫 "${p.name}" inactivado (oculto en tienda y en optimización IO)`,
         p.isAvailable ? 'success' : 'warning',
         p.isAvailable ? '✅' : '🚫'
     );
 }
 
+async function deleteProductPermanently(productId) {
+    const p = state.products.find(prod => prod.id === productId);
+    if (!p) return;
+
+    const confirmMsg = `⚠️ ¿Estás completamente seguro de que deseas ELIMINAR PERMANENTEMENTE "${p.name}"?\n\nEsta acción borrará el producto de forma definitiva del inventario, de la base de datos MongoDB y de todos los módulos. Esta operación no se puede deshacer.`;
+    if (!confirm(confirmMsg)) return;
+
+    // 1. Eliminar del estado local
+    state.products = state.products.filter(prod => prod.id !== productId);
+
+    // 2. Si este producto formaba parte de algún combo (bundleItems), removerlo para evitar errores
+    state.products.forEach(prod => {
+        if (prod.bundleItems && Array.isArray(prod.bundleItems)) {
+            prod.bundleItems = prod.bundleItems.filter(bi => bi.productId !== productId);
+        }
+    });
+
+    // 3. Remover del carrito si estaba agregado
+    if (state.cart && state.cart[productId]) {
+        delete state.cart[productId];
+        if (typeof updateCartBadge === 'function') updateCartBadge();
+    }
+
+    // 4. Persistir cambios en localStorage
+    Storage.set('products', state.products);
+
+    // 5. Llamar al backend para eliminarlo permanentemente de MongoDB
+    try {
+        if (typeof API !== 'undefined' && API.getToken && API.getToken()) {
+            await API.delete(`/api/v1/admin/products/${productId}`).catch(err => {
+                console.warn('Advertencia al eliminar en backend:', err);
+            });
+        }
+    } catch (e) {
+        console.warn('API backend no disponible o error de red:', e);
+    }
+
+    // 6. Recalcular stocks y refrescar todos los apartados
+    recalculateMercadoStocks();
+    renderAdminProductsTable();
+    renderProducts();
+    renderMercadoItemsChecklist();
+    if (typeof renderIoProductInputs === 'function') {
+        renderIoProductInputs(true);
+        limpiarResultadosIO(false);
+    }
+    if (typeof updateDashboardKPIs === 'function') {
+        updateDashboardKPIs();
+    }
+
+    showToast(`✓ Producto "${p.name}" eliminado definitivamente del inventario y de la base de datos`, 'success', '🗑️');
+}
+
 function deleteProduct(productId) {
-    toggleProductActivation(productId);
+    deleteProductPermanently(productId);
 }
 
 // ==========================================================================

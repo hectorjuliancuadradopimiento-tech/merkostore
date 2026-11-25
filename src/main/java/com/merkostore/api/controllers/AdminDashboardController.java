@@ -251,12 +251,12 @@ public class AdminDashboardController {
     }
 
     @DeleteMapping("/products/{productId}")
-    public ResponseEntity<ApiResponse<Product>> deleteProduct(@PathVariable String productId) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + productId));
-        product.setIsAvailable(false);
-        Product saved = productRepository.save(product);
-        return ResponseEntity.ok(ApiResponse.ok("Producto inactivado correctamente (registro preservado)", saved));
+    public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable String productId) {
+        if (!productRepository.existsById(productId)) {
+            throw new ResourceNotFoundException("Producto no encontrado con ID: " + productId);
+        }
+        productRepository.deleteById(productId);
+        return ResponseEntity.ok(ApiResponse.ok("Producto eliminado definitivamente de la base de datos"));
     }
 
     @PatchMapping("/products/{productId}/toggle-status")
