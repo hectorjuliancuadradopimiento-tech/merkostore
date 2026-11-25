@@ -2237,17 +2237,37 @@ function togglePowerBiFullscreen() {
 let ultimaSolucionIO = null;
 
 function initIoSubtab() {
-    syncIoStockFromStore(false);
+    // Verificar si existen productos en la tienda
+    const totalDetal = (state.products || []).filter(p => p.type === 'DETAL');
+    const emptyBanner = document.getElementById('ioEmptyProductsBanner');
+    if (emptyBanner) {
+        emptyBanner.style.display = totalDetal.length === 0 ? 'block' : 'none';
+    }
 
-    // Solo mostrar resultados si el usuario ya ejecutó el solver previamente
+    // NO sincronizar automáticamente por defecto: solo cuando el usuario lo pida con el botón
     if (!ultimaSolucionIO) {
         limpiarResultadosIO(false);
-    } else {
-        ejecutarOptimizacionLinealIO();
     }
 }
 
-function syncIoStockFromStore(showToastNotice = false) {
+function syncIoStockFromStore(showToastNotice = true) {
+    const totalDetal = (state.products || []).filter(p => p.type === 'DETAL');
+    const emptyBanner = document.getElementById('ioEmptyProductsBanner');
+
+    if (totalDetal.length === 0) {
+        if (emptyBanner) emptyBanner.style.display = 'block';
+        showToast('⚠️ No tienes productos añadidos en la tienda.', 'warning', '📦');
+        const setInput = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+        setInput('ioStockHuevos', 0);
+        setInput('ioStockCafe', 0);
+        setInput('ioStockHarina', 0);
+        setInput('ioStockAceite', 0);
+        setInput('ioStockAzucar', 0);
+        return;
+    }
+
+    if (emptyBanner) emptyBanner.style.display = 'none';
+
     const prodHuevos = (state.products || []).find(p => (p.name || '').toLowerCase().includes('huevo') && p.type === 'DETAL');
     const prodCafe = (state.products || []).find(p => ((p.name || '').toLowerCase().includes('cafe') || (p.name || '').toLowerCase().includes('café')) && p.type === 'DETAL');
     const prodHarina = (state.products || []).find(p => (p.name || '').toLowerCase().includes('harina') && p.type === 'DETAL');
@@ -2259,14 +2279,19 @@ function syncIoStockFromStore(showToastNotice = false) {
         if (el) el.value = val;
     };
 
-    if (prodHuevos) setInput('ioStockHuevos', prodHuevos.stock || 0);
-    if (prodCafe) setInput('ioStockCafe', prodCafe.stock || 0);
-    if (prodHarina) setInput('ioStockHarina', prodHarina.stock || 0);
-    if (prodAceite) setInput('ioStockAceite', prodAceite.stock || 0);
-    if (prodAzucar) setInput('ioStockAzucar', prodAzucar.stock || 0);
+    let countFound = 0;
+    if (prodHuevos) { setInput('ioStockHuevos', prodHuevos.stock || 0); countFound++; } else { setInput('ioStockHuevos', 0); }
+    if (prodCafe) { setInput('ioStockCafe', prodCafe.stock || 0); countFound++; } else { setInput('ioStockCafe', 0); }
+    if (prodHarina) { setInput('ioStockHarina', prodHarina.stock || 0); countFound++; } else { setInput('ioStockHarina', 0); }
+    if (prodAceite) { setInput('ioStockAceite', prodAceite.stock || 0); countFound++; } else { setInput('ioStockAceite', 0); }
+    if (prodAzucar) { setInput('ioStockAzucar', prodAzucar.stock || 0); countFound++; } else { setInput('ioStockAzucar', 0); }
 
     if (showToastNotice) {
-        showToast('✓ Cantidades de inventario sincronizadas directamente de la tienda', 'success', '🔄');
+        if (countFound > 0) {
+            showToast(`✓ Stock de ${countFound} productos sincronizado directamente del inventario real`, 'success', '🔄');
+        } else {
+            showToast('⚠️ No se encontraron productos de la canasta básica en tu inventario. Registra productos en "Productos & Inventario".', 'warning', '⚠️');
+        }
     }
 }
 
@@ -2312,9 +2337,19 @@ function limpiarResultadosIO(showToastNotice = true) {
 }
 
 function ejecutarOptimizacionLinealIO() {
-    // Sincronizar existencias actuales de tienda
-    syncIoStockFromStore(false);
+    // Verificar si existen productos en el catálogo
+    const totalDetal = (state.products || []).filter(p => p.type === 'DETAL');
+    if (totalDetal.length === 0) {
+        showToast('⚠️ No tienes productos añadidos en la tienda. Añade productos en "Productos & Inventario" antes de optimizar.', 'warning', '📦');
+        const alertBox = document.getElementById('ioCostAlertBox');
+        if (alertBox) {
+            alertBox.style.display = 'block';
+            alertBox.innerHTML = '⚠️ <strong>No tienes productos añadidos en el inventario.</strong> Ve a "Productos & Inventario" para añadir tus productos con su precio y costo de adquisición.';
+        }
+        return;
+    }
 
+    // Tomar las cantidades de los inputs actuales sin sobreescribir automáticamente
     const bHuevos = parseInt(document.getElementById('ioStockHuevos')?.value) || 0;
     const bCafe = parseInt(document.getElementById('ioStockCafe')?.value) || 0;
     const bHarina = parseInt(document.getElementById('ioStockHarina')?.value) || 0;

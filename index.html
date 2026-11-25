@@ -1187,26 +1187,31 @@
                                 🔄 Actualizar Stock desde Tienda
                             </button>
                         </div>
+                        <!-- BANNER CUANDO NO HAY PRODUCTOS EN TIENDA -->
+                        <div id="ioEmptyProductsBanner" style="display:none; margin-bottom:16px; background:rgba(239,68,68,0.12); border:1.5px solid rgba(239,68,68,0.4); border-radius:12px; padding:16px; color:#fca5a5; font-size:0.88rem;">
+                            ⚠️ <strong>No tienes productos añadidos en el inventario de la tienda.</strong> Para usar el modelo de optimización, primero registra tus productos reales con su precio y costo en <strong>Productos & Inventario</strong>.
+                        </div>
+
                         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:14px;">
                             <div class="merko-form-group">
-                                <label style="font-size:0.75rem; color:#cbd5e1;">Huevos AA x30 (disp.) 🔒</label>
-                                <input type="number" id="ioStockHuevos" value="35" readonly style="padding:8px 12px; font-weight:800; background:rgba(255,255,255,0.04); color:#FF8F00; cursor:not-allowed; border:1px solid rgba(255,255,255,0.12);" title="Stock sincronizado automáticamente con la tienda">
+                                <label style="font-size:0.75rem; color:#cbd5e1;">Huevos AA x30 (disp.) 📦</label>
+                                <input type="number" id="ioStockHuevos" value="0" min="0" style="padding:8px 12px; font-weight:800; background:rgba(255,255,255,0.04); color:#FF8F00; border:1px solid rgba(255,255,255,0.12);" placeholder="0" title="Pulsa 'Actualizar Stock desde Tienda' para sincronizar con inventario real">
                             </div>
                             <div class="merko-form-group">
-                                <label style="font-size:0.75rem; color:#cbd5e1;">Café 425g (disp.) 🔒</label>
-                                <input type="number" id="ioStockCafe" value="20" readonly style="padding:8px 12px; font-weight:800; background:rgba(255,255,255,0.04); color:#FF8F00; cursor:not-allowed; border:1px solid rgba(255,255,255,0.12);" title="Stock sincronizado automáticamente con la tienda">
+                                <label style="font-size:0.75rem; color:#cbd5e1;">Café 425g (disp.) 📦</label>
+                                <input type="number" id="ioStockCafe" value="0" min="0" style="padding:8px 12px; font-weight:800; background:rgba(255,255,255,0.04); color:#FF8F00; border:1px solid rgba(255,255,255,0.12);" placeholder="0" title="Pulsa 'Actualizar Stock desde Tienda' para sincronizar con inventario real">
                             </div>
                             <div class="merko-form-group">
-                                <label style="font-size:0.75rem; color:#cbd5e1;">Harina Pan 1Kg (disp.) 🔒</label>
-                                <input type="number" id="ioStockHarina" value="50" readonly style="padding:8px 12px; font-weight:800; background:rgba(255,255,255,0.04); color:#FF8F00; cursor:not-allowed; border:1px solid rgba(255,255,255,0.12);" title="Stock sincronizado automáticamente con la tienda">
+                                <label style="font-size:0.75rem; color:#cbd5e1;">Harina Pan 1Kg (disp.) 📦</label>
+                                <input type="number" id="ioStockHarina" value="0" min="0" style="padding:8px 12px; font-weight:800; background:rgba(255,255,255,0.04); color:#FF8F00; border:1px solid rgba(255,255,255,0.12);" placeholder="0" title="Pulsa 'Actualizar Stock desde Tienda' para sincronizar con inventario real">
                             </div>
                             <div class="merko-form-group">
-                                <label style="font-size:0.75rem; color:#cbd5e1;">Aceite 3Lt (disp.) 🔒</label>
-                                <input type="number" id="ioStockAceite" value="14" readonly style="padding:8px 12px; font-weight:800; background:rgba(255,255,255,0.04); color:#FF8F00; cursor:not-allowed; border:1px solid rgba(255,255,255,0.12);" title="Stock sincronizado automáticamente con la tienda">
+                                <label style="font-size:0.75rem; color:#cbd5e1;">Aceite 3Lt (disp.) 📦</label>
+                                <input type="number" id="ioStockAceite" value="0" min="0" style="padding:8px 12px; font-weight:800; background:rgba(255,255,255,0.04); color:#FF8F00; border:1px solid rgba(255,255,255,0.12);" placeholder="0" title="Pulsa 'Actualizar Stock desde Tienda' para sincronizar con inventario real">
                             </div>
                             <div class="merko-form-group">
-                                <label style="font-size:0.75rem; color:#cbd5e1;">Azúcar 2.5Kg (disp.) 🔒</label>
-                                <input type="number" id="ioStockAzucar" value="28" readonly style="padding:8px 12px; font-weight:800; background:rgba(255,255,255,0.04); color:#FF8F00; cursor:not-allowed; border:1px solid rgba(255,255,255,0.12);" title="Stock sincronizado automáticamente con la tienda">
+                                <label style="font-size:0.75rem; color:#cbd5e1;">Azúcar 2.5Kg (disp.) 📦</label>
+                                <input type="number" id="ioStockAzucar" value="0" min="0" style="padding:8px 12px; font-weight:800; background:rgba(255,255,255,0.04); color:#FF8F00; border:1px solid rgba(255,255,255,0.12);" placeholder="0" title="Pulsa 'Actualizar Stock desde Tienda' para sincronizar con inventario real">
                             </div>
                             <div class="merko-form-group">
                                 <label style="font-size:0.75rem; font-weight:800; color:#10b981;">TIEMPO DISPONIBLE DEL ADMINISTRADOR (MIN) ✏️</label>
