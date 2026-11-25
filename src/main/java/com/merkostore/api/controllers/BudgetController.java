@@ -33,6 +33,26 @@ public class BudgetController {
         return ResponseEntity.ok(ApiResponse.ok("Presupuesto del negocio recuperado con éxito", budget));
     }
 
+    @PutMapping
+    public ResponseEntity<ApiResponse<StoreBudget>> updateBudget(
+            @RequestBody Map<String, Object> body,
+            Authentication authentication) {
+        String storeId = (String) body.getOrDefault("storeId", "default-store");
+        Object rawAmount = body.get("amount");
+        if (rawAmount == null) {
+            rawAmount = body.get("initialAmount");
+        }
+        if (rawAmount == null) {
+            throw new IllegalArgumentException("El valor de 'amount' es obligatorio");
+        }
+        BigDecimal amount = new BigDecimal(rawAmount.toString());
+        String notes = (String) body.getOrDefault("notes", "Ajuste de presupuesto por el administrador");
+        String user = authentication != null ? authentication.getName() : "admin";
+
+        StoreBudget budget = budgetService.setBudgetBalance(storeId, amount, notes, user);
+        return ResponseEntity.ok(ApiResponse.ok("Presupuesto del negocio actualizado exitosamente", budget));
+    }
+
     @PostMapping("/init")
     public ResponseEntity<ApiResponse<StoreBudget>> initializeBudget(
             @RequestBody Map<String, Object> body,

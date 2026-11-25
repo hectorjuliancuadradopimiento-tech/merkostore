@@ -2543,7 +2543,8 @@ function aplicarSolucionIOAInventario() {
 }
 
 // ==========================================================================
-// MÓDULO DE PRESUPUESTO DEL NEGOCIO & REPOSICIÓN DE MERCANCÍA (FASE 4 - 15)
+// MÓDULO DE PRESUPUESTO DEL NEGOCIO & REPOSICIÓN DE MERCANCÍA
+// SIMPLIFICADO: PRESUPUESTO EDITABLE POR EL ADMIN Y COMPRAS AUTOMÁTICAS
 // ==========================================================================
 
 async function loadBudgetData() {
@@ -2555,14 +2556,27 @@ async function loadBudgetData() {
         ]);
 
         if (budgetRes.status === 'fulfilled' && budgetRes.value?.data) {
-            state.budget = budgetRes.value.data;
+            const b = budgetRes.value.data;
+            state.budget = {
+                initialBudget: Number(b.initialBudget) || 1000000,
+                currentBalance: (b.currentBalance !== undefined && b.currentBalance !== null) ? Number(b.currentBalance) : 1000000,
+                totalPurchases: Number(b.totalPurchases) || 0,
+                totalRecoveredCosts: Number(b.totalRecoveredCosts) || 0,
+                totalManualInjections: Number(b.totalManualInjections) || 0,
+                isInitialized: true
+            };
             Storage.set('store_budget', state.budget);
         } else {
             const saved = Storage.get('store_budget');
-            if (saved) state.budget = saved;
+            if (saved) {
+                state.budget = saved;
+            } else {
+                state.budget = { initialBudget: 1000000, currentBalance: 1000000, totalPurchases: 0, totalRecoveredCosts: 0, totalManualInjections: 0, isInitialized: true };
+                Storage.set('store_budget', state.budget);
+            }
         }
 
-        if (txRes.status === 'fulfilled' && Array.isArray(txRes.value?.data)) {
+        if (txRes.status === 'fulfilled' && Array.isArray(txRes.value?.data) && txRes.value.data.length > 0) {
             state.budgetTransactions = txRes.value.data;
             Storage.set('budget_transactions', state.budgetTransactions);
         } else {
@@ -2570,7 +2584,7 @@ async function loadBudgetData() {
             if (savedTx) state.budgetTransactions = savedTx;
         }
 
-        if (purchasesRes.status === 'fulfilled' && Array.isArray(purchasesRes.value?.data)) {
+        if (purchasesRes.status === 'fulfilled' && Array.isArray(purchasesRes.value?.data) && purchasesRes.value.data.length > 0) {
             state.supplierPurchases = purchasesRes.value.data;
             Storage.set('supplier_purchases', state.supplierPurchases);
         } else {
@@ -2582,7 +2596,11 @@ async function loadBudgetData() {
     } catch (e) {
         console.warn('Fallback a almacenamiento local para presupuesto:', e);
         const saved = Storage.get('store_budget');
-        if (saved) state.budget = saved;
+        if (saved) {
+            state.budget = saved;
+        } else {
+            state.budget = { initialBudget: 1000000, currentBalance: 1000000, totalPurchases: 0, totalRecoveredCosts: 0, totalManualInjections: 0, isInitialized: true };
+        }
         const savedTx = Storage.get('budget_transactions');
         if (savedTx) state.budgetTransactions = savedTx;
         const savedPurchases = Storage.get('supplier_purchases');
@@ -2599,7 +2617,7 @@ function renderBudgetSubtab() {
             totalPurchases: 0,
             totalRecoveredCosts: 0,
             totalManualInjections: 0,
-            isInitialized: false
+            isInitialized: true
         };
     }
 
@@ -2614,39 +2632,43 @@ function renderBudgetSubtab() {
     if (elRecovered) elRecovered.textContent = `$ ${Math.round(state.budget.totalRecoveredCosts || 0).toLocaleString('es-CO')}`;
     if (elInjected) elInjected.textContent = `$ ${Math.round(state.budget.totalManualInjections || 0).toLocaleString('es-CO')}`;
 
-    // 2. Render Supplier Purchases Table
+    // 2. Render Supplier Purchases Table (Matching image columns: CÓDIGO / FECHA, PROVEEDOR, PRODUCTOS ADQUIRIDOS, TOTAL INVERTIDO, IMPACTO EN COSTO PONDERADO)
     const purchasesTbody = document.getElementById('supplierPurchasesTableBody');
     if (purchasesTbody) {
         const purchasesList = state.supplierPurchases || [];
         if (purchasesList.length === 0) {
             purchasesTbody.innerHTML = `
                 <tr>
-                    <td colspan="8" style="text-align:center; padding:32px; color:var(--admin-text-muted);">
-                        📦 No se han registrado compras de reposición a proveedores aún.
+                    <td colspan="5" style="text-align:center; padding:36px; color:var(--admin-text-muted);">
+                        📦 No se han registrado compras de reposición aún. Las compras se generan automáticamente al crear productos o reponer stock en el inventario.
                     </td>
                 </tr>
             `;
         } else {
             purchasesTbody.innerHTML = purchasesList.map(p => {
                 const dateStr = p.createdAt ? p.createdAt.slice(0, 16).replace('T', ' ') : 'Reciente';
+                const prevCostStr = (p.previousUnitCost != null && p.previousUnitCost > 0) ? `$ ${Math.round(p.previousUnitCost).toLocaleString('es-CO')}` : 'Sin costo prev.';
+                const newCostStr = (p.newWeightedAverageCost != null && p.newWeightedAverageCost > 0) ? `$ ${Math.round(p.newWeightedAverageCost).toLocaleString('es-CO')}` : `$ ${Math.round(p.purchaseUnitCost || 0).toLocaleString('es-CO')}`;
+
                 return `
                     <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
-                        <td style="padding:14px 18px; color:#cbd5e1; font-size:0.85rem;">${dateStr}</td>
+                        <td style="padding:14px 18px; color:#cbd5e1; font-size:0.85rem;">
+                            <div style="font-weight:700; color:#fff;">${dateStr}</div>
+                            <span style="font-size:0.72rem; color:#94a3b8; background:rgba(255,255,255,0.05); padding:2px 6px; border-radius:4px;">${p.productSku || p.productId}</span>
+                        </td>
+                        <td style="padding:14px 18px; color:#ffffff; font-weight:700; font-size:0.88rem;">
+                            ${p.supplierName || 'Adquisición de Inventario'}
+                        </td>
                         <td style="padding:14px 18px; font-weight:700; color:#ffffff;">
-                            ${p.productName}
-                            <div style="font-size:0.75rem; color:#94a3b8;">${p.productSku || p.productId}</div>
+                            <div>${p.productName}</div>
+                            <div style="font-size:0.8rem; color:#38bdf8; font-weight:800;">+${p.quantity} unds @ $ ${Math.round(p.purchaseUnitCost).toLocaleString('es-CO')} c/u</div>
                         </td>
-                        <td style="padding:14px 18px; font-weight:800; color:#38bdf8;">+${p.quantity} unds</td>
-                        <td style="padding:14px 18px; color:#94a3b8; font-size:0.85rem;">
-                            ${(p.previousUnitCost != null && p.previousUnitCost > 0) ? '$ ' + Math.round(p.previousUnitCost).toLocaleString('es-CO') : '<span style="color:#f59e0b;">Sin costo prev.</span>'}
+                        <td style="padding:14px 18px; color:#ef4444; font-weight:900; font-size:0.95rem;">
+                            -$ ${Math.round(p.totalCost).toLocaleString('es-CO')}
                         </td>
-                        <td style="padding:14px 18px; color:#ffffff; font-weight:700;">$ ${Math.round(p.purchaseUnitCost).toLocaleString('es-CO')}</td>
-                        <td style="padding:14px 18px; color:#10b981; font-weight:900;">$ ${Math.round(p.newWeightedAverageCost).toLocaleString('es-CO')}</td>
-                        <td style="padding:14px 18px; color:#ef4444; font-weight:800;">-$ ${Math.round(p.totalCost).toLocaleString('es-CO')}</td>
-                        <td style="padding:14px 18px; text-align:center;">
-                            <span style="font-size:0.7rem; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); padding:3px 8px; border-radius:4px; font-weight:800;">
-                                ✓ REGISTRADA
-                            </span>
+                        <td style="padding:14px 18px; font-size:0.82rem;">
+                            <div style="color:#94a3b8;">Prev: ${prevCostStr}</div>
+                            <div style="color:#10b981; font-weight:800;">Nuevo Promedio: ${newCostStr}</div>
                         </td>
                     </tr>
                 `;
@@ -2656,12 +2678,15 @@ function renderBudgetSubtab() {
 
     // 3. Render Budget Transactions Table
     const txTbody = document.getElementById('budgetTransactionsTableBody');
+    const txCountBadge = document.getElementById('budgetTxCountBadge');
     if (txTbody) {
         const txList = state.budgetTransactions || [];
+        if (txCountBadge) txCountBadge.textContent = `${txList.length} movimientos`;
+
         if (txList.length === 0) {
             txTbody.innerHTML = `
                 <tr>
-                    <td colspan="6" style="text-align:center; padding:32px; color:var(--admin-text-muted);">
+                    <td colspan="6" style="text-align:center; padding:36px; color:var(--admin-text-muted);">
                         📑 No hay transacciones de presupuesto registradas en el historial.
                     </td>
                 </tr>
@@ -2669,9 +2694,10 @@ function renderBudgetSubtab() {
         } else {
             txTbody.innerHTML = txList.map(tx => {
                 const dateStr = tx.createdAt ? tx.createdAt.slice(0, 16).replace('T', ' ') : 'Reciente';
-                const isPositive = ['INITIAL_BUDGET', 'MANUAL_ADD', 'SALES_COST_RECOVERY', 'PROFIT_TRANSFER'].includes(tx.type);
+                const isPositive = ['INITIAL_BUDGET', 'MANUAL_ADD', 'SALES_COST_RECOVERY', 'PROFIT_TRANSFER', 'BUDGET_ADJUSTMENT'].includes(tx.type) && tx.amount >= 0;
                 const typeLabels = {
                     'INITIAL_BUDGET': { label: '⚙️ Presupuesto Inicial', color: '#38bdf8' },
+                    'BUDGET_ADJUSTMENT': { label: '💰 Ajuste de Presupuesto', color: '#38bdf8' },
                     'MANUAL_ADD': { label: '➕ Inyección Capital', color: '#10b981' },
                     'SUPPLIER_PURCHASE': { label: '📦 Compra Mercancía', color: '#ef4444' },
                     'SALES_COST_RECOVERY': { label: '💰 Recuperación Costo', color: '#10b981' },
@@ -2687,7 +2713,9 @@ function renderBudgetSubtab() {
                             <span style="font-size:0.75rem; font-weight:800; color:${tInfo.color}; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); padding:3px 8px; border-radius:4px;">
                                 ${tInfo.label}
                             </span>
-                            <div style="font-size:0.78rem; color:#94a3b8; margin-top:3px;">${tx.description || ''}</div>
+                        </td>
+                        <td style="padding:14px 18px; font-size:0.84rem; color:#ffffff;">
+                            ${tx.description || ''}
                         </td>
                         <td style="padding:14px 18px; font-weight:700; color:#cbd5e1; font-size:0.85rem;">${tx.referenceId || '-'}</td>
                         <td style="padding:14px 18px; font-weight:900; color:${isPositive ? '#10b981' : '#ef4444'}; font-size:0.95rem;">
@@ -2696,7 +2724,6 @@ function renderBudgetSubtab() {
                         <td style="padding:14px 18px; font-weight:800; color:#ffffff; font-size:0.95rem;">
                             $ ${Math.round(tx.balanceAfter !== undefined ? tx.balanceAfter : state.budget.currentBalance).toLocaleString('es-CO')}
                         </td>
-                        <td style="padding:14px 18px; color:#94a3b8; font-size:0.8rem;">${tx.registeredBy || 'Administrador'}</td>
                     </tr>
                 `;
             }).join('');
@@ -2705,48 +2732,63 @@ function renderBudgetSubtab() {
 }
 
 // --------------------------------------------------------------------------
-// MODAL CONTROLLERS & FORM HANDLERS
+// MODAL PARA EDITAR PRESUPUESTO DIRECTAMENTE POR EL ADMINISTRADOR
 // --------------------------------------------------------------------------
 
-function openInitBudgetModal() {
-    const modal = document.getElementById('modalInitBudget');
-    if (modal) modal.style.display = 'flex';
+function openEditBudgetModal() {
+    const modal = document.getElementById('modalEditBudget');
+    if (!modal) return;
+
+    const inputVal = document.getElementById('editBudgetValue');
+    if (inputVal) {
+        inputVal.value = (state.budget && state.budget.currentBalance !== undefined) ? state.budget.currentBalance : 1000000;
+    }
+    const inputNotes = document.getElementById('editBudgetNotes');
+    if (inputNotes) inputNotes.value = '';
+
+    modal.style.display = 'flex';
 }
 
-function closeInitBudgetModal() {
-    const modal = document.getElementById('modalInitBudget');
+function closeEditBudgetModal() {
+    const modal = document.getElementById('modalEditBudget');
     if (modal) modal.style.display = 'none';
 }
 
-async function handleInitBudgetSubmit(event) {
+async function handleEditBudgetSubmit(event) {
     if (event) event.preventDefault();
-    const inputVal = document.getElementById('initBudgetValue')?.value;
-    const notesVal = document.getElementById('initBudgetNotes')?.value || 'Presupuesto inicial para reposición';
+
+    const inputVal = document.getElementById('editBudgetValue')?.value;
+    const notesVal = document.getElementById('editBudgetNotes')?.value.trim() || 'Ajuste de presupuesto por el administrador';
     const amount = parseFloat(inputVal);
 
-    if (isNaN(amount) || amount <= 0) {
-        showToast('⚠️ Ingresa un monto de presupuesto inicial válido y positivo.', 'warning', '⚠️');
+    if (isNaN(amount) || amount < 0) {
+        showToast('⚠️ Ingresa un monto de presupuesto válido no negativo.', 'warning', '⚠️');
         return;
     }
 
     try {
         if (API.getToken()) {
-            await API.post('/api/v1/admin/budget/init', { amount, notes: notesVal }).catch(() => null);
+            await API.put('/api/v1/admin/budget', { amount: amount, notes: notesVal }).catch(() => null);
         }
     } catch (e) {
-        console.warn('Fallback local para inicialización de presupuesto');
+        console.warn('Fallback local para ajuste de presupuesto');
     }
 
-    state.budget.initialBudget = amount;
-    state.budget.currentBalance = amount;
-    state.budget.isInitialized = true;
+    if (!state.budget) {
+        state.budget = { initialBudget: amount, currentBalance: amount, totalPurchases: 0, totalRecoveredCosts: 0, totalManualInjections: 0, isInitialized: true };
+    } else {
+        state.budget.currentBalance = amount;
+        state.budget.isInitialized = true;
+    }
+
+    if (!state.budgetTransactions) state.budgetTransactions = [];
 
     const newTx = {
-        id: 'tx-init-' + Date.now(),
-        type: 'INITIAL_BUDGET',
+        id: 'tx-adj-' + Date.now(),
+        type: 'BUDGET_ADJUSTMENT',
         amount: amount,
         description: notesVal,
-        referenceId: 'INIT-' + Date.now().toString().slice(-4),
+        referenceId: 'ADJ-' + Date.now().toString().slice(-4),
         balanceAfter: amount,
         registeredBy: 'Administrador (Propietario)',
         createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
@@ -2757,267 +2799,8 @@ async function handleInitBudgetSubmit(event) {
     Storage.set('budget_transactions', state.budgetTransactions);
 
     renderBudgetSubtab();
-    closeInitBudgetModal();
-    showToast(`✅ Presupuesto inicial registrado: $ ${amount.toLocaleString('es-CO')} COP`, 'success', '💰');
-}
-
-function openAddMoneyModal() {
-    const modal = document.getElementById('modalAddMoneyBudget');
-    if (modal) modal.style.display = 'flex';
-}
-
-function closeAddMoneyModal() {
-    const modal = document.getElementById('modalAddMoneyBudget');
-    if (modal) modal.style.display = 'none';
-}
-
-async function handleAddMoneySubmit(event) {
-    if (event) event.preventDefault();
-    const amountVal = document.getElementById('addMoneyAmount')?.value;
-    const sourceVal = document.getElementById('addMoneySource')?.value || 'Aporte propio del administrador';
-    const amount = parseFloat(amountVal);
-
-    if (isNaN(amount) || amount <= 0) {
-        showToast('⚠️ Ingresa un monto válido para inyectar al presupuesto.', 'warning', '⚠️');
-        return;
-    }
-
-    try {
-        if (API.getToken()) {
-            await API.post('/api/v1/admin/budget/add-money', { amount, source: sourceVal }).catch(() => null);
-        }
-    } catch (e) {
-        console.warn('Fallback local para inyección de presupuesto');
-    }
-
-    state.budget.currentBalance += amount;
-    state.budget.totalManualInjections += amount;
-
-    const newTx = {
-        id: 'tx-add-' + Date.now(),
-        type: 'MANUAL_ADD',
-        amount: amount,
-        description: sourceVal,
-        referenceId: 'INJ-' + Date.now().toString().slice(-4),
-        balanceAfter: state.budget.currentBalance,
-        registeredBy: 'Administrador (Propietario)',
-        createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
-    };
-
-    state.budgetTransactions.unshift(newTx);
-    Storage.set('store_budget', state.budget);
-    Storage.set('budget_transactions', state.budgetTransactions);
-
-    renderBudgetSubtab();
-    closeAddMoneyModal();
-    showToast(`✅ Se agregaron $ ${amount.toLocaleString('es-CO')} COP al fondo de reposición`, 'success', '➕');
-}
-
-function openSupplierPurchaseModal() {
-    const modal = document.getElementById('modalSupplierPurchase');
-    if (!modal) return;
-
-    // Poblar select de productos DETAL disponibles
-    const select = document.getElementById('purchaseProductSelect');
-    if (select) {
-        select.innerHTML = '<option value="">-- Selecciona un producto para reponer --</option>' +
-            (state.products || []).filter(p => p.type === 'DETAL').map(p => `
-                <option value="${p.id}" data-stock="${p.stock || 0}" data-cost="${p.costPrice || 0}">
-                    ${p.name} (Stock: ${p.stock || 0} | Costo act: ${p.costPrice > 0 ? '$ ' + Math.round(p.costPrice).toLocaleString('es-CO') : 'Sin costo'})
-                </option>
-            `).join('');
-    }
-
-    // Resetear formulario
-    const qtyInput = document.getElementById('purchaseQuantity');
-    const costInput = document.getElementById('purchaseUnitCost');
-    if (qtyInput) qtyInput.value = '';
-    if (costInput) costInput.value = '';
-
-    const availDisplay = document.getElementById('purchaseBudgetAvailable');
-    if (availDisplay) availDisplay.textContent = `$ ${Math.round(state.budget.currentBalance || 0).toLocaleString('es-CO')} COP`;
-
-    calculatePurchaseTotals();
-    modal.style.display = 'flex';
-}
-
-function closeSupplierPurchaseModal() {
-    const modal = document.getElementById('modalSupplierPurchase');
-    if (modal) modal.style.display = 'none';
-}
-
-function handlePurchaseProductChange() {
-    const select = document.getElementById('purchaseProductSelect');
-    const selectedOpt = select?.options[select.selectedIndex];
-    const prevStockSpan = document.getElementById('purchasePrevStockDisplay');
-    const prevCostSpan = document.getElementById('purchasePrevCostDisplay');
-
-    if (selectedOpt && selectedOpt.value) {
-        const prod = (state.products || []).find(p => p.id === selectedOpt.value);
-        if (prod) {
-            if (prevStockSpan) prevStockSpan.textContent = `${prod.stock || 0} unds`;
-            if (prevCostSpan) prevCostSpan.textContent = (prod.costPrice != null && prod.costPrice > 0) ? `$ ${Math.round(prod.costPrice).toLocaleString('es-CO')}` : 'Sin costo previo';
-            const costInput = document.getElementById('purchaseUnitCost');
-            if (costInput && !costInput.value && prod.costPrice > 0) {
-                costInput.value = prod.costPrice;
-            }
-        }
-    } else {
-        if (prevStockSpan) prevStockSpan.textContent = '0 unds';
-        if (prevCostSpan) prevCostSpan.textContent = '$ 0';
-    }
-
-    calculatePurchaseTotals();
-}
-
-function calculatePurchaseTotals() {
-    const select = document.getElementById('purchaseProductSelect');
-    const pId = select?.value;
-    const qty = parseInt(document.getElementById('purchaseQuantity')?.value) || 0;
-    const unitCost = parseFloat(document.getElementById('purchaseUnitCost')?.value) || 0;
-    const totalCost = qty * unitCost;
-
-    const totalSpan = document.getElementById('purchaseTotalCostPreview');
-    if (totalSpan) totalSpan.textContent = `$ ${Math.round(totalCost).toLocaleString('es-CO')} COP`;
-
-    const available = state.budget.currentBalance || 0;
-    const alertBox = document.getElementById('purchaseBudgetComparisonAlert');
-    const btnSubmit = document.getElementById('btnSubmitSupplierPurchase');
-
-    if (totalCost > available) {
-        if (alertBox) {
-            alertBox.style.display = 'block';
-            alertBox.innerHTML = `⚠️ <strong>Presupuesto insuficiente:</strong> El costo total ($ ${Math.round(totalCost).toLocaleString('es-CO')}) supera el presupuesto disponible ($ ${Math.round(available).toLocaleString('es-CO')}). Faltan $ ${Math.round(totalCost - available).toLocaleString('es-CO')} COP.`;
-        }
-        if (btnSubmit) btnSubmit.disabled = true;
-    } else {
-        if (alertBox) alertBox.style.display = 'none';
-        if (btnSubmit) btnSubmit.disabled = (qty <= 0 || unitCost <= 0 || !pId);
-    }
-
-    // Cálculo y vista previa del Costo Promedio Ponderado (Fase 4)
-    const newCostSpan = document.getElementById('purchaseNewCostPreview');
-    if (newCostSpan) {
-        if (pId && qty > 0 && unitCost > 0) {
-            const prod = (state.products || []).find(p => p.id === pId);
-            const oldStock = prod ? (prod.stock || 0) : 0;
-            const oldCost = prod && prod.costPrice != null && prod.costPrice > 0 ? prod.costPrice : null;
-
-            let newAvg = unitCost;
-            if (oldCost !== null && (oldStock + qty) > 0) {
-                newAvg = Math.round(((oldStock * oldCost) + (qty * unitCost)) / (oldStock + qty));
-            }
-
-            newCostSpan.textContent = `$ ${newAvg.toLocaleString('es-CO')} COP ${oldCost ? '(antes: $ ' + Math.round(oldCost).toLocaleString('es-CO') + ')' : '(primer costo)'}`;
-        } else {
-            newCostSpan.textContent = '$ 0 COP';
-        }
-    }
-}
-
-async function handleSupplierPurchaseSubmit(event) {
-    if (event) event.preventDefault();
-
-    const select = document.getElementById('purchaseProductSelect');
-    const pId = select?.value;
-    const qty = parseInt(document.getElementById('purchaseQuantity')?.value) || 0;
-    const unitCost = parseFloat(document.getElementById('purchaseUnitCost')?.value) || 0;
-    const totalCost = qty * unitCost;
-    const supplier = document.getElementById('purchaseSupplierName')?.value.trim() || 'Proveedor Distribuidor';
-    const notes = document.getElementById('purchaseNotes')?.value.trim() || 'Reposición periódica';
-
-    if (!pId || qty <= 0 || unitCost <= 0) {
-        showToast('⚠️ Selecciona un producto e ingresa cantidad y costo unitario válidos.', 'warning', '⚠️');
-        return;
-    }
-
-    if (totalCost > (state.budget.currentBalance || 0)) {
-        showToast('❌ Presupuesto disponible insuficiente para realizar esta compra.', 'error', '❌');
-        return;
-    }
-
-    const prod = (state.products || []).find(p => p.id === pId);
-    if (!prod) return;
-
-    const oldStock = prod.stock || 0;
-    const oldCost = (prod.costPrice != null && prod.costPrice > 0) ? prod.costPrice : null;
-
-    let newWeightedCost = unitCost;
-    if (oldCost !== null && (oldStock + qty) > 0) {
-        newWeightedCost = Math.round(((oldStock * oldCost) + (qty * unitCost)) / (oldStock + qty));
-    }
-
-    try {
-        if (API.getToken()) {
-            await API.post('/api/v1/admin/budget/purchases', {
-                productId: pId,
-                quantity: qty,
-                unitCost: unitCost,
-                supplierName: supplier,
-                notes: notes
-            }).catch(() => null);
-        }
-    } catch (e) {
-        console.warn('Fallback local para compra a proveedor');
-    }
-
-    // 1. Decrementar presupuesto
-    state.budget.currentBalance -= totalCost;
-    state.budget.totalPurchases += totalCost;
-
-    // 2. Incrementar stock y actualizar costo promedio ponderado
-    prod.stock = oldStock + qty;
-    prod.costPrice = newWeightedCost;
-    prod.isAvailable = true;
-
-    // 3. Registrar movimiento de compra
-    const purchaseRecord = {
-        id: 'pur-' + Date.now(),
-        productId: pId,
-        productName: prod.name,
-        productSku: prod.sku,
-        previousStock: oldStock,
-        previousUnitCost: oldCost,
-        quantity: qty,
-        purchaseUnitCost: unitCost,
-        totalCost: totalCost,
-        newWeightedAverageCost: newWeightedCost,
-        newStock: prod.stock,
-        supplierName: supplier,
-        notes: notes,
-        createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
-    };
-    state.supplierPurchases.unshift(purchaseRecord);
-
-    // 4. Registrar transacción inmutable en el historial del presupuesto
-    const newTx = {
-        id: 'tx-pur-' + Date.now(),
-        type: 'SUPPLIER_PURCHASE',
-        amount: -totalCost,
-        description: `Compra reposición de ${qty} unds de "${prod.name}" a ${supplier}`,
-        referenceId: 'PUR-' + Date.now().toString().slice(-4),
-        balanceAfter: state.budget.currentBalance,
-        registeredBy: 'Administrador (Propietario)',
-        createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
-    };
-    state.budgetTransactions.unshift(newTx);
-
-    // 5. Recalcular stock de mercados
-    recalculateMercadosStock();
-
-    // 6. Persistir todo el estado
-    Storage.set('products', state.products);
-    Storage.set('store_budget', state.budget);
-    Storage.set('supplier_purchases', state.supplierPurchases);
-    Storage.set('budget_transactions', state.budgetTransactions);
-
-    renderBudgetSubtab();
-    renderProducts();
-    renderAdminProductsTable();
-    updateDashboardKPIs();
-    closeSupplierPurchaseModal();
-
-    showToast(`✅ Compra registrada: +${qty} unds de "${prod.name}". Nuevo costo promedio: $ ${newWeightedCost.toLocaleString('es-CO')}`, 'success', '📦');
+    closeEditBudgetModal();
+    showToast(`✅ Presupuesto actualizado: $ ${amount.toLocaleString('es-CO')} COP`, 'success', '💰');
 }
 
 function recordSalesCostRecovery(order) {
@@ -3039,6 +2822,9 @@ function recordSalesCostRecovery(order) {
     });
 
     if (totalRecoverableCost > 0) {
+        if (!state.budget) {
+            state.budget = { initialBudget: 1000000, currentBalance: 1000000, totalPurchases: 0, totalRecoveredCosts: 0, totalManualInjections: 0, isInitialized: true };
+        }
         state.budget.currentBalance += totalRecoverableCost;
         state.budget.totalRecoveredCosts += totalRecoverableCost;
         order.costRecoveryRecorded = true;
@@ -3054,6 +2840,7 @@ function recordSalesCostRecovery(order) {
             createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
         };
 
+        if (!state.budgetTransactions) state.budgetTransactions = [];
         state.budgetTransactions.unshift(newTx);
         Storage.set('store_budget', state.budget);
         Storage.set('budget_transactions', state.budgetTransactions);
@@ -3084,8 +2871,10 @@ function revertSalesCostRecovery(order) {
     });
 
     if (totalRecoverableCost > 0) {
-        state.budget.currentBalance = Math.max(0, state.budget.currentBalance - totalRecoverableCost);
-        state.budget.totalRecoveredCosts = Math.max(0, state.budget.totalRecoveredCosts - totalRecoverableCost);
+        if (state.budget) {
+            state.budget.currentBalance = Math.max(0, state.budget.currentBalance - totalRecoverableCost);
+            state.budget.totalRecoveredCosts = Math.max(0, state.budget.totalRecoveredCosts - totalRecoverableCost);
+        }
         order.costRecoveryRecorded = false;
 
         const newTx = {
@@ -3094,11 +2883,12 @@ function revertSalesCostRecovery(order) {
             amount: -totalRecoverableCost,
             description: `Reversión de costo recuperado por cancelación de pedido ${order.orderNumber || order.id}`,
             referenceId: order.orderNumber || order.id,
-            balanceAfter: state.budget.currentBalance,
+            balanceAfter: state.budget ? state.budget.currentBalance : 0,
             registeredBy: 'Sistema Merkostore (Cancelación)',
             createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
         };
 
+        if (!state.budgetTransactions) state.budgetTransactions = [];
         state.budgetTransactions.unshift(newTx);
         Storage.set('store_budget', state.budget);
         Storage.set('budget_transactions', state.budgetTransactions);
@@ -3862,14 +3652,72 @@ function saveProductFromEditor() {
     if (state.editingProductId) {
         const existingIndex = state.products.findIndex(p => p.id === state.editingProductId);
         if (existingIndex !== -1) {
+            const oldProd = state.products[existingIndex];
+            const oldStock = oldProd.stock || 0;
+            const deltaStock = stock - oldStock;
+            let finalCostPrice = (costVal !== null) ? costVal : oldProd.costPrice;
+
+            // Si se incrementó el stock físico y tiene costo de adquisición, registrar compra automática con costo ponderado
+            if (deltaStock > 0 && costVal && costVal > 0) {
+                const totalCost = deltaStock * costVal;
+                const oldTotalValue = oldStock * (oldProd.costPrice || costVal);
+                const newTotalValue = oldTotalValue + totalCost;
+                finalCostPrice = Math.round((newTotalValue / stock) * 100) / 100;
+
+                // 1. Descontar del presupuesto
+                if (!state.budget) {
+                    state.budget = { initialBudget: 1000000, currentBalance: 1000000, totalPurchases: 0, totalRecoveredCosts: 0, totalManualInjections: 0, isInitialized: true };
+                }
+                state.budget.currentBalance -= totalCost;
+                state.budget.totalPurchases += totalCost;
+
+                // 2. Registrar compra a proveedor
+                const purRecord = {
+                    id: 'pur-' + Date.now(),
+                    productId: oldProd.id,
+                    productName: name,
+                    productSku: oldProd.sku,
+                    previousStock: oldStock,
+                    previousUnitCost: oldProd.costPrice || 0,
+                    quantity: deltaStock,
+                    purchaseUnitCost: costVal,
+                    totalCost: totalCost,
+                    newWeightedAverageCost: finalCostPrice,
+                    newStock: stock,
+                    supplierName: 'Reposición de Mercancía',
+                    notes: `Reposición de stock (+${deltaStock} unds) al editar producto`,
+                    createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
+                };
+                if (!state.supplierPurchases) state.supplierPurchases = [];
+                state.supplierPurchases.unshift(purRecord);
+
+                // 3. Registrar transacción de presupuesto
+                const newTx = {
+                    id: 'tx-pur-' + Date.now(),
+                    type: 'SUPPLIER_PURCHASE',
+                    amount: -totalCost,
+                    description: `Reposición de ${deltaStock} unds de "${name}"`,
+                    referenceId: 'PUR-' + Date.now().toString().slice(-4),
+                    balanceAfter: state.budget.currentBalance,
+                    registeredBy: 'Sistema Merkostore (Reposición)',
+                    createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
+                };
+                if (!state.budgetTransactions) state.budgetTransactions = [];
+                state.budgetTransactions.unshift(newTx);
+
+                Storage.set('store_budget', state.budget);
+                Storage.set('supplier_purchases', state.supplierPurchases);
+                Storage.set('budget_transactions', state.budgetTransactions);
+            }
+
             state.products[existingIndex] = {
-                ...state.products[existingIndex],
+                ...oldProd,
                 type: type,
                 categoryId: cat,
                 name: name,
                 unitCalc: unit,
                 price: price,
-                costPrice: (costVal !== null) ? costVal : state.products[existingIndex].costPrice,
+                costPrice: finalCostPrice,
                 discountPrice: discount,
                 discountPercent: pct,
                 stock: stock,
@@ -3911,6 +3759,53 @@ function saveProductFromEditor() {
             imagePosX_Mobile: framingMobile.posX,
             imagePosY_Mobile: framingMobile.posY
         };
+
+        // Si se crea con inventario inicial > 0 y costo de adquisición > 0, registrar compra automática y descontar de presupuesto
+        if (stock > 0 && costVal && costVal > 0) {
+            const totalCost = stock * costVal;
+            if (!state.budget) {
+                state.budget = { initialBudget: 1000000, currentBalance: 1000000, totalPurchases: 0, totalRecoveredCosts: 0, totalManualInjections: 0, isInitialized: true };
+            }
+            state.budget.currentBalance -= totalCost;
+            state.budget.totalPurchases += totalCost;
+
+            const purRecord = {
+                id: 'pur-' + Date.now(),
+                productId: newProd.id,
+                productName: name,
+                productSku: newProd.sku,
+                previousStock: 0,
+                previousUnitCost: 0,
+                quantity: stock,
+                purchaseUnitCost: costVal,
+                totalCost: totalCost,
+                newWeightedAverageCost: costVal,
+                newStock: stock,
+                supplierName: 'Inventario Inicial',
+                notes: `Compra inicial automática al registrar producto (${stock} unds)`,
+                createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
+            };
+            if (!state.supplierPurchases) state.supplierPurchases = [];
+            state.supplierPurchases.unshift(purRecord);
+
+            const newTx = {
+                id: 'tx-pur-' + Date.now(),
+                type: 'SUPPLIER_PURCHASE',
+                amount: -totalCost,
+                description: `Compra inicial de inventario (${stock} unds) de "${name}"`,
+                referenceId: 'PUR-' + Date.now().toString().slice(-4),
+                balanceAfter: state.budget.currentBalance,
+                registeredBy: 'Sistema Merkostore (Alta de Producto)',
+                createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
+            };
+            if (!state.budgetTransactions) state.budgetTransactions = [];
+            state.budgetTransactions.unshift(newTx);
+
+            Storage.set('store_budget', state.budget);
+            Storage.set('supplier_purchases', state.supplierPurchases);
+            Storage.set('budget_transactions', state.budgetTransactions);
+        }
+
         state.products.unshift(newProd);
         showToast(`✅ ¡${type === 'MERCADO' ? 'Mercado Combo' : 'Producto Detal'} guardado exitosamente!`, 'success', '💾');
     }

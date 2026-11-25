@@ -829,14 +829,8 @@
                                 </p>
                             </div>
                             <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                                <button class="btn-merko-primary" onclick="openInitBudgetModal()" style="display:inline-flex; align-items:center; gap:8px;">
-                                    ⚙️ Presupuesto Inicial
-                                </button>
-                                <button class="btn-merko-outline" onclick="openAddMoneyModal()" style="color:#10b981; border-color:rgba(16,185,129,0.4); display:inline-flex; align-items:center; gap:8px;">
-                                    💵 Agregar Dinero
-                                </button>
-                                <button class="btn-merko-primary" onclick="openSupplierPurchaseModal()" style="background:linear-gradient(135deg, #10b981, #059669); border:none; display:inline-flex; align-items:center; gap:8px;">
-                                    📦 Comprar Mercancía
+                                <button class="btn-merko-primary" onclick="openEditBudgetModal()" style="display:inline-flex; align-items:center; gap:8px; padding:10px 18px; font-size:0.85rem;">
+                                    💰 Configurar / Editar Presupuesto
                                 </button>
                             </div>
                         </div>
@@ -877,12 +871,10 @@
                                         📦 Historial de Compras de Mercancía a Proveedores
                                     </h3>
                                     <p style="font-size:0.78rem; color:var(--admin-text-muted); margin:4px 0 0;">
-                                        Compras registradas con actualización automática de existencias y costo promedio ponderado.
+                                        Registro automático generado al crear productos o ingresar reposiciones de inventario con su costo de adquisición.
                                     </p>
                                 </div>
-                                <button class="btn-merko-primary" onclick="openSupplierPurchaseModal()" style="font-size:0.8rem; padding:8px 14px;">
-                                    ➕ Registrar Nueva Compra
-                                </button>
+
                             </div>
                             <div class="luxury-table-container">
                                 <table class="merko-table">
@@ -1397,122 +1389,28 @@
         </div>
     </div>
 
-    <!-- MODAL 1: REGISTRAR PRESUPUESTO INICIAL (FASE 5) -->
-    <div class="modal-overlay" id="modalInitBudget">
+    <!-- MODAL: CONFIGURAR / EDITAR PRESUPUESTO DEL NEGOCIO -->
+    <div class="modal-overlay" id="modalEditBudget">
         <div class="modal-card-luxury" style="max-width:440px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                <h3 style="font-size:1.25rem; font-weight:900; color:#ffffff; margin:0;">⚙️ Presupuesto Inicial</h3>
-                <button class="cart-close-btn" onclick="closeInitBudgetModal()"><span>✕</span></button>
+                <h3 style="font-size:1.25rem; font-weight:900; color:#ffffff; margin:0;">💰 Presupuesto del Negocio</h3>
+                <button class="cart-close-btn" onclick="closeEditBudgetModal()"><span>✕</span></button>
             </div>
             <p style="font-size:0.8rem; color:var(--admin-text-muted); margin-bottom:18px;">
-                Ingresa el fondo inicial destinado a la compra y reposición de mercancía.
+                Configura o edita el fondo de capital disponible para la reposición de mercancía. Se registrará el movimiento en el historial.
             </p>
-            <form onsubmit="handleInitBudgetSubmit(event)">
+            <form id="formEditBudget" onsubmit="handleEditBudgetSubmit(event)">
+                <div class="merko-form-group" style="margin-bottom:16px;">
+                    <label>Nuevo Presupuesto Disponible ($ COP) *</label>
+                    <input type="number" id="editBudgetValue" required min="0" placeholder="Ej: 1000000" style="font-size:1.15rem; font-weight:800; color:#10b981;">
+                </div>
                 <div class="merko-form-group" style="margin-bottom:20px;">
-                    <label>Monto Inicial ($ COP) *</label>
-                    <input type="number" id="initBudgetAmount" required min="1" placeholder="Ej: 1000000" style="font-size:1.1rem; font-weight:800; color:#10b981;">
+                    <label>Motivo o Nota de Ajuste (Opcional)</label>
+                    <input type="text" id="editBudgetNotes" placeholder="Ej: Ajuste de saldo inicial o inyección de capital">
                 </div>
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <button type="button" class="btn-merko-outline" onclick="closeInitBudgetModal()">Cancelar</button>
+                    <button type="button" class="btn-merko-outline" onclick="closeEditBudgetModal()">Cancelar</button>
                     <button type="submit" class="btn-merko-primary">💾 Guardar Presupuesto</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL 2: AGREGAR DINERO AL PRESUPUESTO (FASE 5) -->
-    <div class="modal-overlay" id="modalAddMoneyBudget">
-        <div class="modal-card-luxury" style="max-width:460px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                <h3 style="font-size:1.25rem; font-weight:900; color:#ffffff; margin:0;">💵 Agregar Dinero al Presupuesto</h3>
-                <button class="cart-close-btn" onclick="closeAddMoneyModal()"><span>✕</span></button>
-            </div>
-            <p style="font-size:0.8rem; color:var(--admin-text-muted); margin-bottom:18px;">
-                Inyecta capital extraordinario al fondo de reposición. Se registrará un movimiento inmutable en el historial.
-            </p>
-            <form onsubmit="handleAddMoneySubmit(event)">
-                <div class="merko-form-group" style="margin-bottom:14px;">
-                    <label>Valor a Agregar ($ COP) *</label>
-                    <input type="number" id="addMoneyAmount" required min="1" placeholder="Ej: 200000" style="font-size:1.05rem; font-weight:800; color:#10b981;">
-                </div>
-                <div class="merko-form-group" style="margin-bottom:14px;">
-                    <label>Motivo o Descripción *</label>
-                    <input type="text" id="addMoneyDescription" required placeholder="Ej: Inyección de capital propio para quincena">
-                </div>
-                <div class="merko-form-group" style="margin-bottom:20px;">
-                    <label>Fecha del Movimiento *</label>
-                    <input type="datetime-local" id="addMoneyDate" required>
-                </div>
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <button type="button" class="btn-merko-outline" onclick="closeAddMoneyModal()">Cancelar</button>
-                    <button type="submit" class="btn-merko-primary">✅ Registrar Aporte</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL 3: REGISTRAR COMPRA A PROVEEDORES (FASE 6) -->
-    <div class="modal-overlay" id="modalSupplierPurchase">
-        <div class="modal-card-luxury" style="max-width:540px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-                <h3 style="font-size:1.25rem; font-weight:900; color:#ffffff; margin:0;">📦 Registrar Compra a Proveedor</h3>
-                <button class="cart-close-btn" onclick="closeSupplierPurchaseModal()"><span>✕</span></button>
-            </div>
-            <p style="font-size:0.8rem; color:var(--admin-text-muted); margin-bottom:16px;">
-                Al confirmar la compra, se aumentará el stock físico, se actualizará el costo promedio ponderado y se descontará del presupuesto.
-            </p>
-            <form onsubmit="handleSupplierPurchaseSubmit(event)">
-                <div class="merko-form-group" style="margin-bottom:14px;">
-                    <label>Producto a Reponer *</label>
-                    <select id="purchaseProductId" required onchange="handlePurchaseProductChange()" style="padding:10px; font-weight:700;">
-                        <!-- Rendered dynamically -->
-                    </select>
-                </div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
-                    <div class="merko-form-group">
-                        <label>Cantidad Comprada *</label>
-                        <input type="number" id="purchaseQuantity" required min="1" placeholder="Ej: 10" oninput="calculatePurchaseTotals()">
-                    </div>
-                    <div class="merko-form-group">
-                        <label>Precio Adquisición Unitario ($ COP) *</label>
-                        <input type="number" id="purchaseUnitCost" required min="0" placeholder="Ej: 7500" oninput="calculatePurchaseTotals()">
-                    </div>
-                </div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
-                    <div class="merko-form-group">
-                        <label>Nombre del Proveedor (Opcional)</label>
-                        <input type="text" id="purchaseSupplierName" placeholder="Ej: Distribuidora Central">
-                    </div>
-                    <div class="merko-form-group">
-                        <label>Fecha de Compra *</label>
-                        <input type="datetime-local" id="purchaseDate" required>
-                    </div>
-                </div>
-                
-                <!-- Resumen Financiero de la Compra -->
-                <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(230,81,0,0.3); border-radius:10px; padding:12px 16px; margin-bottom:20px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:0.8rem; color:#cbd5e1;">Costo Total de la Compra:</span>
-                        <strong style="font-size:1.1rem; color:#f59e0b;" id="lblPurchaseTotalCost">$ 0</strong>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                        <span style="font-size:0.8rem; color:#cbd5e1;">Presupuesto Disponible:</span>
-                        <span style="font-size:0.85rem; color:#10b981; font-weight:800;" id="lblPurchaseAvailableBudget">$ 0</span>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-size:0.8rem; color:#cbd5e1;">Nuevo Costo Promedio Ponderado:</span>
-                        <span style="font-size:0.85rem; color:#38bdf8; font-weight:800;" id="lblPurchaseWeightedCost">$ 0</span>
-                    </div>
-                    <div id="purchaseBudgetWarning" style="display:none; margin-top:8px; font-size:0.75rem; color:#ef4444; font-weight:800;">
-                        ⚠️ Saldo insuficiente en el presupuesto para completar esta compra.
-                    </div>
-                </div>
-
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <button type="button" class="btn-merko-outline" onclick="closeSupplierPurchaseModal()">Cancelar</button>
-                    <button type="submit" class="btn-merko-primary" id="btnConfirmPurchase" style="background:linear-gradient(135deg, #10b981, #059669);">
-                        ✅ Confirmar Compra
-                    </button>
                 </div>
             </form>
         </div>

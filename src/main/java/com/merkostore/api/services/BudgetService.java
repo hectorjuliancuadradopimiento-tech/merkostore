@@ -86,6 +86,36 @@ public class BudgetService {
         return saved;
     }
 
+    public synchronized StoreBudget setBudgetBalance(String storeId, BigDecimal newBalance, String notes, String createdBy) {
+        if (newBalance == null || newBalance.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("El presupuesto no puede ser negativo");
+        }
+
+        StoreBudget budget = getOrCreateBudget(storeId);
+        budget.setCurrentBalance(newBalance);
+        if (!Boolean.TRUE.equals(budget.getIsInitialized())) {
+            budget.setInitialBudget(newBalance);
+            budget.setIsInitialized(true);
+        }
+        budget.setUpdatedAt(LocalDateTime.now());
+        StoreBudget saved = storeBudgetRepository.save(budget);
+
+        FinancialTransaction tx = FinancialTransaction.builder()
+                .storeId(budget.getStoreId())
+                .type(FinancialTransaction.TransactionType.INCOME)
+                .category("BUDGET_ADJUSTMENT")
+                .amount(newBalance)
+                .balanceAfter(saved.getCurrentBalance())
+                .description(notes != null && !notes.trim().isEmpty() ? notes.trim() : "Ajuste de presupuesto por el administrador")
+                .paymentMethod("AJUSTE_ADMIN")
+                .createdBy(createdBy != null ? createdBy : "admin")
+                .date(LocalDateTime.now())
+                .build();
+        financialTransactionRepository.save(tx);
+
+        return saved;
+    }
+
     public synchronized StoreBudget addMoneyToBudget(String storeId, BigDecimal amount, String description, LocalDateTime date, String createdBy) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("El valor agregado al presupuesto debe ser mayor a cero");
