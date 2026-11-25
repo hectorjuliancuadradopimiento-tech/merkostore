@@ -1711,7 +1711,7 @@ function renderProducts() {
             <div class="product-card-bright ${isSoldOut ? 'sold-out' : ''}">
                 <div class="card-img-wrap" style="--img-fit-pc:${fitPc}; --img-zoom-pc:${zoomPc}; --img-pos-pc:${posX_Pc}% ${posY_Pc}%; --img-trans-x-pc:${transX_Pc}%; --img-trans-y-pc:${transY_Pc}%; --img-fit-mob:${fitMob}; --img-zoom-mob:${zoomMob}; --img-pos-mob:${posX_Mob}% ${posY_Mob}%; --img-trans-x-mob:${transX_Mob}%; --img-trans-y-mob:${transY_Mob}%;">
                     ${isSoldOut ? `<span class="stock-status-badge" style="background:#ef4444; color:#fff; top:10px; left:10px; position:absolute; border-radius:6px; padding:3px 8px; font-size:0.72rem; font-weight:800; z-index:2;">Agotado</span>` : ''}
-                    <img src="${p.imageUrl}" alt="${p.name}" class="product-framed-img" loading="lazy">
+                    <img src="${p.imageUrl}" alt="${p.name}" class="product-framed-img" loading="lazy" style="width:100% !important; height:100% !important; object-fit:${fitPc} !important; object-position:${posX_Pc}% ${posY_Pc}% !important; transform:translate(${transX_Pc}%, ${transY_Pc}%) scale(${zoomPc}) !important;">
                 </div>
                 <div class="card-details">
                     <span class="card-unit-info">${p.unitCalc || (isMercado ? 'Combo Mercado' : 'Unidad detal')}</span>
@@ -4335,6 +4335,11 @@ function updateFramingSetting(prop, val) {
         if (lbl) lbl.textContent = state.currentProductFraming[devKey].posY + '%';
     }
 
+    // Auto-espejo inteligente: si el usuario configura en Modo PC y no ha configurado móvil independientemente, sincronizarlo para que siempre se vea idéntico
+    if (devKey === 'pc' && state.currentProductFraming.mobile) {
+        state.currentProductFraming.mobile = { ...state.currentProductFraming.pc };
+    }
+
     updateFramingPreview();
 }
 
@@ -4346,6 +4351,9 @@ function applyFramingPreset(preset) {
         state.currentProductFraming[devKey] = { fit: 'cover', zoom: 1.0, posX: 50, posY: 50 };
     } else if (preset === 'reset') {
         state.currentProductFraming[devKey] = { fit: 'cover', zoom: 1.0, posX: 50, posY: 50 };
+    }
+    if (devKey === 'pc' && state.currentProductFraming.mobile) {
+        state.currentProductFraming.mobile = { ...state.currentProductFraming.pc };
     }
     switchFramingDevice(state.currentFramingDevice || 'PC');
 }
