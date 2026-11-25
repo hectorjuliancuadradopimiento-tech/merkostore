@@ -2197,10 +2197,11 @@ body::before {
 
 .merko-pill-tabs {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
-    overflow-x: auto;
-    padding-bottom: 12px;
-    margin-bottom: 32px;
+    overflow-x: visible;
+    padding-bottom: 14px;
+    margin-bottom: 24px;
     border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
@@ -3385,20 +3386,19 @@ body.admin-fullscreen-active #viewStorefront {
     background-color: #120d0b;
 }
 
-/* Pill tabs in elegant single horizontal bar with smooth scroll, no wrapping */
+/* Admin navigation pill tabs in elegant 2-row wrapped layout (eliminates horizontal slider) */
 .merko-pill-tabs {
     display: flex;
-    flex-wrap: nowrap;
-    gap: 8px;
-    overflow-x: auto;
-    padding-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 10px;
+    overflow-x: visible;
+    padding-bottom: 12px;
     margin-bottom: 24px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    scrollbar-width: thin;
 }
 
 .merko-pill-tabs::-webkit-scrollbar {
-    height: 4px;
+    display: none;
 }
 
 .merko-pill-tabs::-webkit-scrollbar-thumb {
