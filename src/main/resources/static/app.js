@@ -5707,8 +5707,9 @@ function syncStoreConfigUI() {
 async function loadPublicBackendData() {
     try {
         const catRes = await API.get('/api/v1/public/categories');
-        if (catRes && catRes.data && Array.isArray(catRes.data) && catRes.data.length > 0) {
-            const fetchedCats = catRes.data.map(c => ({
+        const catsArray = Array.isArray(catRes) ? catRes : (catRes?.data && Array.isArray(catRes.data) ? catRes.data : null);
+        if (catsArray && catsArray.length > 0) {
+            const fetchedCats = catsArray.map(c => ({
                 id: c.id,
                 name: c.name,
                 icon: c.icon || '📦',
@@ -5724,54 +5725,45 @@ async function loadPublicBackendData() {
         }
 
         const prodRes = await API.get('/api/v1/public/products');
-        if (prodRes && prodRes.data && Array.isArray(prodRes.data) && prodRes.data.length > 0) {
-            // Si el cliente entra desde un celular o navegador limpio (sin productos modificados por el admin localmente),
-            // debe cargar la lista real de la base de datos de MongoDB
-            const isLocalAdminModified = Storage.get('products') !== null && Storage.get('products') !== undefined && Storage.get('admin_has_custom_catalog');
+        const prodsArray = Array.isArray(prodRes) ? prodRes : (prodRes?.data && Array.isArray(prodRes.data) ? prodRes.data : null);
+        if (prodsArray && prodsArray.length > 0) {
+            // Sincronizar catálogo desde MongoDB:
+            // Construimos la lista completa unificada dando prioridad a los datos actualizados de MongoDB
+            const remoteMap = new Map(prodsArray.map(p => [String(p.id), p]));
             
-            if (!isLocalAdminModified) {
-                // Visitante público o móvil: cargamos el catálogo oficial de MongoDB
-                state.products = prodRes.data.map(p => ({
-                    id: p.id,
-                    type: p.type || (p.id && String(p.id).startsWith('m-') ? 'MERCADO' : 'DETAL'),
-                    categoryId: p.categoryId,
-                    sku: p.sku,
-                    name: p.name,
-                    unitCalc: p.unitCalc || p.unit || 'UND',
-                    price: p.price || 0,
-                    costPrice: p.costPrice || 0,
-                    discountPrice: p.discountPrice || null,
-                    discountPercent: p.discountPercent || (p.discountPrice && p.price ? `-${Math.round((1 - p.discountPrice / p.price) * 100)}%` : null),
-                    stock: p.stock !== undefined ? p.stock : 10,
-                    imageUrl: p.imageUrl || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500',
-                    isAvailable: p.isAvailable !== false,
-                    bundleItems: p.bundleItems || [],
-                    imageFitPc: p.imageFitPc || 'cover',
-                    imageZoomPc: p.imageZoomPc !== undefined ? Number(p.imageZoomPc) : 1.0,
-                    imagePosX_Pc: p.imagePosX_Pc !== undefined ? Number(p.imagePosX_Pc) : 50,
-                    imagePosY_Pc: p.imagePosY_Pc !== undefined ? Number(p.imagePosY_Pc) : 50,
-                    imageFitMobile: p.imageFitMobile || p.imageFitPc || 'cover',
-                    imageZoomMobile: p.imageZoomMobile !== undefined ? Number(p.imageZoomMobile) : (p.imageZoomPc !== undefined ? Number(p.imageZoomPc) : 1.0),
-                    imagePosX_Mobile: p.imagePosX_Mobile !== undefined ? Number(p.imagePosX_Mobile) : (p.imagePosX_Pc !== undefined ? Number(p.imagePosX_Pc) : 50),
-                    imagePosY_Mobile: p.imagePosY_Mobile !== undefined ? Number(p.imagePosY_Mobile) : (p.imagePosY_Pc !== undefined ? Number(p.imagePosY_Pc) : 50)
-                }));
-            } else {
-                // Si el admin está en su PC, sincronizamos precios y stocks remotos pero preservamos sus creaciones locales
-                const backendMap = new Map(prodRes.data.map(p => [p.id, p]));
-                state.products = state.products.map(localP => {
-                    const remote = backendMap.get(localP.id);
-                    if (remote) {
-                        return {
-                            ...localP,
-                            price: remote.price || localP.price,
-                            discountPrice: remote.discountPrice !== undefined ? remote.discountPrice : localP.discountPrice,
-                            stock: remote.stock !== undefined ? remote.stock : localP.stock
-                        };
-                    }
-                    return localP;
-                });
-            }
+            // Si el cliente entra desde celular o incógnito, o ya existen datos en MongoDB, cargamos directamente los datos de la base de datos
+            const mappedRemote = prodsArray.map(p => ({
+                id: p.id,
+                type: p.type || (p.id && String(p.id).startsWith('m-') ? 'MERCADO' : 'DETAL'),
+                categoryId: p.categoryId,
+                sku: p.sku,
+                name: p.name,
+                unitCalc: p.unitCalc || p.unit || 'UND',
+                price: p.price || 0,
+                costPrice: p.costPrice || 0,
+                discountPrice: p.discountPrice || null,
+                discountPercent: p.discountPercent || (p.discountPrice && p.price ? `-${Math.round((1 - p.discountPrice / p.price) * 100)}%` : null),
+                stock: p.stock !== undefined ? p.stock : 10,
+                imageUrl: p.imageUrl || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500',
+                isAvailable: p.isAvailable !== false,
+                bundleItems: p.bundleItems || [],
+                imageFitPc: p.imageFitPc || 'cover',
+                imageZoomPc: p.imageZoomPc !== undefined ? Number(p.imageZoomPc) : 1.0,
+                imagePosX_Pc: p.imagePosX_Pc !== undefined ? Number(p.imagePosX_Pc) : 50,
+                imagePosY_Pc: p.imagePosY_Pc !== undefined ? Number(p.imagePosY_Pc) : 50,
+                imageFitMobile: p.imageFitMobile || p.imageFitPc || 'cover',
+                imageZoomMobile: p.imageZoomMobile !== undefined ? Number(p.imageZoomMobile) : (p.imageZoomPc !== undefined ? Number(p.imageZoomPc) : 1.0),
+                imagePosX_Mobile: p.imagePosX_Mobile !== undefined ? Number(p.imagePosX_Mobile) : (p.imagePosX_Pc !== undefined ? Number(p.imagePosX_Pc) : 50),
+                imagePosY_Mobile: p.imagePosY_Mobile !== undefined ? Number(p.imagePosY_Mobile) : (p.imagePosY_Pc !== undefined ? Number(p.imagePosY_Pc) : 50)
+            }));
+
+            // Si hay productos locales creados que aún no estuvieran en MongoDB, preservarlos
+            const remoteIds = new Set(prodsArray.map(p => String(p.id)));
+            const localOnly = (state.products || []).filter(lp => !remoteIds.has(String(lp.id)));
+
+            state.products = [...mappedRemote, ...localOnly];
             Storage.set('products', state.products);
+            recalculateMercadoStocks();
             renderProducts();
             renderAdminProductsTable();
         }
