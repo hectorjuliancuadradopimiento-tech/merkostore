@@ -2741,17 +2741,24 @@ function openEditBudgetModal() {
 
     const inputVal = document.getElementById('editBudgetValue');
     if (inputVal) {
-        inputVal.value = (state.budget && state.budget.currentBalance !== undefined) ? state.budget.currentBalance : 1000000;
+        const cur = (state.budget && state.budget.currentBalance !== undefined && state.budget.currentBalance !== null) 
+            ? Math.max(0, state.budget.currentBalance) 
+            : 1000000;
+        inputVal.value = cur;
     }
     const inputNotes = document.getElementById('editBudgetNotes');
     if (inputNotes) inputNotes.value = '';
 
+    modal.classList.add('active');
     modal.style.display = 'flex';
 }
 
 function closeEditBudgetModal() {
     const modal = document.getElementById('modalEditBudget');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
 }
 
 async function handleEditBudgetSubmit(event) {
@@ -2762,7 +2769,7 @@ async function handleEditBudgetSubmit(event) {
     const amount = parseFloat(inputVal);
 
     if (isNaN(amount) || amount < 0) {
-        showToast('⚠️ Ingresa un monto de presupuesto válido no negativo.', 'warning', '⚠️');
+        showToast('⚠️ El presupuesto no puede ser negativo ni estar vacío.', 'warning', '⚠️');
         return;
     }
 
