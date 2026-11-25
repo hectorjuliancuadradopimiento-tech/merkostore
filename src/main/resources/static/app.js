@@ -1245,6 +1245,78 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // FLOATING TOAST NOTIFICATION ENGINE (ULTRA-LIVIANO, ÁGIL Y NO INVASIVO)
+
+// ==========================================================================
+// VENTANA FLOTANTE DE CONFIRMACIÓN PERSONALIZADA (MERKOSTORE LUXURY MODAL)
+// ==========================================================================
+let merkoConfirmResolver = null;
+
+function showMerkoConfirm({ title, message, icon = '⚠️', confirmText = 'Confirmar', cancelText = 'Cancelar', confirmType = 'danger' }) {
+    return new Promise((resolve) => {
+        merkoConfirmResolver = resolve;
+
+        const modal = document.getElementById('merkoConfirmModal');
+        const iconEl = document.getElementById('merkoConfirmIcon');
+        const titleEl = document.getElementById('merkoConfirmTitle');
+        const msgEl = document.getElementById('merkoConfirmMessage');
+        const btnOk = document.getElementById('merkoConfirmBtnOk');
+        const btnCancel = document.getElementById('merkoConfirmBtnCancel');
+
+        if (!modal) {
+            const fallback = window.confirm(`${title}\n\n${message}`);
+            return resolve(fallback);
+        }
+
+        if (iconEl) iconEl.textContent = icon;
+        if (titleEl) titleEl.textContent = title;
+        if (msgEl) msgEl.textContent = message;
+
+        if (btnCancel) {
+            btnCancel.textContent = cancelText;
+            btnCancel.onclick = () => closeMerkoConfirm(false);
+        }
+
+        if (btnOk) {
+            btnOk.textContent = confirmText;
+            if (confirmType === 'danger') {
+                btnOk.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+                btnOk.style.borderColor = '#ef4444';
+                btnOk.style.boxShadow = '0 4px 15px rgba(239, 68, 68, 0.4)';
+            } else if (confirmType === 'warning') {
+                btnOk.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+                btnOk.style.borderColor = '#f59e0b';
+                btnOk.style.boxShadow = '0 4px 15px rgba(245, 158, 11, 0.4)';
+            } else {
+                btnOk.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                btnOk.style.borderColor = '#10b981';
+                btnOk.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.4)';
+            }
+
+            btnOk.onclick = () => closeMerkoConfirm(true);
+        }
+
+        modal.onclick = (e) => {
+            if (e.target === modal) closeMerkoConfirm(false);
+        };
+
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+    });
+}
+
+function closeMerkoConfirm(result) {
+    const modal = document.getElementById('merkoConfirmModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+    }
+    if (typeof merkoConfirmResolver === 'function') {
+        const resolve = merkoConfirmResolver;
+        merkoConfirmResolver = null;
+        resolve(result);
+    }
+}
+
 function showToast(message, type = 'success', icon = null) {
     const container = document.getElementById('toastContainer');
     if (!container) return;
@@ -3003,17 +3075,20 @@ function renderBudgetSubtab() {
                 const prevCostStr = (p.previousUnitCost != null && p.previousUnitCost > 0) ? `$ ${Math.round(p.previousUnitCost).toLocaleString('es-CO')}` : 'Sin costo prev.';
                 const newCostStr = (p.newWeightedAverageCost != null && p.newWeightedAverageCost > 0) ? `$ ${Math.round(p.newWeightedAverageCost).toLocaleString('es-CO')}` : `$ ${Math.round(p.purchaseUnitCost || 0).toLocaleString('es-CO')}`;
 
+                const assocProd = (state.products || []).find(prod => prod.id === p.productId || prod.sku === p.productSku || (prod.name && p.productName && prod.name.toLowerCase() === p.productName.toLowerCase()));
+                const isPurchaseInactive = assocProd ? assocProd.isAvailable === false : false;
+
                 return `
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); ${isPurchaseInactive ? 'opacity:0.68; background:rgba(239, 68, 68, 0.05); border-left:3px solid #ef4444;' : ''}">
                         <td style="padding:14px 18px; color:#cbd5e1; font-size:0.85rem;">
                             <div style="font-weight:700; color:#fff;">${dateStr}</div>
-                            <span style="font-size:0.72rem; color:#94a3b8; background:rgba(255,255,255,0.05); padding:2px 6px; border-radius:4px;">${p.productSku || p.productId}</span>
+                            <span style="font-size:0.72rem; color:${isPurchaseInactive ? '#f87171' : '#94a3b8'}; background:rgba(255,255,255,0.05); padding:2px 6px; border-radius:4px;">${p.productSku || p.productId} ${isPurchaseInactive ? '(Inactivo)' : ''}</span>
                         </td>
                         <td style="padding:14px 18px; color:#ffffff; font-weight:700; font-size:0.88rem;">
                             ${p.supplierName || 'Adquisición de Inventario'}
                         </td>
                         <td style="padding:14px 18px; font-weight:700; color:#ffffff;">
-                            <div>${p.productName}</div>
+                            <div>${p.productName} ${isPurchaseInactive ? '<span style="font-size:0.65rem; color:#ef4444; background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.35); padding:1px 6px; border-radius:4px; font-weight:800; margin-left:4px;">🚫 REGISTRO INACTIVO (PRODUCTO INACTIVO)</span>' : ''}</div>
                             <div style="font-size:0.8rem; color:#38bdf8; font-weight:800;">+${p.quantity} unds @ $ ${Math.round(p.purchaseUnitCost).toLocaleString('es-CO')} c/u</div>
                         </td>
                         <td style="padding:14px 18px; color:#ef4444; font-weight:900; font-size:0.95rem;">
@@ -3059,8 +3134,10 @@ function renderBudgetSubtab() {
                 };
                 const tInfo = typeLabels[tx.type] || { label: tx.type, color: '#94a3b8' };
 
+                const isTxInactive = (state.products || []).some(prod => prod.isAvailable === false && tx.description && tx.description.toLowerCase().includes(prod.name.toLowerCase()));
+
                 return `
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); ${isTxInactive ? 'opacity:0.68; background:rgba(239, 68, 68, 0.05); border-left:3px solid #ef4444;' : ''}">
                         <td style="padding:14px 18px; color:#cbd5e1; font-size:0.85rem;">${dateStr}</td>
                         <td style="padding:14px 18px;">
                             <span style="font-size:0.75rem; font-weight:800; color:${tInfo.color}; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); padding:3px 8px; border-radius:4px;">
@@ -3068,7 +3145,7 @@ function renderBudgetSubtab() {
                             </span>
                         </td>
                         <td style="padding:14px 18px; font-size:0.84rem; color:#ffffff;">
-                            ${tx.description || ''}
+                            ${tx.description || ''} ${isTxInactive ? '<span style="font-size:0.65rem; color:#ef4444; background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.35); padding:1px 5px; border-radius:4px; font-weight:800; margin-left:4px;">🚫 Ítem Inactivo</span>' : ''}
                         </td>
                         <td style="padding:14px 18px; font-weight:700; color:#cbd5e1; font-size:0.85rem;">${tx.referenceId || '-'}</td>
                         <td style="padding:14px 18px; font-weight:900; color:${isPositive ? '#10b981' : '#ef4444'}; font-size:0.95rem;">
@@ -3405,13 +3482,17 @@ async function deleteAdminUser(userId) {
     const u = usersList.find(user => user.id === userId);
     const username = u ? u.username : 'seleccionado';
     const isCurrentlyActive = u.isActive !== false;
-    const confirmMsg = isCurrentlyActive 
-        ? `¿Deseas inactivar la cuenta de "${username}"? El registro de usuario se preservará en el sistema.`
-        : `¿Deseas reactivar la cuenta de "${username}"?`;
-
-    if (!confirm(confirmMsg)) {
-        return;
-    }
+    const ok = await showMerkoConfirm({
+        title: isCurrentlyActive ? 'Inactivar Administrador' : 'Activar Administrador',
+        message: isCurrentlyActive 
+            ? `¿Deseas inactivar la cuenta de "${username}"?\n\nEl usuario no podrá acceder al panel de administración hasta que sea reactivado.`
+            : `¿Deseas reactivar la cuenta de "${username}"?`,
+        icon: isCurrentlyActive ? '👤' : '✅',
+        confirmText: isCurrentlyActive ? 'Inactivar' : 'Activar',
+        cancelText: 'Cancelar',
+        confirmType: isCurrentlyActive ? 'warning' : 'success'
+    });
+    if (!ok) return;
 
     u.isActive = !isCurrentlyActive;
 
@@ -3773,11 +3854,19 @@ async function toggleProductActivation(productId) {
     const p = state.products.find(prod => prod.id === productId);
     if (!p) return;
     const currentlyActive = p.isAvailable !== false;
-    const confirmPrompt = currentlyActive 
-        ? `¿Deseas inactivar "${p.name}"?\n\nAl inactivarlo, el producto se ocultará de la vista de los clientes, del módulo de Investigación de Operaciones (Simplex/MILP) y de la creación de combos.`
-        : `¿Deseas reactivar "${p.name}" en la tienda?\n\nVolverá a estar visible para los clientes y disponible en Investigación de Operaciones e inventario.`;
 
-    if (!confirm(confirmPrompt)) return;
+    const ok = await showMerkoConfirm({
+        title: currentlyActive ? 'Inactivar Producto' : 'Activar Producto',
+        message: currentlyActive 
+            ? `¿Deseas inactivar "${p.name}"?\n\nAl inactivarlo, el producto se ocultará de la vista de los clientes, del módulo de Investigación de Operaciones (Simplex/MILP), de la creación de combos y sus registros en el historial se marcarán como inactivos.`
+            : `¿Deseas reactivar "${p.name}" en la tienda?\n\nVolverá a estar visible para los clientes y disponible en Investigación de Operaciones, inventario y registros de historial.`,
+        icon: currentlyActive ? '🚫' : '✅',
+        confirmText: currentlyActive ? 'Inactivar Producto' : 'Activar Producto',
+        cancelText: 'Cancelar',
+        confirmType: currentlyActive ? 'warning' : 'success'
+    });
+
+    if (!ok) return;
 
     p.isAvailable = !currentlyActive;
     Storage.set('products', state.products);
@@ -3792,6 +3881,9 @@ async function toggleProductActivation(productId) {
     renderProducts();
     renderAdminProductsTable();
     renderMercadoItemsChecklist();
+    renderHistorialUnificadoTable();
+    renderActiveOrdersTable();
+    if (typeof renderBudgetSubtab === 'function') renderBudgetSubtab();
     if (typeof renderIoProductInputs === 'function') {
         renderIoProductInputs(true);
         limpiarResultadosIO(false);
@@ -3809,8 +3901,16 @@ async function deleteProductPermanently(productId) {
     const p = state.products.find(prod => prod.id === productId);
     if (!p) return;
 
-    const confirmMsg = `⚠️ ¿Estás completamente seguro de que deseas ELIMINAR PERMANENTEMENTE "${p.name}"?\n\nEsta acción borrará el producto de forma definitiva del inventario, de la base de datos MongoDB y de todos los módulos. Esta operación no se puede deshacer.`;
-    if (!confirm(confirmMsg)) return;
+    const ok = await showMerkoConfirm({
+        title: 'Eliminar Producto Definitivamente',
+        message: `⚠️ ¿Estás completamente seguro de que deseas ELIMINAR PERMANENTEMENTE "${p.name}"?\n\nEsta acción borrará el producto de forma definitiva del inventario, de la base de datos MongoDB y de todos los módulos. Esta operación no se puede deshacer.`,
+        icon: '🗑️',
+        confirmText: 'Eliminar Permanentemente',
+        cancelText: 'Cancelar',
+        confirmType: 'danger'
+    });
+
+    if (!ok) return;
 
     // 1. Eliminar del estado local
     state.products = state.products.filter(prod => prod.id !== productId);
@@ -3847,6 +3947,9 @@ async function deleteProductPermanently(productId) {
     renderAdminProductsTable();
     renderProducts();
     renderMercadoItemsChecklist();
+    renderHistorialUnificadoTable();
+    renderActiveOrdersTable();
+    if (typeof renderBudgetSubtab === 'function') renderBudgetSubtab();
     if (typeof renderIoProductInputs === 'function') {
         renderIoProductInputs(true);
         limpiarResultadosIO(false);
@@ -4396,11 +4499,17 @@ async function toggleCategoryActivation(catId) {
     if (!cat) return;
 
     const currentlyActive = cat.isActive !== false;
-    const confirmPrompt = currentlyActive
-        ? `¿Deseas inactivar la categoría "${cat.name}"? Los productos y el registro se preservarán.`
-        : `¿Deseas activar la categoría "${cat.name}"?`;
-
-    if (!confirm(confirmPrompt)) return;
+    const ok = await showMerkoConfirm({
+        title: currentlyActive ? 'Inactivar Categoría' : 'Activar Categoría',
+        message: currentlyActive 
+            ? `¿Deseas inactivar la categoría "${cat.name}"?\n\nLos productos existentes y el registro se preservarán en el sistema.`
+            : `¿Deseas activar la categoría "${cat.name}"?`,
+        icon: currentlyActive ? '🏷️' : '✅',
+        confirmText: currentlyActive ? 'Inactivar' : 'Activar',
+        cancelText: 'Cancelar',
+        confirmType: currentlyActive ? 'warning' : 'success'
+    });
+    if (!ok) return;
 
     cat.isActive = !currentlyActive;
     Storage.set('categories', state.categories);
@@ -4428,7 +4537,15 @@ async function deleteCategory(catId) {
     }
     const cat = state.categories.find(c => c.id === catId);
     if (!cat) return;
-    if (!confirm(`¿Estás seguro de eliminar permanentemente la categoría "${cat.name}"? Esta acción no se puede deshacer.`)) return;
+    const ok = await showMerkoConfirm({
+        title: 'Eliminar Categoría',
+        message: `¿Estás seguro de eliminar permanentemente la categoría "${cat.name}"?\n\nEsta acción no se puede deshacer.`,
+        icon: '🗑️',
+        confirmText: 'Eliminar Categoría',
+        cancelText: 'Cancelar',
+        confirmType: 'danger'
+    });
+    if (!ok) return;
 
     state.categories = state.categories.filter(c => c.id !== catId);
     Storage.set('categories', state.categories);
@@ -4768,15 +4885,30 @@ function renderHistorialUnificadoTable() {
     }
 
     tbody.innerHTML = filtered.map(o => {
-        const itemsListText = (o.items || []).map(it => `${it.qty || it.quantity || 1}x ${it.name || it.productName || 'Producto'}`).join(', ');
+        // Verificar si algún producto de esta orden está inactivo actualmente
+        const inactiveItemsInOrder = (o.items || []).filter(it => {
+            const prod = (state.products || []).find(p => p.id === it.productId || (it.productId && p.id && String(p.id).toLowerCase() === String(it.productId).toLowerCase()) || (p.name && it.name && p.name.toLowerCase() === it.name.toLowerCase()));
+            return prod ? prod.isAvailable === false : false;
+        });
+        const hasInactiveProduct = inactiveItemsInOrder.length > 0;
+
+        const itemsListText = (o.items || []).map(it => {
+            const prod = (state.products || []).find(p => p.id === it.productId || (it.productId && p.id && String(p.id).toLowerCase() === String(it.productId).toLowerCase()) || (p.name && it.name && p.name.toLowerCase() === it.name.toLowerCase()));
+            const isItInactive = prod ? prod.isAvailable === false : false;
+            return isItInactive 
+                ? `<span style="color:#f87171; text-decoration:line-through;" title="Producto inactivo">${it.qty || it.quantity || 1}x ${it.name || it.productName || 'Producto'}</span> <span style="font-size:0.6rem; color:#ef4444; background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.4); padding:1px 4px; border-radius:3px; font-weight:800;">🚫 INACTIVO</span>`
+                : `${it.qty || it.quantity || 1}x ${it.name || it.productName || 'Producto'}`;
+        }).join(', ');
+
         const isPaid = o.paymentStatus === 'PAID';
         
         return `
-            <tr>
+            <tr style="${hasInactiveProduct ? 'opacity:0.68; background:rgba(239, 68, 68, 0.05); border-left:3px solid #ef4444;' : ''}">
                 <td>
                     <div class="code-badge-gold">${o.orderNumber}</div>
                     <div class="client-name-bold">${o.customerName || 'Cliente'}</div>
                     <div class="client-phone-sub">${o.customerPhone || 'Sin teléfono'}</div>
+                    ${hasInactiveProduct ? `<div style="margin-top:4px;"><span style="font-size:0.62rem; color:#ef4444; background:rgba(239,68,68,0.18); border:1px solid rgba(239,68,68,0.35); padding:2px 6px; border-radius:4px; font-weight:800; display:inline-block;">🚫 REGISTRO CON PRODUCTO INACTIVO</span></div>` : ''}
                 </td>
                 <td style="max-width:280px;">
                     <div class="items-solicitud-text">${itemsListText || 'Sin ítems'}</div>
@@ -5016,9 +5148,15 @@ function contactCustomerWhatsApp(phone, orderCode) {
 async function deleteOrder(orderId) {
     const o = state.orders.find(ord => ord.id === orderId);
     if (!o) return;
-    if (!confirm(`¿Estás seguro de eliminar permanentemente el pedido ${o.orderNumber || ''} del historial? Esta acción no se puede deshacer.`)) {
-        return;
-    }
+    const ok = await showMerkoConfirm({
+        title: 'Eliminar Pedido',
+        message: `¿Estás seguro de eliminar permanentemente el pedido ${o.orderNumber || ''} del historial?\n\nEsta acción no se puede deshacer.`,
+        icon: '📜',
+        confirmText: 'Eliminar Pedido',
+        cancelText: 'Cancelar',
+        confirmType: 'danger'
+    });
+    if (!ok) return;
 
     state.orders = state.orders.filter(ord => ord.id !== orderId);
     Storage.set('orders', state.orders);

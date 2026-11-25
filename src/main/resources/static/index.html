@@ -1933,6 +1933,25 @@
         </div>
     </div>
 
+    <!-- VENTANA FLOTANTE DE CONFIRMACIÓN MERKOSTORE (CUSTOM LUXURY MODAL ADAPTADO A LOS COLORES DE LA PÁGINA) -->
+    <div class="modal-overlay" id="merkoConfirmModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); z-index:999999; align-items:center; justify-content:center; padding:20px;">
+        <div class="modal-card-luxury" style="max-width:460px; text-align:center; padding:28px 24px; border:1.5px solid #FF8F00; box-shadow:0 25px 60px rgba(0,0,0,0.95), 0 0 30px rgba(255,143,0,0.25);">
+            <div id="merkoConfirmIcon" style="font-size:3rem; margin-bottom:14px; line-height:1; filter:drop-shadow(0 0 12px rgba(255,143,0,0.5));">⚠️</div>
+            <h3 id="merkoConfirmTitle" style="font-size:1.28rem; font-weight:900; color:#ffffff; margin:0 0 12px 0;">¿Estás seguro?</h3>
+            <div id="merkoConfirmMessage" style="font-size:0.88rem; color:#cbd5e1; line-height:1.6; margin-bottom:24px; white-space:pre-line; text-align:left; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:14px 16px; border-radius:10px;">
+                Mensaje de confirmación
+            </div>
+            <div style="display:flex; justify-content:center; gap:12px;">
+                <button type="button" id="merkoConfirmBtnCancel" class="btn-merko-outline" style="min-width:120px; padding:10px 18px; font-weight:700;">
+                    Cancelar
+                </button>
+                <button type="button" id="merkoConfirmBtnOk" class="btn-merko-primary" style="min-width:140px; padding:10px 20px; font-weight:800;">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- ORDER DETAIL MODAL (MATCHING REFERENCE IMAGE 2 EXACTLY) -->
     <div class="order-detail-modal-overlay" id="orderDetailModalOverlay">
         <div class="order-detail-modal-card" id="orderDetailModalContent">
