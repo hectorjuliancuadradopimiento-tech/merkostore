@@ -660,6 +660,9 @@ body::before {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 16px;
+    padding-top: 8px;
+    padding-bottom: 12px;
+    margin-top: -4px;
     margin-bottom: 40px;
 }
 
@@ -4382,6 +4385,12 @@ body.admin-fullscreen-active #viewStorefront {
         font-size: 1.25rem !important;
     }
 
+    .main-nav .reflective-logo-wrap {
+        width: 48px !important;
+        height: 48px !important;
+        padding: 2px !important;
+    }
+
     .brand-sub {
         display: none !important; /* Hide long subtext on small screens to prevent title squashing */
     }
@@ -4483,18 +4492,7 @@ body.admin-fullscreen-active #viewStorefront {
     }
 
     .hero-logo-emblem-wrap {
-        margin-top: 6px !important;
-        position: relative !important;
-        z-index: 2 !important;
-    }
-
-    .hero-logo-emblem-wrap .reflective-shimmer-sweep {
-        animation: reflectiveShimmerSweep 3s infinite cubic-bezier(0.4, 0, 0.2, 1) !important;
-    }
-
-    .reflective-logo-wrap.size-lg {
-        width: 84px !important;
-        height: 84px !important;
+        display: none !important;
     }
 
     /* 4. CATEGORY BADGES (HORIZONTAL SMOOTH CHIPS ON MOBILE) */
@@ -4504,8 +4502,12 @@ body.admin-fullscreen-active #viewStorefront {
         scroll-snap-type: x mandatory !important;
         -webkit-overflow-scrolling: touch !important;
         gap: 10px !important;
-        padding-bottom: 10px !important;
-        margin-bottom: 24px !important;
+        padding-top: 10px !important;
+        padding-bottom: 14px !important;
+        padding-left: 4px !important;
+        padding-right: 4px !important;
+        margin-top: -6px !important;
+        margin-bottom: 20px !important;
         scrollbar-width: none !important;
     }
 
@@ -4519,6 +4521,18 @@ body.admin-fullscreen-active #viewStorefront {
         padding: 12px 14px !important;
         scroll-snap-align: start !important;
         border-radius: 14px !important;
+        transform: none !important;
+    }
+
+    .cat-badge-card:hover,
+    .cat-badge-card.active {
+        transform: none !important;
+        box-shadow: 0 4px 14px rgba(220, 38, 38, 0.18) !important;
+    }
+
+    .cat-badge-card:hover .cat-badge-icon-box,
+    .cat-badge-card.active .cat-badge-icon-box {
+        transform: scale(1.08) !important;
     }
 
     .cat-badge-icon {

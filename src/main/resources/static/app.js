@@ -156,205 +156,8 @@ const state = {
         { id: 'cat5', name: '🧼 Cuidado del Hogar', icon: '🧼', bgColor: '#f3e8ff' }
     ],
 
-    // Products & Mercados (Exactamente los 12 productos del Data Warehouse / Power BI)
-    products: [
-        {
-            id: 'PRD-001',
-            type: 'DETAL',
-            categoryId: 'cat2',
-            sku: 'PRD-001',
-            name: 'Huevos Kikes AA x30',
-            unitCalc: 'Unidad a $ 816.67',
-            costPrice: 14700,
-            price: 24500,
-            discountPrice: null,
-            discountPercent: null,
-            stock: 35,
-            imageUrl: 'https://images.unsplash.com/photo-1516467508483-a7212febe31a?w=500',
-            isAvailable: true
-        },
-        {
-            id: 'PRD-002',
-            type: 'DETAL',
-            categoryId: 'cat4',
-            sku: 'PRD-002',
-            name: 'Café Sello Rojo 425g',
-            unitCalc: 'Gramo a $ 51.74',
-            costPrice: 15000,
-            price: 21990,
-            discountPrice: null,
-            discountPercent: null,
-            stock: 20,
-            imageUrl: 'https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=500',
-            isAvailable: true
-        },
-        {
-            id: 'PRD-003',
-            type: 'DETAL',
-            categoryId: 'cat4',
-            sku: 'PRD-003',
-            name: 'Harina Pan 1Kg',
-            unitCalc: 'Gramo a $ 4.80',
-            costPrice: 3200,
-            price: 4800,
-            discountPrice: null,
-            discountPercent: null,
-            stock: 50,
-            imageUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=500',
-            isAvailable: true
-        },
-        {
-            id: 'PRD-004',
-            type: 'DETAL',
-            categoryId: 'cat4',
-            sku: 'PRD-004',
-            name: 'Aceite Medalla de Oro 3Lt',
-            unitCalc: 'Litro a $ 6.496.67',
-            costPrice: 13500,
-            price: 19490,
-            discountPercent: null,
-            discountPrice: null,
-            stock: 14,
-            imageUrl: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=500',
-            isAvailable: true
-        },
-        {
-            id: 'PRD-005',
-            type: 'DETAL',
-            categoryId: 'cat4',
-            sku: 'PRD-005',
-            name: 'Azúcar Blanca 2.5Kg',
-            unitCalc: 'Gramo a $ 3.96',
-            costPrice: 6800,
-            price: 9900,
-            discountPrice: null,
-            discountPercent: null,
-            stock: 28,
-            imageUrl: 'https://images.unsplash.com/photo-1581441363689-1f3c3c414635?w=500',
-            isAvailable: true
-        },
-        {
-            id: 'PRD-006',
-            type: 'DETAL',
-            categoryId: 'cat4',
-            sku: 'PRD-006',
-            name: 'Arroz Diana 1Kg',
-            unitCalc: 'Gramo a $ 4.50',
-            costPrice: 3100,
-            price: 4500,
-            discountPrice: null,
-            discountPercent: null,
-            stock: 45,
-            imageUrl: 'https://images.unsplash.com/photo-1536304993881-ff6e9eefa2a6?w=500',
-            isAvailable: true
-        },
-        {
-            id: 'PRD-007',
-            type: 'DETAL',
-            categoryId: 'cat2',
-            sku: 'PRD-007',
-            name: 'Leche Colanta Entera 900ml',
-            unitCalc: 'Mililitro a $ 4.67',
-            costPrice: 2900,
-            price: 4200,
-            discountPrice: null,
-            discountPercent: null,
-            stock: 30,
-            imageUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=500',
-            isAvailable: true
-        },
-        {
-            id: 'PRD-008',
-            type: 'DETAL',
-            categoryId: 'cat3',
-            sku: 'PRD-008',
-            name: 'Pan Bimbo Artesano 500g',
-            unitCalc: 'Gramo a $ 17.00',
-            costPrice: 6000,
-            price: 8500,
-            discountPrice: null,
-            discountPercent: null,
-            stock: 18,
-            imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500',
-            isAvailable: true
-        },
-        {
-            id: 'PRD-009',
-            type: 'DETAL',
-            categoryId: 'cat5',
-            sku: 'PRD-009',
-            name: 'Jabón Rey Barra 300g',
-            unitCalc: 'Unidad a $ 3.200',
-            costPrice: 2100,
-            price: 3200,
-            discountPrice: null,
-            discountPercent: null,
-            stock: 40,
-            imageUrl: 'https://images.unsplash.com/photo-1607006314177-3e818b264eef?w=500',
-            isAvailable: true
-        },
-        {
-            id: 'CMB-001',
-            type: 'MERCADO',
-            categoryId: 'cat1',
-            sku: 'CMB-001',
-            name: 'Mercado Familiar Esencial',
-            unitCalc: 'Combo Familiar Completo',
-            costPrice: 31800,
-            price: 54000,
-            discountPrice: 44900,
-            discountPercent: '-17%',
-            stock: 10,
-            imageUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500',
-            isAvailable: true,
-            bundleItems: [
-                { productId: 'PRD-001', quantity: 1 },
-                { productId: 'PRD-003', quantity: 2 },
-                { productId: 'PRD-004', quantity: 1 },
-                { productId: 'PRD-005', quantity: 1 },
-                { productId: 'PRD-006', quantity: 1 }
-            ]
-        },
-        {
-            id: 'CMB-002',
-            type: 'MERCADO',
-            categoryId: 'cat1',
-            sku: 'CMB-002',
-            name: 'Mercado Desayuno Completo',
-            unitCalc: 'Combo Desayuno Nutritivo',
-            costPrice: 25200,
-            price: 39900,
-            discountPrice: 34500,
-            discountPercent: '-14%',
-            stock: 8,
-            imageUrl: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=500',
-            isAvailable: true,
-            bundleItems: [
-                { productId: 'PRD-001', quantity: 1 },
-                { productId: 'PRD-002', quantity: 1 },
-                { productId: 'PRD-007', quantity: 2 },
-                { productId: 'PRD-008', quantity: 1 }
-            ]
-        },
-        {
-            id: 'CMB-003',
-            type: 'MERCADO',
-            categoryId: 'cat1',
-            sku: 'CMB-003',
-            name: 'Combo Aseo y Hogar',
-            unitCalc: 'Kit Limpieza Profunda',
-            costPrice: 18500,
-            price: 32000,
-            discountPrice: 28000,
-            discountPercent: '-13%',
-            stock: 6,
-            imageUrl: 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=500',
-            isAvailable: true,
-            bundleItems: [
-                { productId: 'PRD-009', quantity: 4 }
-            ]
-        }
-    ],
+    // Products & Mercados (Se cargan estrictamente desde MongoDB)
+    products: [],
 
     // Orders (Exactamente los 20 pedidos y 25 transacciones del Data Warehouse / Power BI)
     orders: [
@@ -1265,10 +1068,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedCategories = Storage.get('categories');
     const savedOrders = Storage.get('orders');
 
-    if (savedProducts !== null && savedProducts !== undefined) {
-        state.products = savedProducts;
+    if (savedProducts !== null && savedProducts !== undefined && Array.isArray(savedProducts)) {
+        state.products = savedProducts.filter(p => !String(p.id).startsWith('PRD-') && !String(p.id).startsWith('CMB-'));
     } else {
-        Storage.set('products', state.products);
+        state.products = [];
     }
 
     if (savedCategories !== null && savedCategories !== undefined) {
@@ -5757,11 +5560,8 @@ async function loadPublicBackendData() {
                 imagePosY_Mobile: p.imagePosY_Mobile !== undefined ? Number(p.imagePosY_Mobile) : (p.imagePosY_Pc !== undefined ? Number(p.imagePosY_Pc) : 50)
             }));
 
-            // Si hay productos locales creados que aún no estuvieran en MongoDB, preservarlos
-            const remoteIds = new Set(prodsArray.map(p => String(p.id)));
-            const localOnly = (state.products || []).filter(lp => !remoteIds.has(String(lp.id)));
-
-            state.products = [...mappedRemote, ...localOnly];
+            // El catálogo oficial y único para clientes es el que existe en MongoDB (sin productos demo residuales)
+            state.products = mappedRemote;
             Storage.set('products', state.products);
             recalculateMercadoStocks();
             renderProducts();
@@ -5854,9 +5654,12 @@ async function loadAdminBackendData() {
                 };
             });
 
-            // Preservar productos creados localmente que aún no están en backend
+            // Preservar únicamente productos creados localmente por el admin si aún no se sincronizan
             const remoteIds = new Set(prodsRes.value.data.map(p => String(p.id)));
-            const localOnly = (state.products || []).filter(lp => !remoteIds.has(String(lp.id)));
+            const localOnly = (state.products || []).filter(lp => 
+                (String(lp.id).startsWith('p-') || String(lp.id).startsWith('m-')) && 
+                !remoteIds.has(String(lp.id))
+            );
             state.products = [...mergedProducts, ...localOnly];
 
             Storage.set('products', state.products);
