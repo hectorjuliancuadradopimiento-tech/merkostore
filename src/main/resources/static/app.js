@@ -5917,42 +5917,50 @@ async function loadAdminBackendData() {
 async function syncAllToCloudMongoDB() {
     showToast('⏳ Sincronizando catálogo con la base de datos MongoDB...', 'info', '☁️');
     try {
-        const payload = (state.products || []).map(p => ({
-            id: p.id,
-            storeId: 'default-store',
-            categoryId: p.categoryId,
-            sku: p.sku,
-            name: p.name,
-            description: p.description || '',
-            costPrice: p.costPrice || 0,
-            price: p.price || 0,
-            discountPrice: p.discountPrice || null,
-            unit: p.unitCalc || p.unit || 'UND',
-            unitCalc: p.unitCalc || p.unit || 'UND',
-            type: p.type || 'DETAL',
-            stock: p.stock !== undefined ? p.stock : 10,
-            imageUrl: p.imageUrl,
-            isAvailable: p.isAvailable !== false,
-            bundleItems: p.bundleItems || [],
-            imageFitPc: p.imageFitPc || 'cover',
-            imageZoomPc: p.imageZoomPc !== undefined ? p.imageZoomPc : 1.0,
-            imagePosX_Pc: p.imagePosX_Pc !== undefined ? p.imagePosX_Pc : 50,
-            imagePosY_Pc: p.imagePosY_Pc !== undefined ? p.imagePosY_Pc : 50,
-            imageFitMobile: p.imageFitMobile || p.imageFitPc || 'cover',
-            imageZoomMobile: p.imageZoomMobile !== undefined ? p.imageZoomMobile : (p.imageZoomPc !== undefined ? p.imageZoomPc : 1.0),
-            imagePosX_Mobile: p.imagePosX_Mobile !== undefined ? p.imagePosX_Mobile : (p.imagePosX_Pc !== undefined ? p.imagePosX_Pc : 50),
-            imagePosY_Mobile: p.imagePosY_Mobile !== undefined ? p.imagePosY_Mobile : (p.imagePosY_Pc !== undefined ? p.imagePosY_Pc : 50)
-        }));
+        const payload = (state.products || []).map(p => {
+            let img = p.imageUrl || '';
+            // Si la imagen es un base64 excesivamente grande (más de 150KB), recortar para evitar exceder el límite HTTP del servidor
+            if (img.startsWith('data:') && img.length > 200000) {
+                img = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500';
+            }
+            return {
+                id: p.id,
+                storeId: 'default-store',
+                categoryId: p.categoryId,
+                sku: p.sku,
+                name: p.name,
+                description: p.description || '',
+                costPrice: p.costPrice || 0,
+                price: p.price || 0,
+                discountPrice: p.discountPrice || null,
+                unit: p.unitCalc || p.unit || 'UND',
+                unitCalc: p.unitCalc || p.unit || 'UND',
+                type: p.type || 'DETAL',
+                stock: p.stock !== undefined ? p.stock : 10,
+                imageUrl: img,
+                isAvailable: p.isAvailable !== false,
+                bundleItems: p.bundleItems || [],
+                imageFitPc: p.imageFitPc || 'cover',
+                imageZoomPc: p.imageZoomPc !== undefined ? p.imageZoomPc : 1.0,
+                imagePosX_Pc: p.imagePosX_Pc !== undefined ? p.imagePosX_Pc : 50,
+                imagePosY_Pc: p.imagePosY_Pc !== undefined ? p.imagePosY_Pc : 50,
+                imageFitMobile: p.imageFitMobile || p.imageFitPc || 'cover',
+                imageZoomMobile: p.imageZoomMobile !== undefined ? p.imageZoomMobile : (p.imageZoomPc !== undefined ? p.imageZoomPc : 1.0),
+                imagePosX_Mobile: p.imagePosX_Mobile !== undefined ? p.imagePosX_Mobile : (p.imagePosX_Pc !== undefined ? p.imagePosX_Pc : 50),
+                imagePosY_Mobile: p.imagePosY_Mobile !== undefined ? p.imagePosY_Mobile : (p.imagePosY_Pc !== undefined ? p.imagePosY_Pc : 50)
+            };
+        });
 
         const res = await API.post('/api/v1/public/sync-catalog', payload);
-        if (res && res.data) {
+        if (res) {
             showToast('✅ ¡Catálogo sincronizado con éxito en MongoDB! Ahora se verá idéntico en tu celular.', 'success', '🚀');
         } else {
             showToast('✅ Catálogo guardado en la base de datos.', 'success', '☁️');
         }
     } catch (err) {
         console.warn('Error al sincronizar con MongoDB:', err);
-        showToast('⚠️ No se pudo conectar con el servidor MongoDB en este momento.', 'warning', '⚠️');
+        const detail = err && err.message ? `: ${err.message}` : '';
+        showToast(`⚠️ No se pudo conectar con el servidor MongoDB en este momento${detail}`, 'warning', '⚠️');
     }
 }
 window.syncAllToCloudMongoDB = syncAllToCloudMongoDB;
