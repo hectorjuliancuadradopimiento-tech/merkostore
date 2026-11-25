@@ -148,12 +148,7 @@ const state = {
 
     // Categories
     categories: [
-        { id: 'ALL', name: '✨ Todos los Productos', icon: '🛒', bgColor: '#fee2e2' },
-        { id: 'cat1', name: '📦 Combos Mercados', icon: '📦', bgColor: '#fef2f2' },
-        { id: 'cat2', name: '🥛 Lácteos y Huevos', icon: '🥛', bgColor: '#e0f2fe' },
-        { id: 'cat3', name: '🥖 Panadería', icon: '🥖', bgColor: '#fef3c7' },
-        { id: 'cat4', name: '🌾 Abarrotes y Despensa', icon: '🌾', bgColor: '#dcfce7' },
-        { id: 'cat5', name: '🧼 Cuidado del Hogar', icon: '🧼', bgColor: '#f3e8ff' }
+        { id: 'ALL', name: '✨ Todos los Productos', icon: '🛒', bgColor: '#fee2e2' }
     ],
 
     // Products & Mercados (Se cargan estrictamente desde MongoDB)
@@ -4648,6 +4643,7 @@ function saveNewCategory() {
     renderCategoryOptions();
     if (nameInput) nameInput.value = '';
     showToast(`✨ Categoría "${name}" creada exitosamente`, 'success', '✨');
+    syncCategoriesToCloud();
 }
 
 function editCategory(catId) {
@@ -4692,6 +4688,7 @@ function handleSaveCategoryEdit(e) {
     renderCategoryOptions();
     closeEditCategoryModal();
     showToast(`✨ Categoría "${name}" actualizada con éxito`, 'success', '✨');
+    syncCategoriesToCloud();
 }
 
 async function toggleCategoryActivation(catId) {
@@ -4723,6 +4720,7 @@ async function toggleCategoryActivation(catId) {
     renderCategoryBadges();
     renderAdminCategoriesTable();
     renderCategoryOptions();
+    syncCategoriesToCloud();
     showToast(
         cat.isActive ? `✅ Categoría "${cat.name}" activada` : `🚫 Categoría "${cat.name}" inactivada (registro preservado)`,
         cat.isActive ? 'success' : 'warning',
@@ -4759,8 +4757,31 @@ async function deleteCategory(catId) {
     renderCategoryBadges();
     renderAdminCategoriesTable();
     renderCategoryOptions();
+    syncCategoriesToCloud();
     showToast(`🗑️ Categoría "${cat.name}" eliminada permanentemente`, 'success', '🗑️');
 }
+
+async function syncCategoriesToCloud() {
+    try {
+        const payload = (state.categories || [])
+            .filter(c => c.id !== 'ALL')
+            .map((c, idx) => ({
+                id: c.id,
+                storeId: 'default-store',
+                name: c.name,
+                icon: c.icon || '📦',
+                bgColor: c.bgColor || '#f1f5f9',
+                displayOrder: idx,
+                isActive: c.isActive !== false
+            }));
+        if (payload.length > 0 && typeof API !== 'undefined' && API.post) {
+            await API.post('/api/v1/public/sync-categories', payload).catch(e => console.warn('Sync cats warning:', e));
+        }
+    } catch (e) {
+        console.warn('Sync cats catch:', e);
+    }
+}
+window.syncCategoriesToCloud = syncCategoriesToCloud;
 
 // ==========================================================================
 // CONTROL DE PEDIDOS EN PROCESO & DESPACHOS ENGINE
@@ -5509,6 +5530,15 @@ function syncStoreConfigUI() {
 // ==========================================
 async function loadPublicBackendData() {
     try {
+        // Si este navegador (PC) ya tiene categorías personalizadas creadas,
+        // aseguramos subirlas a MongoDB para que todos los demás dispositivos las reciban
+        const savedCats = Storage.get('categories');
+        const hasCustomLocalCats = savedCats && Array.isArray(savedCats) && savedCats.some(c => String(c.id).startsWith('cat-'));
+        if (hasCustomLocalCats) {
+            state.categories = savedCats;
+            await syncCategoriesToCloud().catch(() => {});
+        }
+
         const catRes = await API.get('/api/v1/public/categories');
         const catsArray = Array.isArray(catRes) ? catRes : (catRes?.data && Array.isArray(catRes.data) ? catRes.data : null);
         if (catsArray && catsArray.length > 0) {
@@ -5516,7 +5546,7 @@ async function loadPublicBackendData() {
                 id: c.id,
                 name: c.name,
                 icon: c.icon || '📦',
-                bgColor: '#f1f5f9'
+                bgColor: c.bgColor || '#f1f5f9'
             }));
             state.categories = [
                 { id: 'ALL', name: '✨ Todos los Productos', icon: '🛒', bgColor: '#fee2e2' },
@@ -5525,6 +5555,7 @@ async function loadPublicBackendData() {
             Storage.set('categories', state.categories);
             renderCategoryBadges();
             renderAdminCategoriesTable();
+            renderCategoryOptions();
         }
 
         const prodRes = await API.get('/api/v1/public/products');
@@ -5746,6 +5777,7 @@ async function syncAllToCloudMongoDB() {
             };
         });
 
+        await syncCategoriesToCloud();
         const res = await API.post('/api/v1/public/sync-catalog', payload);
         if (res) {
             showToast('✅ ¡Catálogo sincronizado con éxito en MongoDB! Ahora se verá idéntico en tu celular.', 'success', '🚀');

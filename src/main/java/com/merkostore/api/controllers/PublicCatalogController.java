@@ -24,8 +24,55 @@ public class PublicCatalogController {
 
     @GetMapping("/categories")
     public ResponseEntity<List<Category>> getActiveCategories(@RequestParam(defaultValue = "default-store") String storeId) {
-        List<Category> categories = categoryRepository.findByStoreIdAndIsActiveTrueOrderByDisplayOrderAsc(storeId);
-        return ResponseEntity.ok(categories);
+        List<Category> all = categoryRepository.findByStoreId(storeId);
+        List<Category> active = all.stream()
+                .filter(c -> c.getIsActive() == null || Boolean.TRUE.equals(c.getIsActive()))
+                .sorted((a, b) -> {
+                    int orderA = a.getDisplayOrder() != null ? a.getDisplayOrder() : 999;
+                    int orderB = b.getDisplayOrder() != null ? b.getDisplayOrder() : 999;
+                    return Integer.compare(orderA, orderB);
+                })
+                .toList();
+        return ResponseEntity.ok(active);
+    }
+
+    /**
+     * Sincronización de categorías hacia MongoDB (nube)
+     */
+    @PostMapping("/sync-categories")
+    public ResponseEntity<List<Category>> syncCategories(
+            @RequestBody List<Category> incomingCategories,
+            @RequestParam(defaultValue = "default-store") String storeId) {
+        if (incomingCategories == null || incomingCategories.isEmpty()) {
+            return ResponseEntity.ok(categoryRepository.findByStoreId(storeId));
+        }
+
+        java.util.Set<String> incomingIds = incomingCategories.stream()
+                .map(Category::getId)
+                .filter(id -> id != null && !id.equalsIgnoreCase("ALL"))
+                .collect(java.util.stream.Collectors.toSet());
+
+        for (int i = 0; i < incomingCategories.size(); i++) {
+            Category c = incomingCategories.get(i);
+            if (c.getId() == null || c.getId().equalsIgnoreCase("ALL")) continue;
+            c.setStoreId(storeId);
+            if (c.getIsActive() == null) c.setIsActive(true);
+            if (c.getDisplayOrder() == null) c.setDisplayOrder(i);
+            categoryRepository.save(c);
+        }
+
+        // Si se reciben categorías personalizadas (cat-...), eliminar categorías demo antiguas si ya no existen
+        boolean hasCustomCats = incomingIds.stream().anyMatch(id -> id.startsWith("cat-"));
+        if (hasCustomCats) {
+            List<Category> existing = categoryRepository.findByStoreId(storeId);
+            for (Category ex : existing) {
+                if (!incomingIds.contains(ex.getId()) && ex.getId().matches("cat[1-5]")) {
+                    categoryRepository.deleteById(ex.getId());
+                }
+            }
+        }
+
+        return ResponseEntity.ok(categoryRepository.findByStoreId(storeId));
     }
 
     @GetMapping("/products")

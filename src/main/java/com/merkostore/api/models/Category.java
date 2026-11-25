@@ -24,6 +24,7 @@ public class Category {
     private String name;
     private String slug;
     private String icon;
+    private String bgColor;
     private Integer displayOrder;
     private Boolean isActive;
 }
