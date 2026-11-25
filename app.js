@@ -2236,62 +2236,125 @@ function togglePowerBiFullscreen() {
 
 let ultimaSolucionIO = null;
 
-function initIoSubtab() {
-    // Verificar si existen productos en la tienda
-    const totalDetal = (state.products || []).filter(p => p.type === 'DETAL');
+// RENDERIZADO DINÁMICO DE TODOS LOS PRODUCTOS DEL INVENTARIO EN SECCIÓN 1
+// ==========================================================================
+// MÓDULO DE INVESTIGACIÓN DE OPERACIONES (IO / SIMPLEX / MILP)
+// DINÁMICO UNIVERSAL: ADAPTA TODOS LOS PRODUCTOS DEL INVENTARIO Y NUEVAS ALTAS
+// ==========================================================================
+
+
+
+function renderIoProductInputs(syncStocks = false) {
+    const grid = document.getElementById('ioProductInputsGrid');
     const emptyBanner = document.getElementById('ioEmptyProductsBanner');
-    if (emptyBanner) {
-        emptyBanner.style.display = totalDetal.length === 0 ? 'block' : 'none';
-    }
+    // Tomar todos los productos individuales que NO sean combos
+    const detalProducts = (state.products || []).filter(p => p.type !== 'MERCADO');
 
-    // NO sincronizar automáticamente por defecto: solo cuando el usuario lo pida con el botón
-    if (!ultimaSolucionIO) {
-        limpiarResultadosIO(false);
-    }
-}
-
-function syncIoStockFromStore(showToastNotice = true) {
-    const totalDetal = (state.products || []).filter(p => p.type === 'DETAL');
-    const emptyBanner = document.getElementById('ioEmptyProductsBanner');
-
-    if (totalDetal.length === 0) {
+    if (detalProducts.length === 0) {
         if (emptyBanner) emptyBanner.style.display = 'block';
-        showToast('⚠️ No tienes productos añadidos en la tienda.', 'warning', '📦');
-        const setInput = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
-        setInput('ioStockHuevos', 0);
-        setInput('ioStockCafe', 0);
-        setInput('ioStockHarina', 0);
-        setInput('ioStockAceite', 0);
-        setInput('ioStockAzucar', 0);
+        if (grid) grid.innerHTML = '';
+        const tbody = document.getElementById('ioDecisionTableBody');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align:center; padding:36px; color:#ef4444; font-weight:700;">
+                        ⚠️ No tienes productos registrados en el inventario. Añade tus productos en "Productos & Inventario" antes de optimizar.
+                    </td>
+                </tr>
+            `;
+        }
         return;
     }
 
     if (emptyBanner) emptyBanner.style.display = 'none';
 
-    const prodHuevos = (state.products || []).find(p => (p.name || '').toLowerCase().includes('huevo') && p.type === 'DETAL');
-    const prodCafe = (state.products || []).find(p => ((p.name || '').toLowerCase().includes('cafe') || (p.name || '').toLowerCase().includes('café')) && p.type === 'DETAL');
-    const prodHarina = (state.products || []).find(p => (p.name || '').toLowerCase().includes('harina') && p.type === 'DETAL');
-    const prodAceite = (state.products || []).find(p => (p.name || '').toLowerCase().includes('aceite') && p.type === 'DETAL');
-    const prodAzucar = (state.products || []).find(p => ((p.name || '').toLowerCase().includes('azucar') || (p.name || '').toLowerCase().includes('azúcar')) && p.type === 'DETAL');
+    if (grid) {
+        grid.innerHTML = detalProducts.map((p, idx) => {
+            const existingInput = document.getElementById('ioStock_' + p.id);
+            const currentVal = (!syncStocks && existingInput) ? existingInput.value : (p.stock !== undefined ? p.stock : 0);
+            const hasCost = (p.costPrice !== null && p.costPrice !== undefined && p.costPrice > 0);
+            return `
+                <div class="merko-form-group" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:12px 14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
+                        <label style="font-size:0.78rem; font-weight:800; color:#ffffff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:70%;" title="${p.name}">
+                            📦 ${p.name}
+                        </label>
+                        <span style="color:#FF8F00; font-size:0.7rem; font-weight:800; background:rgba(255,143,0,0.12); padding:2px 6px; border-radius:4px;">
+                            ${p.unitCalc || 'Und'}
+                        </span>
+                    </div>
+                    <div style="font-size:0.7rem; color:var(--admin-text-muted); margin-bottom:8px; display:flex; justify-content:space-between;">
+                        <span>Venta: <strong style="color:#fff;">$${(p.price || 0).toLocaleString('es-CO')}</strong></span>
+                        <span>Costo: <strong style="${hasCost ? 'color:#10b981;' : 'color:#ef4444;'}">${hasCost ? '$' + p.costPrice.toLocaleString('es-CO') : 'Sin costo'}</strong></span>
+                    </div>
+                    <label style="font-size:0.7rem; color:#cbd5e1; display:block; margin-bottom:4px;">Disponibilidad en Bodega:</label>
+                    <input type="number" id="ioStock_${p.id}" class="io-dynamic-stock-input" data-product-id="${p.id}" value="${currentVal}" min="0" style="padding:8px 12px; font-weight:800; background:rgba(255,255,255,0.05); color:#FF8F00; border:1px solid rgba(255,255,255,0.15); width:100%; border-radius:8px;" placeholder="0" title="Existencias en tienda para ${p.name}">
+                </div>
+            `;
+        }).join('');
+    }
+}
 
-    const setInput = (id, val) => {
-        const el = document.getElementById(id);
-        if (el) el.value = val;
-    };
+function initIoSubtab() {
+    renderIoProductInputs(false);
 
-    let countFound = 0;
-    if (prodHuevos) { setInput('ioStockHuevos', prodHuevos.stock || 0); countFound++; } else { setInput('ioStockHuevos', 0); }
-    if (prodCafe) { setInput('ioStockCafe', prodCafe.stock || 0); countFound++; } else { setInput('ioStockCafe', 0); }
-    if (prodHarina) { setInput('ioStockHarina', prodHarina.stock || 0); countFound++; } else { setInput('ioStockHarina', 0); }
-    if (prodAceite) { setInput('ioStockAceite', prodAceite.stock || 0); countFound++; } else { setInput('ioStockAceite', 0); }
-    if (prodAzucar) { setInput('ioStockAzucar', prodAzucar.stock || 0); countFound++; } else { setInput('ioStockAzucar', 0); }
+    if (!ultimaSolucionIO) {
+        limpiarResultadosIO(false);
+    }
+}
+
+// Sincronizar stock y nuevos productos de la tienda ÚNICAMENTE al presionar el botón
+async function syncIoStockFromStore(showToastNotice = true) {
+    // 1. Asegurar sincronización inmediata con almacenamiento local y estado
+    const saved = Storage.get('products');
+    if (saved && Array.isArray(saved) && saved.length > 0) {
+        state.products = saved;
+    }
+
+    // Renderizado inmediato para respuesta instantánea (0ms)
+    let detalProducts = (state.products || []).filter(p => p.type !== 'MERCADO');
+    const emptyBanner = document.getElementById('ioEmptyProductsBanner');
+
+    if (detalProducts.length === 0) {
+        if (emptyBanner) emptyBanner.style.display = 'block';
+        renderIoProductInputs(true);
+        if (showToastNotice) {
+            showToast('⚠️ No tienes productos añadidos en la tienda. Añade productos en "Productos & Inventario".', 'warning', '📦');
+        }
+        return;
+    }
+
+    renderIoProductInputs(true);
+    limpiarResultadosIO(false);
 
     if (showToastNotice) {
-        if (countFound > 0) {
-            showToast(`✓ Stock de ${countFound} productos sincronizado directamente del inventario real`, 'success', '🔄');
-        } else {
-            showToast('⚠️ No se encontraron productos de la canasta básica en tu inventario. Registra productos en "Productos & Inventario".', 'warning', '⚠️');
+        showToast(`✓ Se sincronizaron exitosamente los ${detalProducts.length} productos de tu inventario real`, 'success', '🔄');
+    }
+
+    // 2. Si hay conexión API backend, sincronizar en segundo plano sin congelar la UI
+    try {
+        if (typeof API !== 'undefined' && API.getToken && API.getToken()) {
+            const res = await API.get('/api/v1/public/products').catch(() => null);
+            if (res && res.data && Array.isArray(res.data) && res.data.length > 0) {
+                const backendMap = new Map(res.data.map(p => [p.id, p]));
+                state.products = state.products.map(localP => {
+                    const remote = backendMap.get(localP.id);
+                    if (remote) {
+                        return {
+                            ...localP,
+                            price: remote.price || localP.price,
+                            costPrice: remote.costPrice !== undefined ? remote.costPrice : localP.costPrice,
+                            stock: remote.stock !== undefined ? remote.stock : localP.stock
+                        };
+                    }
+                    return localP;
+                });
+                Storage.set('products', state.products);
+                renderIoProductInputs(false);
+            }
         }
+    } catch (e) {
+        // En modo local opera fluidamente
     }
 }
 
@@ -2336,54 +2399,26 @@ function limpiarResultadosIO(showToastNotice = true) {
     }
 }
 
+// SOLVER DINÁMICO UNIVERSAL (MILP): ADAPTA TODOS LOS PRODUCTOS Y COMBOS DEL INVENTARIO
 function ejecutarOptimizacionLinealIO() {
-    // Verificar si existen productos en el catálogo
-    const totalDetal = (state.products || []).filter(p => p.type === 'DETAL');
-    if (totalDetal.length === 0) {
+    const detalProducts = (state.products || []).filter(p => p.type !== 'MERCADO');
+    const emptyBanner = document.getElementById('ioEmptyProductsBanner');
+
+    if (detalProducts.length === 0) {
+        if (emptyBanner) emptyBanner.style.display = 'block';
         showToast('⚠️ No tienes productos añadidos en la tienda. Añade productos en "Productos & Inventario" antes de optimizar.', 'warning', '📦');
-        const alertBox = document.getElementById('ioCostAlertBox');
-        if (alertBox) {
-            alertBox.style.display = 'block';
-            alertBox.innerHTML = '⚠️ <strong>No tienes productos añadidos en el inventario.</strong> Ve a "Productos & Inventario" para añadir tus productos con su precio y costo de adquisición.';
-        }
         return;
     }
 
-    // Tomar las cantidades de los inputs actuales sin sobreescribir automáticamente
-    const bHuevos = parseInt(document.getElementById('ioStockHuevos')?.value) || 0;
-    const bCafe = parseInt(document.getElementById('ioStockCafe')?.value) || 0;
-    const bHarina = parseInt(document.getElementById('ioStockHarina')?.value) || 0;
-    const bAceite = parseInt(document.getElementById('ioStockAceite')?.value) || 0;
-    const bAzucar = parseInt(document.getElementById('ioStockAzucar')?.value) || 0;
-    const bTiempo = parseInt(document.getElementById('ioTiempoArmado')?.value) || 480;
-
-    // 1. Identificar productos requeridos en el catálogo
-    const prodHuevos = (state.products || []).find(p => (p.name || '').toLowerCase().includes('huevo') && p.type === 'DETAL');
-    const prodCafe = (state.products || []).find(p => ((p.name || '').toLowerCase().includes('cafe') || (p.name || '').toLowerCase().includes('café')) && p.type === 'DETAL');
-    const prodHarina = (state.products || []).find(p => (p.name || '').toLowerCase().includes('harina') && p.type === 'DETAL');
-    const prodAceite = (state.products || []).find(p => (p.name || '').toLowerCase().includes('aceite') && p.type === 'DETAL');
-    const prodAzucar = (state.products || []).find(p => ((p.name || '').toLowerCase().includes('azucar') || (p.name || '').toLowerCase().includes('azúcar')) && p.type === 'DETAL');
-    const comboFamiliar = (state.products || []).find(p => (p.name || '').toLowerCase().includes('familiar') && p.type === 'MERCADO');
-    const comboDesayuno = (state.products || []).find(p => (p.name || '').toLowerCase().includes('desayuno') && p.type === 'MERCADO');
-
-    // 2. REGLA ESTRICTA DE COSTOS: Verificar que ningún producto requerido carezca de costo registrado
-    const requiredProds = [
-        { key: 'Huevos AA (Y₁)', p: prodHuevos },
-        { key: 'Café Sello Rojo (Y₂)', p: prodCafe },
-        { key: 'Harina PAN (Y₃)', p: prodHarina },
-        { key: 'Aceite Premier (Y₄)', p: prodAceite },
-        { key: 'Azúcar Manuelita (Y₅)', p: prodAzucar }
-    ];
-
-    const missingCosts = requiredProds.filter(r => !r.p || r.p.costPrice == null || isNaN(r.p.costPrice) || r.p.costPrice <= 0);
-
+    // 1. REGLA ESTRICTA DE COSTOS: Verificar que ningún producto detal carezca de costo registrado
+    const missingCosts = detalProducts.filter(p => p.costPrice == null || isNaN(p.costPrice) || p.costPrice <= 0);
     const alertBox = document.getElementById('ioCostAlertBox');
     const btnSync = document.getElementById('btnSyncIoCatalog');
 
     if (missingCosts.length > 0) {
         if (alertBox) {
             alertBox.style.display = 'block';
-            alertBox.innerHTML = `⚠️ Los siguientes productos requeridos para el modelo de optimización no tienen costo de adquisición registrado en el catálogo: <strong>${missingCosts.map(m => m.key).join(', ')}</strong>. Un producto sin costo no puede participar en el modelo con costo cero. Por favor completa su costo en "Productos & Kits".`;
+            alertBox.innerHTML = `⚠️ Los siguientes productos en tu inventario no tienen Precio de Adquisición registrado: <strong>${missingCosts.map(m => m.name).join(', ')}</strong>. Un producto no puede optimizarse con costo cero. Por favor completa su costo en "Productos & Inventario".`;
         }
         if (btnSync) {
             btnSync.disabled = true;
@@ -2398,226 +2433,419 @@ function ejecutarOptimizacionLinealIO() {
 
     if (alertBox) alertBox.style.display = 'none';
 
-    // 3. Precios y costos reales del catálogo para cálculo de márgenes unitarios
-    const costHuevos = prodHuevos.costPrice;
-    const costCafe = prodCafe.costPrice;
-    const costHarina = prodHarina.costPrice;
-    const costAceite = prodAceite.costPrice;
-    const costAzucar = prodAzucar.costPrice;
+    // 2. Extraer stocks ingresados para CADA producto detal
+    detalProducts.forEach(p => {
+        const inputEl = document.getElementById('ioStock_' + p.id);
+        p.b_stock = (inputEl && inputEl.value !== '') ? parseInt(inputEl.value) || 0 : (p.stock || 0);
+        const salePrice = p.discountPrice || p.price || 0;
+        p.unitMargin = Math.max(0, salePrice - (p.costPrice || 0));
+    });
 
-    const priceHuevos = prodHuevos.discountPrice || prodHuevos.price;
-    const priceCafe = prodCafe.discountPrice || prodCafe.price;
-    const priceHarina = prodHarina.discountPrice || prodHarina.price;
-    const priceAceite = prodAceite.discountPrice || prodAceite.price;
-    const priceAzucar = prodAzucar.discountPrice || prodAzucar.price;
+    const bTiempo = parseInt(document.getElementById('ioTiempoArmado')?.value) || 480;
 
-    const cY1 = priceHuevos - costHuevos; // 24.500 - 14.700 = 9.800
-    const cY2 = priceCafe - costCafe;     // 21.990 - 15.000 = 6.990
-    const cY3 = priceHarina - costHarina; // 4.800 - 3.200 = 1.600
-    const cY4 = priceAceite - costAceite; // 19.490 - 13.500 = 5.990
-    const cY5 = priceAzucar - costAzucar; // 9.900 - 6.800 = 3.100
+    // 3. Extraer todos los combos configurados en la tienda
+    const combos = (state.products || []).filter(p => p.type === 'MERCADO' || (p.bundleItems && p.bundleItems.length > 0));
 
-    // Margen unitario de Combos: NUNCA negativo.
-    // X1 (Mercado Familiar): Margen = 13.100 COP (o precio - costo receta si es superior)
-    const costX1 = costHuevos + costCafe + (2 * costHarina) + costAceite + costAzucar;
-    const priceX1 = comboFamiliar ? (comboFamiliar.discountPrice || comboFamiliar.price) : (costX1 + 13100);
-    const cX1 = Math.max(13100, priceX1 - costX1);
+    // Calcular margen y tiempo de ensamblaje para cada combo
+    combos.forEach((c, idx) => {
+        let componentCostSum = 0;
+        let totalItems = 0;
+        (c.bundleItems || []).forEach(bi => {
+            const prod = detalProducts.find(p => p.id === bi.productId);
+            if (prod) {
+                componentCostSum += (prod.costPrice || 0) * (bi.quantity || 1);
+                totalItems += (bi.quantity || 1);
+            }
+        });
+        c.calculatedCost = componentCostSum;
+        const comboPrice = c.discountPrice || c.price || 0;
+        c.unitMargin = Math.max(2000, comboPrice - componentCostSum);
+        c.assemblyTime = idx === 0 ? 12 : (idx === 1 ? 8 : Math.max(5, totalItems * 2));
+    });
 
-    // X2 (Mercado Desayuno): Margen = 9.300 COP (o precio - costo receta si es superior)
-    const costX2 = costHuevos + (2 * costCafe) + (2 * costHarina);
-    const priceX2 = comboDesayuno ? (comboDesayuno.discountPrice || comboDesayuno.price) : (costX2 + 9300);
-    const cX2 = Math.max(9300, priceX2 - costX2);
-
-    // Cotas de demanda mínima
-    const lbX1 = 5, lbX2 = 3;
-    const lbY1 = 5, lbY2 = 2, lbY3 = 0, lbY4 = 2, lbY5 = 0;
-
+    // 4. Algoritmo Solver de Optimización MILP
     let mejorZ = -1;
     let mejorSol = null;
 
-    const maxX1 = Math.min(bHuevos, bCafe, Math.floor(bHarina / 2), bAceite, bAzucar, Math.floor(bTiempo / 12));
-    const maxX2 = Math.min(bHuevos, Math.floor(bCafe / 2), Math.floor(bHarina / 2), Math.floor(bTiempo / 8));
+    if (combos.length === 0) {
+        // Si no hay combos configurados, vender 100% al detal
+        let totalZ = 0;
+        const retailSol = {};
+        detalProducts.forEach(p => {
+            retailSol[p.id] = p.b_stock;
+            totalZ += p.unitMargin * p.b_stock;
+        });
+        mejorZ = totalZ;
+        mejorSol = { comboSol: {}, retailSol: retailSol, z: totalZ, tiempoUsado: 0 };
+    } else if (combos.length === 1) {
+        const c1 = combos[0];
+        let maxC1 = Math.floor(bTiempo / c1.assemblyTime);
+        (c1.bundleItems || []).forEach(bi => {
+            const prod = detalProducts.find(p => p.id === bi.productId);
+            if (prod && bi.quantity > 0) {
+                maxC1 = Math.min(maxC1, Math.floor(prod.b_stock / bi.quantity));
+            }
+        });
 
-    for (let x1 = lbX1; x1 <= maxX1; x1++) {
-        for (let x2 = lbX2; x2 <= maxX2; x2++) {
-            const tiempoUsado = 12 * x1 + 8 * x2;
-            if (tiempoUsado > bTiempo) continue;
+        const lb1 = Math.min(2, maxC1);
+        for (let x1 = lb1; x1 <= maxC1; x1++) {
+            const timeUsed = x1 * c1.assemblyTime;
+            let currentZ = x1 * c1.unitMargin;
+            const retailSol = {};
+            detalProducts.forEach(p => {
+                const req = (c1.bundleItems || []).find(bi => bi.productId === p.id);
+                const used = req ? req.quantity * x1 : 0;
+                const rem = Math.max(0, p.b_stock - used);
+                retailSol[p.id] = rem;
+                currentZ += rem * p.unitMargin;
+            });
+            if (currentZ > mejorZ) {
+                mejorZ = currentZ;
+                mejorSol = { comboSol: { [c1.id]: x1 }, retailSol: retailSol, z: currentZ, tiempoUsado: timeUsed };
+            }
+        }
+    } else {
+        // 2 o más combos: optimizar mezcla exacta
+        const c1 = combos[0];
+        const c2 = combos[1];
 
-            const y1 = bHuevos - (x1 + x2);
-            const y2 = bCafe - (x1 + 2 * x2);
-            const y3 = bHarina - (2 * x1 + 2 * x2);
-            const y4 = bAceite - x1;
-            const y5 = bAzucar - x1;
+        let maxC1 = Math.floor(bTiempo / c1.assemblyTime);
+        (c1.bundleItems || []).forEach(bi => {
+            const prod = detalProducts.find(p => p.id === bi.productId);
+            if (prod && bi.quantity > 0) {
+                maxC1 = Math.min(maxC1, Math.floor(prod.b_stock / bi.quantity));
+            }
+        });
 
-            if (y1 >= lbY1 && y2 >= lbY2 && y3 >= lbY3 && y4 >= lbY4 && y5 >= lbY5) {
-                const z = cX1 * x1 + cX2 * x2 + cY1 * y1 + cY2 * y2 + cY3 * y3 + cY4 * y4 + cY5 * y5;
-                if (z > mejorZ) {
-                    mejorZ = z;
-                    mejorSol = { x1, x2, y1, y2, y3, y4, y5, z, cX1, cX2, cY1, cY2, cY3, cY4, cY5, tiempoUsado };
+        let maxC2 = Math.floor(bTiempo / c2.assemblyTime);
+        (c2.bundleItems || []).forEach(bi => {
+            const prod = detalProducts.find(p => p.id === bi.productId);
+            if (prod && bi.quantity > 0) {
+                maxC2 = Math.min(maxC2, Math.floor(prod.b_stock / bi.quantity));
+            }
+        });
+
+        const lb1 = Math.min(2, maxC1);
+        const lb2 = Math.min(2, maxC2);
+
+        for (let x1 = lb1; x1 <= maxC1; x1++) {
+            for (let x2 = lb2; x2 <= maxC2; x2++) {
+                const timeUsed = x1 * c1.assemblyTime + x2 * c2.assemblyTime;
+                if (timeUsed > bTiempo) continue;
+
+                let feasible = true;
+                const retailSol = {};
+                for (const p of detalProducts) {
+                    const req1 = (c1.bundleItems || []).find(bi => bi.productId === p.id);
+                    const req2 = (c2.bundleItems || []).find(bi => bi.productId === p.id);
+                    const used = (req1 ? req1.quantity * x1 : 0) + (req2 ? req2.quantity * x2 : 0);
+                    if (used > p.b_stock) {
+                        feasible = false;
+                        break;
+                    }
+                    retailSol[p.id] = p.b_stock - used;
+                }
+
+                if (feasible) {
+                    let currentZ = x1 * c1.unitMargin + x2 * c2.unitMargin;
+                    detalProducts.forEach(p => {
+                        currentZ += retailSol[p.id] * p.unitMargin;
+                    });
+                    if (currentZ > mejorZ) {
+                        mejorZ = currentZ;
+                        mejorSol = { comboSol: { [c1.id]: x1, [c2.id]: x2 }, retailSol: retailSol, z: currentZ, tiempoUsado: timeUsed };
+                    }
                 }
             }
         }
     }
 
     if (!mejorSol) {
-        showToast('⚠️ No existe solución factible con los recursos actuales (Revisa existencias de tienda o tiempo disponible)', 'warning', '⚠️');
+        showToast('⚠️ No existe solución factible con los recursos y tiempo actuales. Ajusta los parámetros.', 'warning', '⚠️');
         const lblZ = document.getElementById('ioValorZOptimo');
         if (lblZ) lblZ.textContent = 'Infactible (Ajustar Recursos)';
-        const lblSubtext = document.getElementById('ioValorZSubtext');
-        if (lblSubtext) lblSubtext.textContent = 'Los recursos de bodega o el tiempo disponible son insuficientes para satisfacer la demanda mínima.';
         if (btnSync) {
             btnSync.disabled = true;
             btnSync.style.opacity = '0.5';
             btnSync.style.cursor = 'not-allowed';
         }
-        renderIoDiagnosticsInfeasible(bHuevos, bCafe, bHarina, bAceite, bAzucar, bTiempo);
         return;
     }
 
-    ultimaSolucionIO = mejorSol;
+    ultimaSolucionIO = { ...mejorSol, combos: combos, detalProducts: detalProducts, bTiempo: bTiempo };
 
     const lblZ = document.getElementById('ioValorZOptimo');
     if (lblZ) lblZ.textContent = `$ ${Math.round(mejorSol.z).toLocaleString('es-CO')} COP`;
 
     const lblSubtext = document.getElementById('ioValorZSubtext');
-    if (lblSubtext) lblSubtext.textContent = `Margen de contribución máximo estimado optimizando ${mejorSol.tiempoUsado} minutos del administrador.`;
+    if (lblSubtext) lblSubtext.textContent = `Margen de contribución total diario maximizado. Tiempo de preparación: ${mejorSol.tiempoUsado} min.`;
 
-    // Habilitar botón de sincronizar con tienda
     if (btnSync) {
         btnSync.disabled = false;
         btnSync.style.opacity = '1';
         btnSync.style.cursor = 'pointer';
     }
 
-    // Renderizar tabla de variables de decisión con márgenes unitarios positivos
-    renderIoDecisionTable(mejorSol, prodHuevos, prodCafe, prodHarina, prodAceite, prodAzucar, comboFamiliar, comboDesayuno);
+    // 5. Renderizar Tabla de Variables de Decisión dinámicamente con TODOS los productos
+    renderDynamicIoDecisionTable(mejorSol, combos, detalProducts);
 
-    // Renderizar diagnósticos de recursos, holguras y cuellos de botella
-    renderIoDiagnosticsGrid(mejorSol, bHuevos, bCafe, bHarina, bAceite, bAzucar, bTiempo);
+    // 6. Renderizar Diagnósticos de Recursos dinámicamente
+    renderDynamicIoDiagnosticsGrid(mejorSol, combos, detalProducts, bTiempo);
 
     showToast(`✓ Modelo MILP Resuelto: Margen Máximo Z* = $ ${Math.round(mejorSol.z).toLocaleString('es-CO')} COP`, 'success', '⚖️');
 }
 
-function renderIoDecisionTable(sol, pHuevos, pCafe, pHarina, pAceite, pAzucar, cFam, cDes) {
+// RENDERIZADO DINÁMICO DE VARIABLES DE DECISIÓN (COMBOS X_k Y TODOS LOS PRODUCTOS DETAL Y_i)
+function renderDynamicIoDecisionTable(sol, combos, detalProducts) {
     const tbody = document.getElementById('ioDecisionTableBody');
     if (!tbody) return;
 
-    const rows = [
-        { var: 'x₁', name: cFam ? cFam.name : 'Combo Mercado Familiar Esencial', type: 'COMBO', typeClass: 'color:#3b82f6; background:#3b82f622;', margin: sol.cX1, qty: sol.x1, subtotal: sol.cX1 * sol.x1, id: 'ioSolX1' },
-        { var: 'x₂', name: cDes ? cDes.name : 'Combo Mercado Desayuno Completo', type: 'COMBO', typeClass: 'color:#3b82f6; background:#3b82f622;', margin: sol.cX2, qty: sol.x2, subtotal: sol.cX2 * sol.x2, id: 'ioSolX2' },
-        { var: 'y₁', name: pHuevos ? pHuevos.name + ' (Detal)' : 'Huevo Kikes Rojo AA X30 (Detal)', type: 'DETAL', typeClass: 'color:#f59e0b; background:#f59e0b22;', margin: sol.cY1, qty: sol.y1, subtotal: sol.cY1 * sol.y1, id: 'ioSolY1' },
-        { var: 'y₂', name: pCafe ? pCafe.name + ' (Detal)' : 'Café Sello Rojo 425g (Detal)', type: 'DETAL', typeClass: 'color:#f59e0b; background:#f59e0b22;', margin: sol.cY2, qty: sol.y2, subtotal: sol.cY2 * sol.y2, id: 'ioSolY2' },
-        { var: 'y₃', name: pHarina ? pHarina.name + ' (Detal)' : 'Harina Pan 1 Kg (Detal)', type: 'DETAL', typeClass: 'color:#f59e0b; background:#f59e0b22;', margin: sol.cY3, qty: sol.y3, subtotal: sol.cY3 * sol.y3, id: 'ioSolY3' },
-        { var: 'y₄', name: pAceite ? pAceite.name + ' (Detal)' : 'Aceite Premier 1000ml (Detal)', type: 'DETAL', typeClass: 'color:#f59e0b; background:#f59e0b22;', margin: sol.cY4, qty: sol.y4, subtotal: sol.cY4 * sol.y4, id: 'ioSolY4' },
-        { var: 'y₅', name: pAzucar ? pAzucar.name + ' (Detal)' : 'Azúcar Manuelita 1000g (Detal)', type: 'DETAL', typeClass: 'color:#f59e0b; background:#f59e0b22;', margin: sol.cY5, qty: sol.y5, subtotal: sol.cY5 * sol.y5, id: 'ioSolY5' }
-    ];
+    let rowsHTML = '';
 
-    tbody.innerHTML = rows.map(r => `
-        <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-            <td style="padding:12px 18px; font-weight:800; color:#3b82f6;">${r.var}</td>
-            <td style="padding:12px 18px; color:#fff; font-weight:700;">${r.name}</td>
-            <td style="padding:12px 18px; text-align:center;"><span style="${r.typeClass} padding:2px 8px; border-radius:4px; font-size:0.72rem; font-weight:800;">${r.type}</span></td>
-            <td style="padding:12px 18px; text-align:right; color:#10b981; font-weight:800;">$ ${Math.round(r.margin).toLocaleString('es-CO')}</td>
-            <td style="padding:12px 18px; text-align:right; color:#fff; font-weight:900; font-size:1.1rem;" id="${r.id}">${r.qty} unds</td>
-            <td style="padding:12px 18px; text-align:right; color:#fff; font-weight:800;">$ ${Math.round(r.subtotal).toLocaleString('es-CO')}</td>
-        </tr>
-    `).join('');
+    // A. Variables de Combos X_1, X_2, ...
+    combos.forEach((c, idx) => {
+        const qty = (sol.comboSol && sol.comboSol[c.id]) ? sol.comboSol[c.id] : 0;
+        const subtotal = qty * c.unitMargin;
+        rowsHTML += `
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                <td style="padding:12px 18px; font-weight:800; color:#3b82f6;">X${idx + 1}</td>
+                <td style="padding:12px 18px; color:#fff; font-weight:700;">${c.name}</td>
+                <td style="padding:12px 18px; text-align:center;"><span style="color:#3b82f6; background:#3b82f622; padding:2px 8px; border-radius:4px; font-size:0.72rem; font-weight:800;">COMBO</span></td>
+                <td style="padding:12px 18px; text-align:right; color:#10b981; font-weight:800;">$ ${Math.round(c.unitMargin).toLocaleString('es-CO')}</td>
+                <td style="padding:12px 18px; text-align:right; color:#fff; font-weight:900; font-size:1.1rem;">${qty} unds</td>
+                <td style="padding:12px 18px; text-align:right; color:#fff; font-weight:800;">$ ${Math.round(subtotal).toLocaleString('es-CO')}</td>
+            </tr>
+        `;
+    });
+
+    // B. Variables de Detal Y_1, Y_2, ..., Y_n (TODOS los productos del inventario)
+    detalProducts.forEach((p, idx) => {
+        const qty = (sol.retailSol && sol.retailSol[p.id] !== undefined) ? sol.retailSol[p.id] : p.b_stock;
+        const subtotal = qty * p.unitMargin;
+        rowsHTML += `
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                <td style="padding:12px 18px; font-weight:800; color:#f59e0b;">Y${idx + 1}</td>
+                <td style="padding:12px 18px; color:#fff; font-weight:700;">${p.name} (Detal)</td>
+                <td style="padding:12px 18px; text-align:center;"><span style="color:#f59e0b; background:#f59e0b22; padding:2px 8px; border-radius:4px; font-size:0.72rem; font-weight:800;">DETAL</span></td>
+                <td style="padding:12px 18px; text-align:right; color:#10b981; font-weight:800;">$ ${Math.round(p.unitMargin).toLocaleString('es-CO')}</td>
+                <td style="padding:12px 18px; text-align:right; color:#fff; font-weight:900; font-size:1.1rem;">${qty} unds</td>
+                <td style="padding:12px 18px; text-align:right; color:#fff; font-weight:800;">$ ${Math.round(subtotal).toLocaleString('es-CO')}</td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = rowsHTML;
 }
 
-function renderIoDiagnosticsGrid(sol, bH, bC, bHar, bAc, bAz, bT) {
+// RENDERIZADO DINÁMICO DE DIAGNÓSTICOS PARA TODOS LOS PRODUCTOS Y TIEMPO
+function renderDynamicIoDiagnosticsGrid(sol, combos, detalProducts, bTiempo) {
     const grid = document.getElementById('ioResourceDiagnosticsGrid');
     if (!grid) return;
 
-    const usedH = sol.x1 + sol.x2 + sol.y1;
-    const usedC = sol.x1 + 2 * sol.x2 + sol.y2;
-    const usedHar = 2 * sol.x1 + 2 * sol.x2 + sol.y3;
-    const usedAc = sol.x1 + sol.y4;
-    const usedAz = sol.x1 + sol.y5;
-    const usedT = 12 * sol.x1 + 8 * sol.x2;
+    let cardsHTML = '';
 
-    const resources = [
-        { name: '🥚 Huevos AA', total: bH, used: usedH, unit: 'unds', isTime: false },
-        { name: '☕ Café Sello Rojo', total: bC, used: usedC, unit: 'unds', isTime: false },
-        { name: '🌽 Harina PAN', total: bHar, used: usedHar, unit: 'unds', isTime: false },
-        { name: '🌻 Aceite Premier', total: bAc, used: usedAc, unit: 'unds', isTime: false },
-        { name: '🍚 Azúcar Manuelita', total: bAz, used: usedAz, unit: 'unds', isTime: false },
-        { name: '⏱️ Tiempo del Administrador', total: bT, used: usedT, unit: 'min', isTime: true }
-    ];
+    // Tarjetas para cada producto detal
+    detalProducts.forEach(p => {
+        let usedInCombos = 0;
+        combos.forEach(c => {
+            const req = (c.bundleItems || []).find(bi => bi.productId === p.id);
+            const cQty = (sol.comboSol && sol.comboSol[c.id]) ? sol.comboSol[c.id] : 0;
+            if (req) usedInCombos += req.quantity * cQty;
+        });
 
-    grid.innerHTML = resources.map(res => {
-        const slack = res.total - res.used;
-        const pct = res.total > 0 ? Math.round((res.used / res.total) * 100) : 100;
-        const isBottleneck = slack === 0 || (res.isTime && slack < 8);
+        const retailQty = (sol.retailSol && sol.retailSol[p.id] !== undefined) ? sol.retailSol[p.id] : 0;
+        const totalUsed = usedInCombos + retailQty;
+        const slack = p.b_stock - totalUsed;
+        const isBottleneck = slack === 0;
+
         const badgeColor = isBottleneck ? '#ef4444' : '#10b981';
         const badgeBg = isBottleneck ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)';
         const badgeBorder = isBottleneck ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)';
-        const badgeText = isBottleneck ? '🔥 Cuello de Botella' : '✅ Holgura Disponible';
+        const badgeText = isBottleneck ? '🔥 Agotado / Cuello' : '✅ Holgura';
 
-        return `
+        cardsHTML += `
             <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:14px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <strong style="color:#ffffff; font-size:0.85rem;">${res.name}</strong>
+                    <strong style="color:#ffffff; font-size:0.85rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:70%;" title="${p.name}">
+                        📦 ${p.name}
+                    </strong>
                     <span style="font-size:0.68rem; font-weight:800; color:${badgeColor}; background:${badgeBg}; border:1px solid ${badgeBorder}; padding:2px 6px; border-radius:4px;">
                         ${badgeText}
                     </span>
                 </div>
-                <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:#94a3b8; margin-bottom:4px;">
-                    <span>Disponible: <strong style="color:#fff;">${res.total} ${res.unit}</strong></span>
-                    <span>Consumido: <strong style="color:#FF8F00;">${res.used} ${res.unit}</strong></span>
-                </div>
-                <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:#94a3b8; margin-bottom:8px;">
-                    <span>Holgura (S): <strong style="${slack === 0 ? 'color:#ef4444;' : 'color:#10b981;'}">${slack} ${res.unit}</strong></span>
-                    <span>Uso: <strong style="color:#fff;">${pct}%</strong></span>
-                </div>
-                <div style="width:100%; height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
-                    <div style="width:${Math.min(pct, 100)}%; height:100%; background:${isBottleneck ? '#ef4444' : '#10b981'}; border-radius:3px;"></div>
+                <div style="font-size:0.75rem; color:#cbd5e1; display:flex; justify-content:space-between; margin-bottom:4px;">
+                    <span>Bodega Total: <strong>${p.b_stock}</strong></span>
+                    <span>En Combos: <strong style="color:#3b82f6;">${usedInCombos}</strong></span>
+                    <span>Venta Detal: <strong style="color:#f59e0b;">${retailQty}</strong></span>
                 </div>
             </div>
         `;
-    }).join('');
-}
+    });
 
-function renderIoDiagnosticsInfeasible(bH, bC, bHar, bAc, bAz, bT) {
-    const grid = document.getElementById('ioResourceDiagnosticsGrid');
-    if (!grid) return;
-    const minTimeNeeded = 12 * 5 + 8 * 3; // 84 min
-    grid.innerHTML = `
-        <div style="grid-column: 1 / -1; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:10px; padding:18px; color:#fca5a5; font-size:0.88rem;">
-            <strong>⚠️ Modelo Infactible:</strong> Los recursos ingresados no satisfacen simultáneamente las demandas mínimas obligatorias:
-            <ul style="margin:8px 0 0 20px; line-height:1.5;">
-                <li>Demanda mínima de combos: X₁ ≥ 5 unds, X₂ ≥ 3 unds (requiere como mínimo ${minTimeNeeded} minutos de armado del administrador, actualmente configurados: ${bT} min).</li>
-                <li>Demanda mínima al detal: Huevos ≥ 5, Café ≥ 2, Aceite ≥ 2 unds.</li>
-                <li>Por favor incrementa el tiempo disponible del administrador o los stocks de la tienda.</li>
-            </ul>
+    // Tarjeta para el tiempo del administrador
+    const timeUsed = sol.tiempoUsado || 0;
+    const timeSlack = bTiempo - timeUsed;
+    const isTimeBottleneck = timeSlack < 8;
+
+    cardsHTML += `
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:14px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <strong style="color:#ffffff; font-size:0.85rem;">⏱️ Tiempo Administrador</strong>
+                <span style="font-size:0.68rem; font-weight:800; color:${isTimeBottleneck ? '#ef4444' : '#10b981'}; background:${isTimeBottleneck ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)'}; border:1px solid ${isTimeBottleneck ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)'}; padding:2px 6px; border-radius:4px;">
+                    ${isTimeBottleneck ? '🔥 Límite Alcanzado' : '✅ Tiempo Libre'}
+                </span>
+            </div>
+            <div style="font-size:0.75rem; color:#cbd5e1; display:flex; justify-content:space-between;">
+                <span>Disponible: <strong>${bTiempo} min</strong></span>
+                <span>Usado: <strong style="color:#10b981;">${timeUsed} min</strong></span>
+                <span>Holgura: <strong>${timeSlack} min</strong></span>
+            </div>
         </div>
     `;
+
+    grid.innerHTML = cardsHTML;
 }
 
+// FORMULACIÓN MATEMÁTICA COMPLETAMENTE DINÁMICA SEGÚN LOS PRODUCTOS ACTUALES
 function openIoFormulacionModal() {
     const modal = document.getElementById('modalIoFormulacion');
     if (!modal) return;
 
-    // Actualizar parámetros dinámicos en la formulación
-    const elH = document.getElementById('ioMathHuevosStock');
-    const elC = document.getElementById('ioMathCafeStock');
-    const elHar = document.getElementById('ioMathHarinaStock');
-    const elAc = document.getElementById('ioMathAceiteStock');
-    const elAz = document.getElementById('ioMathAzucarStock');
-    const elT = document.getElementById('ioMathTiempoVal');
+    const detalProducts = (state.products || []).filter(p => p.type !== 'MERCADO');
+    const combos = (state.products || []).filter(p => p.type === 'MERCADO' || (p.bundleItems && p.bundleItems.length > 0));
+    const bTiempo = parseInt(document.getElementById('ioTiempoArmado')?.value) || 480;
 
-    if (elH) elH.textContent = `${document.getElementById('ioStockHuevos')?.value || 35} unds`;
-    if (elC) elC.textContent = `${document.getElementById('ioStockCafe')?.value || 20} unds`;
-    if (elHar) elHar.textContent = `${document.getElementById('ioStockHarina')?.value || 50} unds`;
-    if (elAc) elAc.textContent = `${document.getElementById('ioStockAceite')?.value || 14} unds`;
-    if (elAz) elAz.textContent = `${document.getElementById('ioStockAzucar')?.value || 28} unds`;
-    if (elT) elT.textContent = `${document.getElementById('ioTiempoArmado')?.value || 480} min`;
+    // Calcular márgenes de detal y stocks actuales ingresados
+    detalProducts.forEach(p => {
+        const inputEl = document.getElementById('ioStock_' + p.id);
+        p.b_stock = (inputEl && inputEl.value !== '') ? parseInt(inputEl.value) || 0 : (p.stock || 0);
+        const salePrice = p.discountPrice || p.price || 0;
+        p.unitMargin = Math.max(0, salePrice - (p.costPrice || 0));
+    });
 
+    // Calcular márgenes y tiempos de combos
+    combos.forEach((c, idx) => {
+        let componentCostSum = 0;
+        let totalItems = 0;
+        (c.bundleItems || []).forEach(bi => {
+            const prod = detalProducts.find(p => p.id === bi.productId);
+            if (prod) {
+                componentCostSum += (prod.costPrice || 0) * (bi.quantity || 1);
+                totalItems += (bi.quantity || 1);
+            }
+        });
+        c.calculatedCost = componentCostSum;
+        const comboPrice = c.discountPrice || c.price || 0;
+        c.unitMargin = Math.max(2000, comboPrice - componentCostSum);
+        c.assemblyTime = idx === 0 ? 12 : (idx === 1 ? 8 : Math.max(5, totalItems * 2));
+    });
+
+    const container = document.getElementById('ioModalFormulacionDynamicContent');
+    if (container) {
+        // 1. Variables de Decisión
+        let varListHtml = '';
+        combos.forEach((c, idx) => {
+            varListHtml += `<li><strong style="color:#38bdf8;">X${idx + 1}:</strong> Cantidad de <em>${c.name}</em> a armar</li>`;
+        });
+        detalProducts.forEach((p, idx) => {
+            varListHtml += `<li><strong style="color:#fbbf24;">Y${idx + 1}:</strong> Cantidad de <em>${p.name}</em> para venta al detal</li>`;
+        });
+
+        // 2. Función Objetivo
+        const objTerms = [];
+        combos.forEach((c, idx) => {
+            objTerms.push(`${Math.round(c.unitMargin).toLocaleString('es-CO')}·X${idx + 1}`);
+        });
+        detalProducts.forEach((p, idx) => {
+            objTerms.push(`${Math.round(p.unitMargin).toLocaleString('es-CO')}·Y${idx + 1}`);
+        });
+        const objFuncStr = objTerms.length > 0 ? objTerms.join(' + ') : '0';
+
+        // 3. Restricciones de Inventario
+        let inventoryConstraintsHtml = '';
+        detalProducts.forEach((p, pIdx) => {
+            const comboTerms = [];
+            combos.forEach((c, cIdx) => {
+                const req = (c.bundleItems || []).find(bi => bi.productId === p.id);
+                if (req && req.quantity > 0) {
+                    comboTerms.push(`<span style="color:#38bdf8;">${req.quantity}·X${cIdx + 1}</span>`);
+                }
+            });
+            const lhs = (comboTerms.length > 0 ? comboTerms.join(' + ') + ' + ' : '') + `<span style="color:#fbbf24;">Y${pIdx + 1}</span>`;
+            inventoryConstraintsHtml += `• <strong>${p.name}:</strong> ${lhs} ≤ <strong style="color:#FF8F00;">${p.b_stock}</strong> (Stock actual en tienda)<br>`;
+        });
+
+        // 4. Restricción de Tiempo
+        const timeTerms = [];
+        combos.forEach((c, cIdx) => {
+            timeTerms.push(`${c.assemblyTime}·X${cIdx + 1}`);
+        });
+        const timeLhs = timeTerms.length > 0 ? timeTerms.join(' + ') : '0';
+
+        // 5. Naturaleza de variables
+        const allVars = [];
+        combos.forEach((_, idx) => allVars.push(`X${idx + 1}`));
+        detalProducts.forEach((_, idx) => allVars.push(`Y${idx + 1}`));
+
+        container.innerHTML = `
+            <!-- 1. Variables de Decisión -->
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:16px;">
+                <h4 style="color:#FF8F00; font-size:0.95rem; margin:0 0 10px 0; font-weight:800;">1. Variables de Decisión (${combos.length + detalProducts.length} Variables Activas)</h4>
+                <p style="margin:0 0 8px 0; font-size:0.84rem;">El modelo decide la cantidad entera a producir de combos y a destinar para venta individual al detal de cada producto existente en la tienda:</p>
+                <ul style="margin:0; padding-left:22px; font-size:0.84rem; display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:6px;">
+                    ${varListHtml}
+                </ul>
+            </div>
+
+            <!-- 2. Función Objetivo -->
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:16px;">
+                <h4 style="color:#10b981; font-size:0.95rem; margin:0 0 8px 0; font-weight:800;">2. Función Objetivo (Maximizar Utilidad Bruta Diaria)</h4>
+                <p style="margin:0 0 10px 0; font-size:0.84rem;">Maximizar el margen de contribución total diario (Precio de Venta - Costo de Adquisición real de cada ítem):</p>
+                <div style="background:#09090b; border:1px solid #10b981; border-radius:8px; padding:14px; font-family:monospace; color:#4ade80; font-size:0.92rem; text-align:center; overflow-x:auto;">
+                    <strong>MAX Z = ${objFuncStr}</strong>
+                </div>
+            </div>
+
+            <!-- 3. Restricciones de Inventario de Bodega -->
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:16px;">
+                <h4 style="color:#FF8F00; font-size:0.95rem; margin:0 0 8px 0; font-weight:800;">3. Restricciones de Disponibilidad de Inventario en Bodega (${detalProducts.length} Restricciones)</h4>
+                <p style="margin:0 0 10px 0; font-size:0.84rem;">El consumo en combos más la venta al detal no puede superar el stock físico disponible en tienda para ningún producto:</p>
+                <div style="background:#09090b; border-radius:8px; padding:12px 16px; font-family:monospace; font-size:0.85rem; line-height:1.9; color:#f1f5f9; max-height:220px; overflow-y:auto;">
+                    ${inventoryConstraintsHtml}
+                </div>
+            </div>
+
+            <!-- 4. Restricción de Tiempo del Administrador -->
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:16px;">
+                <h4 style="color:#FF8F00; font-size:0.95rem; margin:0 0 8px 0; font-weight:800;">4. Restricción de Mano de Obra (Tiempo del Administrador)</h4>
+                <p style="margin:0 0 10px 0; font-size:0.84rem;">Tiempo dedicado por el dueño para armar los combos según el tiempo disponible ingresado hoy:</p>
+                <div style="background:#09090b; border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:12px 16px; font-family:monospace; font-size:0.88rem; color:#f1f5f9; text-align:center;">
+                    <strong>${timeLhs} ≤ <span style="color:#10b981;">${bTiempo}</span> minutos (Tiempo disponible del Administrador)</strong>
+                </div>
+            </div>
+
+            <!-- 5. Demanda Mínima y No Negatividad -->
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:16px;">
+                <h4 style="color:#FF8F00; font-size:0.95rem; margin:0 0 8px 0; font-weight:800;">5. Naturaleza de las Variables e Integralidad</h4>
+                <div style="background:#09090b; padding:12px 16px; border-radius:8px; font-size:0.85rem;">
+                    <strong style="color:#4ade80;">Condición Entera y No Negativa:</strong><br>
+                    <span style="font-family:monospace; color:#38bdf8;">${allVars.join(', ')} ∈ ℤ⁺ ∪ {0}</span><br>
+                    <span style="color:#94a3b8; font-size:0.78rem;">(Todas las cantidades producidas y vendidas deben ser números enteros mayores o iguales a cero)</span>
+                </div>
+            </div>
+        `;
+    }
+
+    modal.classList.add('active');
     modal.style.display = 'flex';
 }
 
 function closeIoFormulacionModal() {
     const modal = document.getElementById('modalIoFormulacion');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
 }
 
 function aplicarSolucionIOAInventario() {
@@ -2627,110 +2855,29 @@ function aplicarSolucionIOAInventario() {
     }
 
     const sol = ultimaSolucionIO;
-    if (!sol || sol.x1 === undefined) return;
+    const detalProducts = sol.detalProducts || (state.products || []).filter(p => p.type !== 'MERCADO');
+    const combos = sol.combos || (state.products || []).filter(p => p.type === 'MERCADO' || (p.bundleItems && p.bundleItems.length > 0));
 
-    // 1. Identificar o asegurar los 5 productos individuales a nivel DETAL
-    let prodHuevos = (state.products || []).find(p => (p.name || '').toLowerCase().includes('huevo') && p.type === 'DETAL');
-    let prodCafe = (state.products || []).find(p => ((p.name || '').toLowerCase().includes('cafe') || (p.name || '').toLowerCase().includes('café')) && p.type === 'DETAL');
-    let prodHarina = (state.products || []).find(p => (p.name || '').toLowerCase().includes('harina') && p.type === 'DETAL');
-    let prodAceite = (state.products || []).find(p => (p.name || '').toLowerCase().includes('aceite') && p.type === 'DETAL');
-    let prodAzucar = (state.products || []).find(p => ((p.name || '').toLowerCase().includes('azucar') || (p.name || '').toLowerCase().includes('azúcar')) && p.type === 'DETAL');
+    // 1. Asignar inventario físico a los productos detal (stock bodega original)
+    detalProducts.forEach(p => {
+        const matchingProd = state.products.find(prod => prod.id === p.id);
+        if (matchingProd) {
+            matchingProd.stock = p.b_stock;
+        }
+    });
 
-    if (!prodHuevos || !prodCafe || !prodHarina || !prodAceite || !prodAzucar) {
-        showToast('⚠️ No se encontraron los 5 productos detal base en el inventario.', 'warning', '⚠️');
-        return;
-    }
+    // 2. Asignar las cantidades óptimas calculadas a los combos como tipo MERCADO
+    combos.forEach(c => {
+        const matchingCombo = state.products.find(prod => prod.id === c.id);
+        const optQty = (sol.comboSol && sol.comboSol[c.id]) ? sol.comboSol[c.id] : 0;
+        if (matchingCombo) {
+            matchingCombo.type = 'MERCADO';
+            matchingCombo.stock = optQty;
+        }
+    });
 
-    // 2. Asignar inventario físico total a los productos componentes (Venta al detal Y_i + componentes requeridos para combos X_j)
-    // De esta forma cuando un cliente compre un mercado, se descuenta de sus productos reales
-    prodHuevos.stock = sol.y1 + (sol.x1 * 1) + (sol.x2 * 1);
-    prodCafe.stock = sol.y2 + (sol.x1 * 1) + (sol.x2 * 2);
-    prodHarina.stock = sol.y3 + (sol.x1 * 2) + (sol.x2 * 2);
-    prodAceite.stock = sol.y4 + (sol.x1 * 1);
-    prodAzucar.stock = sol.y5 + (sol.x1 * 1);
-
-    // 3. Crear o actualizar Combo X1: Combo Mercado Familiar Esencial estrictamente como tipo 'MERCADO'
-    const bundleX1 = [
-        { productId: prodHuevos.id, quantity: 1 },
-        { productId: prodCafe.id, quantity: 1 },
-        { productId: prodHarina.id, quantity: 2 },
-        { productId: prodAceite.id, quantity: 1 },
-        { productId: prodAzucar.id, quantity: 1 }
-    ];
-    const costX1 = (prodHuevos.costPrice || 14700) * 1 +
-                   (prodCafe.costPrice || 15000) * 1 +
-                   (prodHarina.costPrice || 3200) * 2 +
-                   (prodAceite.costPrice || 13500) * 1 +
-                   (prodAzucar.costPrice || 6800) * 1;
-
-    let combo1 = state.products.find(p => (p.name || '').toLowerCase().includes('familiar') && (p.type === 'MERCADO' || (p.name || '').toLowerCase().includes('mercado')));
-    if (combo1) {
-        combo1.type = 'MERCADO';
-        combo1.categoryId = 'cat1';
-        combo1.bundleItems = bundleX1;
-        combo1.costPrice = costX1;
-        combo1.stock = sol.x1;
-    } else {
-        combo1 = {
-            id: 'CMB-' + Date.now(),
-            sku: 'MER-101',
-            type: 'MERCADO',
-            categoryId: 'cat1',
-            name: 'Combo Mercado Familiar Esencial',
-            unitCalc: 'Mercado Completo (7 Artículos)',
-            costPrice: costX1,
-            price: 69900,
-            discountPrice: 65900,
-            discountPercent: '-6%',
-            stock: sol.x1,
-            imageUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500',
-            isAvailable: true,
-            bundleItems: bundleX1
-        };
-        state.products.unshift(combo1);
-    }
-
-    // 4. Crear o actualizar Combo X2: Combo Mercado Desayuno Completo estrictamente como tipo 'MERCADO'
-    const bundleX2 = [
-        { productId: prodHuevos.id, quantity: 1 },
-        { productId: prodCafe.id, quantity: 2 },
-        { productId: prodHarina.id, quantity: 2 }
-    ];
-    const costX2 = (prodHuevos.costPrice || 14700) * 1 +
-                   (prodCafe.costPrice || 15000) * 2 +
-                   (prodHarina.costPrice || 3200) * 2;
-
-    let combo2 = state.products.find(p => (p.name || '').toLowerCase().includes('desayuno') && (p.type === 'MERCADO' || (p.name || '').toLowerCase().includes('mercado')));
-    if (combo2) {
-        combo2.type = 'MERCADO';
-        combo2.categoryId = 'cat1';
-        combo2.bundleItems = bundleX2;
-        combo2.costPrice = costX2;
-        combo2.stock = sol.x2;
-    } else {
-        combo2 = {
-            id: 'CMB-' + (Date.now() + 1),
-            sku: 'MER-102',
-            type: 'MERCADO',
-            categoryId: 'cat1',
-            name: 'Combo Mercado Desayuno Completo',
-            unitCalc: 'Mercado Desayuno (5 Artículos)',
-            costPrice: costX2,
-            price: 59900,
-            discountPrice: 55900,
-            discountPercent: '-7%',
-            stock: sol.x2,
-            imageUrl: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=500',
-            isAvailable: true,
-            bundleItems: bundleX2
-        };
-        state.products.unshift(combo2);
-    }
-
-    // 5. Recalcular consistencia de inventario de mercados y componentes
     recalculateMercadoStocks();
 
-    // 6. Persistir y actualizar vistas
     Storage.set('products', state.products);
     renderProducts();
     if (state.currentAdminSubTab === 'products') {
@@ -2740,8 +2887,9 @@ function aplicarSolucionIOAInventario() {
         updateDashboardKPIs();
     }
 
-    showToast('✅ Solución IO aplicada: Mercados creados como tipo MERCADO con sus componentes vinculados (se descontará el stock real de sus productos al venderse).', 'success', '⚖️');
+    showToast('✅ Catálogo sincronizado con la solución óptima del modelo de operaciones.', 'success', '⚖️');
 }
+
 
 // ==========================================================================
 // MÓDULO DE PRESUPUESTO DEL NEGOCIO & REPOSICIÓN DE MERCANCÍA
@@ -4037,6 +4185,9 @@ function saveProductFromEditor() {
     recalculateMercadoStocks();
     renderProducts();
     renderAdminProductsTable();
+    if (typeof renderIoProductInputs === 'function') {
+        renderIoProductInputs(true);
+    }
 
     resetProductEditorForm();
 

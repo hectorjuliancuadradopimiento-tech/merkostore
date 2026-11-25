@@ -1192,32 +1192,15 @@
                             ⚠️ <strong>No tienes productos añadidos en el inventario de la tienda.</strong> Para usar el modelo de optimización, primero registra tus productos reales con su precio y costo en <strong>Productos & Inventario</strong>.
                         </div>
 
-                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:14px;">
-                            <div class="merko-form-group">
-                                <label style="font-size:0.75rem; color:#cbd5e1;">Huevos AA x30 (disp.) 📦</label>
-                                <input type="number" id="ioStockHuevos" value="0" min="0" style="padding:8px 12px; font-weight:800; background:rgba(255,255,255,0.04); color:#FF8F00; border:1px solid rgba(255,255,255,0.12);" placeholder="0" title="Pulsa 'Actualizar Stock desde Tienda' para sincronizar con inventario real">
-                            </div>
-                            <div class="merko-form-group">
-                                <label style="font-size:0.75rem; color:#cbd5e1;">Café 425g (disp.) 📦</label>
-                                <input type="number" id="ioStockCafe" value="0" min="0" style="padding:8px 12px; font-weight:800; background:rgba(255,255,255,0.04); color:#FF8F00; border:1px solid rgba(255,255,255,0.12);" placeholder="0" title="Pulsa 'Actualizar Stock desde Tienda' para sincronizar con inventario real">
-                            </div>
-                            <div class="merko-form-group">
-                                <label style="font-size:0.75rem; color:#cbd5e1;">Harina Pan 1Kg (disp.) 📦</label>
-                                <input type="number" id="ioStockHarina" value="0" min="0" style="padding:8px 12px; font-weight:800; background:rgba(255,255,255,0.04); color:#FF8F00; border:1px solid rgba(255,255,255,0.12);" placeholder="0" title="Pulsa 'Actualizar Stock desde Tienda' para sincronizar con inventario real">
-                            </div>
-                            <div class="merko-form-group">
-                                <label style="font-size:0.75rem; color:#cbd5e1;">Aceite 3Lt (disp.) 📦</label>
-                                <input type="number" id="ioStockAceite" value="0" min="0" style="padding:8px 12px; font-weight:800; background:rgba(255,255,255,0.04); color:#FF8F00; border:1px solid rgba(255,255,255,0.12);" placeholder="0" title="Pulsa 'Actualizar Stock desde Tienda' para sincronizar con inventario real">
-                            </div>
-                            <div class="merko-form-group">
-                                <label style="font-size:0.75rem; color:#cbd5e1;">Azúcar 2.5Kg (disp.) 📦</label>
-                                <input type="number" id="ioStockAzucar" value="0" min="0" style="padding:8px 12px; font-weight:800; background:rgba(255,255,255,0.04); color:#FF8F00; border:1px solid rgba(255,255,255,0.12);" placeholder="0" title="Pulsa 'Actualizar Stock desde Tienda' para sincronizar con inventario real">
-                            </div>
-                            <div class="merko-form-group">
-                                <label style="font-size:0.75rem; font-weight:800; color:#10b981;">TIEMPO DISPONIBLE DEL ADMINISTRADOR (MIN) ✏️</label>
-                                <input type="number" id="ioTiempoArmado" value="480" min="1" style="padding:8px 12px; font-weight:800; border:1.5px solid #10b981;">
-                                <small style="display:block; font-size:0.68rem; color:#cbd5e1; margin-top:4px;">Ingresa los minutos que puedes dedicar hoy a preparar combos. Pulsa "Ejecutar Solver" para calcular.</small>
-                            </div>
+                        <!-- DYNAMIC PRODUCT INPUTS GRID FOR ALL INVENTORY ITEMS -->
+                        <div id="ioProductInputsGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:16px;">
+                            <!-- Rendered dynamically by renderIoProductInputs() for all products in store -->
+                        </div>
+
+                        <div class="merko-form-group" style="max-width:360px; background:rgba(16,185,129,0.05); border:1px solid rgba(16,185,129,0.3); border-radius:12px; padding:12px 16px;">
+                            <label style="font-size:0.78rem; font-weight:800; color:#10b981; margin-bottom:6px; display:block;">⏱️ TIEMPO DISPONIBLE DEL ADMINISTRADOR (MIN) ✏️</label>
+                            <input type="number" id="ioTiempoArmado" value="480" min="1" style="padding:8px 12px; font-weight:800; border:1.5px solid #10b981; width:100%; border-radius:8px; font-size:1.1rem; color:#ffffff; background:#181311;">
+                            <small style="display:block; font-size:0.7rem; color:#cbd5e1; margin-top:6px;">Minutos disponibles del administrador hoy para armar combos y atender la tienda.</small>
                         </div>
                     </div>
 
@@ -1877,7 +1860,7 @@
                 <button onclick="closeIoFormulacionModal()" style="background:transparent; border:none; color:#a1a1aa; font-size:1.4rem; cursor:pointer; padding:4px 8px; line-height:1;" title="Cerrar ventana">✕</button>
             </div>
 
-            <div style="font-size:0.88rem; color:#cbd5e1; line-height:1.6; display:flex; flex-direction:column; gap:20px;">
+            <div id="ioModalFormulacionDynamicContent" style="font-size:0.88rem; color:#cbd5e1; line-height:1.6; display:flex; flex-direction:column; gap:20px;">
                 <!-- 1. Variables de Decisión -->
                 <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:16px;">
                     <h4 style="color:#FF8F00; font-size:0.95rem; margin:0 0 10px 0; font-weight:800;">1. Variables de Decisión</h4>
