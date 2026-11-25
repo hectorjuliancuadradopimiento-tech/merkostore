@@ -747,7 +747,7 @@ body::before {
 .card-img-wrap {
     position: relative;
     width: 100%;
-    height: 145px;
+    height: 175px;
     background: linear-gradient(135deg, #FBF9F7 0%, #F3EFEA 100%);
     overflow: hidden;
     display: flex;
@@ -809,7 +809,7 @@ body::before {
     max-height: 100% !important;
     object-fit: var(--img-fit-pc, cover) !important;
     object-position: var(--img-pos-pc, 50% 50%) !important;
-    transform: scale(var(--img-zoom-pc, 1)) !important;
+    transform: translate(var(--img-trans-x-pc, 0%), var(--img-trans-y-pc, 0%)) scale(var(--img-zoom-pc, 1)) !important;
     transition: transform 0.25s ease;
     will-change: transform;
 }
@@ -819,17 +819,17 @@ body::before {
 }
 
 .product-card-bright:hover .card-img-wrap img.product-framed-img {
-    transform: scale(calc(var(--img-zoom-pc, 1) * 1.05)) !important;
+    transform: translate(var(--img-trans-x-pc, 0%), var(--img-trans-y-pc, 0%)) scale(calc(var(--img-zoom-pc, 1) * 1.05)) !important;
 }
 
 @media (max-width: 768px) {
     .card-img-wrap img.product-framed-img {
         object-fit: var(--img-fit-mob, cover) !important;
         object-position: var(--img-pos-mob, 50% 50%) !important;
-        transform: scale(var(--img-zoom-mob, 1)) !important;
+        transform: translate(var(--img-trans-x-mob, 0%), var(--img-trans-y-mob, 0%)) scale(var(--img-zoom-mob, 1)) !important;
     }
     .product-card-bright:hover .card-img-wrap img.product-framed-img {
-        transform: scale(calc(var(--img-zoom-mob, 1) * 1.05)) !important;
+        transform: translate(var(--img-trans-x-mob, 0%), var(--img-trans-y-mob, 0%)) scale(calc(var(--img-zoom-mob, 1) * 1.05)) !important;
     }
 }
 
@@ -4539,7 +4539,7 @@ body.admin-fullscreen-active #viewStorefront {
     }
 
     .card-img-wrap {
-        height: 125px !important;
+        height: 145px !important;
     }
 
     .card-body-bright {

@@ -1693,9 +1693,23 @@ function renderProducts() {
         const isMercado = p.type === 'MERCADO';
         const isSoldOut = p.isAvailable === false || p.stock <= 0;
 
+        const fitPc = p.imageFitPc || 'cover';
+        const zoomPc = p.imageZoomPc !== undefined ? Number(p.imageZoomPc) : 1;
+        const posX_Pc = p.imagePosX_Pc !== undefined ? Number(p.imagePosX_Pc) : 50;
+        const posY_Pc = p.imagePosY_Pc !== undefined ? Number(p.imagePosY_Pc) : 50;
+        const transX_Pc = posX_Pc - 50;
+        const transY_Pc = posY_Pc - 50;
+
+        const fitMob = p.imageFitMobile || fitPc;
+        const zoomMob = p.imageZoomMobile !== undefined ? Number(p.imageZoomMobile) : zoomPc;
+        const posX_Mob = p.imagePosX_Mobile !== undefined ? Number(p.imagePosX_Mobile) : posX_Pc;
+        const posY_Mob = p.imagePosY_Mobile !== undefined ? Number(p.imagePosY_Mobile) : posY_Pc;
+        const transX_Mob = posX_Mob - 50;
+        const transY_Mob = posY_Mob - 50;
+
         return `
             <div class="product-card-bright ${isSoldOut ? 'sold-out' : ''}">
-                <div class="card-img-wrap" style="--img-fit-pc:${p.imageFitPc || 'cover'}; --img-zoom-pc:${p.imageZoomPc || 1}; --img-pos-pc:${p.imagePosX_Pc !== undefined ? p.imagePosX_Pc : 50}% ${p.imagePosY_Pc !== undefined ? p.imagePosY_Pc : 50}%; --img-fit-mob:${p.imageFitMobile || p.imageFitPc || 'cover'}; --img-zoom-mob:${p.imageZoomMobile || p.imageZoomPc || 1}; --img-pos-mob:${p.imagePosX_Mobile !== undefined ? p.imagePosX_Mobile : (p.imagePosX_Pc !== undefined ? p.imagePosX_Pc : 50)}% ${p.imagePosY_Mobile !== undefined ? p.imagePosY_Mobile : (p.imagePosY_Pc !== undefined ? p.imagePosY_Pc : 50)}%;">
+                <div class="card-img-wrap" style="--img-fit-pc:${fitPc}; --img-zoom-pc:${zoomPc}; --img-pos-pc:${posX_Pc}% ${posY_Pc}%; --img-trans-x-pc:${transX_Pc}%; --img-trans-y-pc:${transY_Pc}%; --img-fit-mob:${fitMob}; --img-zoom-mob:${zoomMob}; --img-pos-mob:${posX_Mob}% ${posY_Mob}%; --img-trans-x-mob:${transX_Mob}%; --img-trans-y-mob:${transY_Mob}%;">
                     ${isSoldOut ? `<span class="stock-status-badge" style="background:#ef4444; color:#fff; top:10px; left:10px; position:absolute; border-radius:6px; padding:3px 8px; font-size:0.72rem; font-weight:800; z-index:2;">Agotado</span>` : ''}
                     <img src="${p.imageUrl}" alt="${p.name}" class="product-framed-img" loading="lazy">
                 </div>
@@ -4261,10 +4275,14 @@ function switchFramingDevice(device) {
         badge.textContent = isPc ? '100% IDÉNTICA PC' : '100% IDÉNTICA MÓVIL';
     }
 
-    // Card width in preview
+    // Card width and image wrap height in live preview matching client view
     const liveCard = document.getElementById('liveCardPreview');
+    const prevWrap = document.getElementById('prevImgWrap');
     if (liveCard) {
         liveCard.style.maxWidth = isPc ? '240px' : '185px';
+    }
+    if (prevWrap) {
+        prevWrap.style.height = isPc ? '175px' : '145px';
     }
 
     // Sync input controls with selected device framing
@@ -4306,15 +4324,15 @@ function updateFramingSetting(prop, val) {
         const lbl = document.getElementById('lblImgZoom');
         if (lbl) lbl.textContent = num.toFixed(2) + 'x';
     } else if (prop === 'posX') {
-        const num = parseInt(val) || 0;
-        state.currentProductFraming[devKey].posX = num;
+        const num = parseInt(val);
+        state.currentProductFraming[devKey].posX = isNaN(num) ? 50 : num;
         const lbl = document.getElementById('lblImgPosX');
-        if (lbl) lbl.textContent = num + '%';
+        if (lbl) lbl.textContent = state.currentProductFraming[devKey].posX + '%';
     } else if (prop === 'posY') {
-        const num = parseInt(val) || 0;
-        state.currentProductFraming[devKey].posY = num;
+        const num = parseInt(val);
+        state.currentProductFraming[devKey].posY = isNaN(num) ? 50 : num;
         const lbl = document.getElementById('lblImgPosY');
-        if (lbl) lbl.textContent = num + '%';
+        if (lbl) lbl.textContent = state.currentProductFraming[devKey].posY + '%';
     }
 
     updateFramingPreview();
@@ -4337,9 +4355,16 @@ function updateFramingPreview() {
     const conf = state.currentProductFraming[devKey] || { fit: 'cover', zoom: 1.0, posX: 50, posY: 50 };
     const img = document.getElementById('prevImg');
     if (img) {
-        img.style.objectFit = conf.fit || 'cover';
-        img.style.objectPosition = `${conf.posX !== undefined ? conf.posX : 50}% ${conf.posY !== undefined ? conf.posY : 50}%`;
-        img.style.transform = `scale(${conf.zoom || 1.0})`;
+        const posX = conf.posX !== undefined ? Number(conf.posX) : 50;
+        const posY = conf.posY !== undefined ? Number(conf.posY) : 50;
+        const zoom = conf.zoom !== undefined ? Number(conf.zoom) : 1.0;
+        const fit = conf.fit || 'cover';
+
+        img.style.objectFit = fit;
+        img.style.objectPosition = `${posX}% ${posY}%`;
+        const transX = (posX - 50);
+        const transY = (posY - 50);
+        img.style.transform = `translate(${transX}%, ${transY}%) scale(${zoom})`;
     }
 }
 
