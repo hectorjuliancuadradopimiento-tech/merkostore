@@ -906,7 +906,8 @@ function updateDashboardKPIs() {
 
     const activeOrders = ordersList.filter(o => ['RECEIVED', 'PREPARING', 'READY', 'ON_WAY'].includes(o.status));
     const pendingOrders = ordersList.filter(o => o.status === 'RECEIVED' || o.paymentStatus === 'PENDING');
-    const lowStockProds = productsList.filter(p => (Number(p.stock) || 0) <= 5 || p.isAvailable === false);
+    // Únicamente productos ACTIVOS con stock bajo o agotados deben alertar para reponer
+    const lowStockProds = productsList.filter(p => p.isAvailable !== false && ((Number(p.stock) || 0) <= (Number(p.minStockAlert) || 5)));
 
     // Métricas globales históricas de productos activos
     let validActiveTotalSales = 0;
@@ -1015,7 +1016,8 @@ function renderDashboardContent() {
     const actionRequestsContainer = document.getElementById('dashActionRequestsList');
     if (actionRequestsContainer) {
         const pendingOrders = state.orders.filter(o => o.status === 'RECEIVED' || o.paymentStatus === 'PENDING');
-        const lowStock = state.products.filter(p => (p.stock || 0) <= 5);
+        // Excluir productos inactivos de las solicitudes de reposición
+        const lowStock = (state.products || []).filter(p => p.isAvailable !== false && ((Number(p.stock) || 0) <= (Number(p.minStockAlert) || 5)));
 
         let requestsHTML = '';
         pendingOrders.forEach(o => {
@@ -1056,7 +1058,8 @@ function renderDashboardContent() {
     // 4. Low Stock Product List (Right Panel 1)
     const lowStockContainer = document.getElementById('dashLowStockList');
     if (lowStockContainer) {
-        const lowStockProducts = state.products.filter(p => (p.stock || 0) <= 5).slice(0, 4);
+        // Excluir productos inactivos de la lista de stock bajo para reponer
+        const lowStockProducts = (state.products || []).filter(p => p.isAvailable !== false && ((Number(p.stock) || 0) <= (Number(p.minStockAlert) || 5))).slice(0, 4);
         if (lowStockProducts.length === 0) {
             lowStockContainer.innerHTML = `
                 <div style="text-align:center; padding:24px 16px; color:var(--admin-text-muted); font-size:0.85rem;">
@@ -3650,7 +3653,7 @@ function renderAdminProductsTable() {
     } else if (filter === 'SOLD_OUT') {
         list = list.filter(p => p.isAvailable === false || p.stock <= 0);
     } else if (filter === 'LOW_STOCK') {
-        list = list.filter(p => p.stock <= 3 && p.stock > 0);
+        list = list.filter(p => p.isAvailable !== false && p.stock <= (p.minStockAlert || 5) && p.stock > 0);
     } else if (filter === 'WITH_COST') {
         list = list.filter(p => p.costPrice != null && p.costPrice > 0);
     } else if (filter === 'NO_COST') {
