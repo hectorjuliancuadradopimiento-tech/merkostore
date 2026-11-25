@@ -3813,7 +3813,20 @@ function toggleMercadoCompositionForm() {
             stockInput.placeholder = 'Ej: 5';
         }
         if (warnBox) warnBox.style.display = 'none';
-        renderMercadoItemsChecklist();
+
+        // Si ya hay checks marcados en el DOM por el usuario durante la sesión actual de edición, preservarlos
+        const currentChecks = [];
+        document.querySelectorAll('.mercado-bundle-check:checked').forEach(chk => {
+            const pId = chk.getAttribute('data-id');
+            const qtyInput = document.querySelector(`.mercado-bundle-qty[data-id="${pId}"]`);
+            currentChecks.push({ productId: pId, quantity: parseInt(qtyInput?.value || 1) });
+        });
+
+        if (currentChecks.length > 0) {
+            renderMercadoItemsChecklist(currentChecks);
+        } else {
+            renderMercadoItemsChecklist();
+        }
     } else {
         if (container) container.style.display = 'none';
         if (lblStock) lblStock.textContent = 'Inventario Inicial *';
@@ -3827,24 +3840,51 @@ function toggleMercadoCompositionForm() {
     }
 }
 
-function renderMercadoItemsChecklist() {
+function renderMercadoItemsChecklist(bundleItemsToMark = null) {
     const container = document.getElementById('mercadoItemsChecklist');
     if (!container) return;
 
     // Solo permitir armar combos con productos detal activos
-    const detalProducts = state.products.filter(p => p.type !== 'MERCADO' && p.isAvailable !== false);
-    container.innerHTML = detalProducts.map(p => `
-        <div style="display:flex; align-items:center; justify-space-between; background:#18181b; padding:8px 12px; border-radius:8px;">
-            <label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; color:#ffffff; cursor:pointer;">
-                <input type="checkbox" class="mercado-bundle-check" data-id="${p.id}">
-                <span>${p.name} (Stock detal: ${p.stock})</span>
-            </label>
-            <div style="display:flex; align-items:center; gap:6px;">
-                <span style="font-size:0.72rem; color:#a1a1aa;">Cant:</span>
-                <input type="number" class="mercado-bundle-qty" data-id="${p.id}" value="1" min="1" style="width:55px; padding:4px 6px; font-size:0.8rem; background:#0f172a; color:#fff; border:1px solid #3f3f46; border-radius:4px;">
+    const detalProducts = (state.products || []).filter(p => p.type !== 'MERCADO' && p.isAvailable !== false);
+
+    // Determinar qué items deben estar seleccionados
+    let selectedMap = {};
+    let items = bundleItemsToMark;
+
+    // Si no se pasaron items explícitos, verificar si se está editando un producto existente tipo MERCADO
+    if (!items && state.editingProductId) {
+        const ep = (state.products || []).find(prod => String(prod.id) === String(state.editingProductId));
+        if (ep && ep.type === 'MERCADO' && Array.isArray(ep.bundleItems) && ep.bundleItems.length > 0) {
+            items = ep.bundleItems;
+        }
+    }
+
+    if (Array.isArray(items)) {
+        items.forEach(b => {
+            const id = b.productId || b.id;
+            if (id != null) {
+                selectedMap[String(id)] = b.quantity || b.qty || 1;
+            }
+        });
+    }
+
+    container.innerHTML = detalProducts.map(p => {
+        const pIdStr = String(p.id);
+        const isChecked = selectedMap[pIdStr] !== undefined;
+        const qty = isChecked ? (selectedMap[pIdStr] || 1) : 1;
+        return `
+            <div style="display:flex; align-items:center; justify-space-between; background:#18181b; padding:8px 12px; border-radius:8px;">
+                <label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; color:#ffffff; cursor:pointer;">
+                    <input type="checkbox" class="mercado-bundle-check" data-id="${p.id}" ${isChecked ? 'checked' : ''}>
+                    <span>${p.name} (Stock detal: ${p.stock})</span>
+                </label>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="font-size:0.72rem; color:#a1a1aa;">Cant:</span>
+                    <input type="number" class="mercado-bundle-qty" data-id="${p.id}" value="${qty}" min="1" style="width:55px; padding:4px 6px; font-size:0.8rem; background:#0f172a; color:#fff; border:1px solid #3f3f46; border-radius:4px;">
+                </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 function handleProductImageUpload(event) {
@@ -3910,6 +3950,7 @@ function resetProductEditorForm(userCancelled = false) {
     document.querySelectorAll('.mercado-bundle-check').forEach(chk => { chk.checked = false; });
     document.querySelectorAll('.mercado-bundle-qty').forEach(qtyInp => { qtyInp.value = '1'; });
 
+    renderMercadoItemsChecklist([]);
     toggleMercadoCompositionForm();
     state.currentProductFraming = {
         pc: { fit: 'cover', zoom: 1.0, posX: 50, posY: 50 },
@@ -3924,10 +3965,13 @@ function resetProductEditorForm(userCancelled = false) {
 }
 
 function editProduct(productId) {
-    const p = state.products.find(prod => prod.id === productId);
+    const p = state.products.find(prod => String(prod.id) === String(productId));
     if (!p) return;
 
     state.editingProductId = productId;
+
+    // Cambiar a la pestaña de productos al inicio para que ningún refresco posterior desmarque los items
+    switchAdminSubTab('products');
 
     const titleEl = document.getElementById('editorSubtabTitle');
     if (titleEl) titleEl.textContent = '✏️ EDITAR PRODUCTO O MERCADO';
@@ -3960,20 +4004,7 @@ function editProduct(productId) {
 
     if (p.type === 'MERCADO') {
         const bundleList = Array.isArray(p.bundleItems) ? p.bundleItems : [];
-        const bundleMap = {};
-        bundleList.forEach(b => {
-            bundleMap[b.productId] = b.quantity || 1;
-        });
-
-        document.querySelectorAll('.mercado-bundle-check').forEach(chk => {
-            const id = chk.getAttribute('data-id');
-            const hasItem = bundleMap[id] !== undefined;
-            chk.checked = hasItem;
-            const qtyInp = document.querySelector(`.mercado-bundle-qty[data-id="${id}"]`);
-            if (qtyInp) {
-                qtyInp.value = hasItem ? bundleMap[id] : 1;
-            }
-        });
+        renderMercadoItemsChecklist(bundleList);
     }
 
     state.currentProductFraming = {
@@ -3993,7 +4024,6 @@ function editProduct(productId) {
     switchFramingDevice('PC');
 
     updateLivePreview();
-    switchAdminSubTab('products');
     setTimeout(() => {
         document.getElementById('productEditorCard')?.scrollIntoView({ behavior: 'smooth' });
     }, 50);
@@ -5659,22 +5689,46 @@ async function loadAdminBackendData() {
         }
 
         if (prodsRes.status === 'fulfilled' && prodsRes.value?.data && Array.isArray(prodsRes.value.data) && prodsRes.value.data.length > 0) {
-            state.products = prodsRes.value.data.map(p => ({
-                id: p.id,
-                type: p.bundleItems && p.bundleItems.length > 0 ? 'MERCADO' : 'DETAL',
-                categoryId: p.categoryId || 'cat1',
-                sku: p.sku || 'SKU-001',
-                name: p.name,
-                unitCalc: p.unit ? `Unidad por ${p.unit}` : 'Unidad',
-                costPrice: (p.costPrice !== undefined && p.costPrice !== null && p.costPrice > 0) ? p.costPrice : null,
-                price: p.price || 0,
-                discountPrice: p.discountPrice || null,
-                discountPercent: p.discountPrice && p.price ? `-${Math.round((1 - p.discountPrice / p.price) * 100)}%` : null,
-                stock: p.stock !== undefined ? p.stock : 10,
-                imageUrl: p.imageUrl || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500',
-                isAvailable: p.isAvailable !== false,
-                bundleItems: p.bundleItems || []
-            }));
+            const localMap = new Map((state.products || []).map(lp => [String(lp.id), lp]));
+            const mergedProducts = prodsRes.value.data.map(p => {
+                const local = localMap.get(String(p.id));
+                const bundleItems = (local && Array.isArray(local.bundleItems) && local.bundleItems.length > 0)
+                    ? local.bundleItems
+                    : (p.bundleItems || []);
+                const resolvedType = (local && local.type) 
+                    ? local.type 
+                    : (bundleItems.length > 0 ? 'MERCADO' : 'DETAL');
+                return {
+                    id: p.id,
+                    type: resolvedType,
+                    categoryId: (local && local.categoryId) || p.categoryId || 'cat1',
+                    sku: p.sku || (local && local.sku) || 'SKU-001',
+                    name: (local && local.name) || p.name,
+                    unitCalc: (local && local.unitCalc) || (p.unit ? `Unidad por ${p.unit}` : 'Unidad'),
+                    costPrice: (local && local.costPrice != null) ? local.costPrice : ((p.costPrice !== undefined && p.costPrice !== null && p.costPrice > 0) ? p.costPrice : null),
+                    price: (local && local.price != null) ? local.price : (p.price || 0),
+                    discountPrice: (local && local.discountPrice !== undefined) ? local.discountPrice : (p.discountPrice || null),
+                    discountPercent: (local && local.discountPercent !== undefined) ? local.discountPercent : (p.discountPrice && p.price ? `-${Math.round((1 - p.discountPrice / p.price) * 100)}%` : null),
+                    stock: (local && local.stock !== undefined) ? local.stock : (p.stock !== undefined ? p.stock : 10),
+                    imageUrl: (local && local.imageUrl) || p.imageUrl || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500',
+                    isAvailable: (local && local.isAvailable !== undefined) ? local.isAvailable : (p.isAvailable !== false),
+                    bundleItems: bundleItems,
+                    imageFitPc: local?.imageFitPc,
+                    imageZoomPc: local?.imageZoomPc,
+                    imagePosX_Pc: local?.imagePosX_Pc,
+                    imagePosY_Pc: local?.imagePosY_Pc,
+                    imageFitMobile: local?.imageFitMobile,
+                    imageZoomMobile: local?.imageZoomMobile,
+                    imagePosX_Mobile: local?.imagePosX_Mobile,
+                    imagePosY_Mobile: local?.imagePosY_Mobile
+                };
+            });
+
+            // Preservar productos creados localmente que aún no están en backend
+            const remoteIds = new Set(prodsRes.value.data.map(p => String(p.id)));
+            const localOnly = (state.products || []).filter(lp => !remoteIds.has(String(lp.id)));
+            state.products = [...mergedProducts, ...localOnly];
+
             Storage.set('products', state.products);
             renderProducts();
             renderAdminProductsTable();
