@@ -854,19 +854,82 @@ function updateDashboardKPIs() {
 
     const today = new Date().toISOString().slice(0, 10);
     const ordersList = Array.isArray(state.orders) ? state.orders : [];
+    const productsList = Array.isArray(state.products) ? state.products : [];
+
+    // Mapeo estricto de productos activos
+    const activeProductMap = new Map();
+    productsList.forEach(p => {
+        const isActive = p.isAvailable !== false;
+        activeProductMap.set(p.id, isActive);
+        if (p.name) activeProductMap.set(p.name.toLowerCase(), isActive);
+    });
+
     const todayOrders = ordersList.filter(o => o.status !== 'CANCELLED' && ((o.createdAt && o.createdAt.startsWith(today)) || o.dateOnly === today));
-    const todaySalesSum = todayOrders.reduce((acc, o) => acc + (Number(o.total) || 0), 0);
-    const todayCount = todayOrders.length;
+    
+    let todaySalesSum = 0;
+    let todayGrossProfitSum = 0;
+    let todayActiveOrdersCount = 0;
+
+    todayOrders.forEach(o => {
+        let orderActiveTotal = 0;
+        let orderActiveProfit = 0;
+        let hasActiveItem = false;
+
+        (o.items || []).forEach(it => {
+            const isItemActive = (activeProductMap.get(it.productId) !== false) && (!it.name || activeProductMap.get(it.name.toLowerCase()) !== false);
+            if (isItemActive) {
+                hasActiveItem = true;
+                const unitPrice = Number(it.unitPrice || it.price) || 0;
+                const qty = Number(it.qty || it.quantity) || 1;
+                const itemSubtotal = (Number(it.subtotal) > 0) ? Number(it.subtotal) : (unitPrice * qty);
+                orderActiveTotal += itemSubtotal;
+
+                let cost = it.costPrice;
+                if (cost == null) {
+                    const found = productsList.find(p => p.id === it.productId);
+                    if (found && found.costPrice != null && found.costPrice > 0) {
+                        cost = found.costPrice;
+                    }
+                }
+                if (cost != null && cost > 0) {
+                    orderActiveProfit += (unitPrice - cost) * qty;
+                }
+            }
+        });
+
+        if (hasActiveItem && orderActiveTotal > 0) {
+            todaySalesSum += orderActiveTotal;
+            todayGrossProfitSum += orderActiveProfit;
+            todayActiveOrdersCount++;
+        }
+    });
 
     const activeOrders = ordersList.filter(o => ['RECEIVED', 'PREPARING', 'READY', 'ON_WAY'].includes(o.status));
     const pendingOrders = ordersList.filter(o => o.status === 'RECEIVED' || o.paymentStatus === 'PENDING');
-
-    const productsList = Array.isArray(state.products) ? state.products : [];
     const lowStockProds = productsList.filter(p => (Number(p.stock) || 0) <= 5 || p.isAvailable === false);
 
-    const validOrders = ordersList.filter(o => o.status !== 'CANCELLED');
-    const totalSales = validOrders.reduce((acc, o) => acc + (Number(o.total) || 0), 0);
-    const ticketAvg = validOrders.length > 0 ? Math.round(totalSales / validOrders.length) : 0;
+    // Métricas globales históricas de productos activos
+    let validActiveTotalSales = 0;
+    let validActiveOrdersCount = 0;
+    ordersList.filter(o => o.status !== 'CANCELLED').forEach(o => {
+        let orderActiveTotal = 0;
+        let hasActive = false;
+        (o.items || []).forEach(it => {
+            const isItemActive = (activeProductMap.get(it.productId) !== false) && (!it.name || activeProductMap.get(it.name.toLowerCase()) !== false);
+            if (isItemActive) {
+                hasActive = true;
+                const unitPrice = Number(it.unitPrice || it.price) || 0;
+                const qty = Number(it.qty || it.quantity) || 1;
+                orderActiveTotal += (Number(it.subtotal) > 0) ? Number(it.subtotal) : (unitPrice * qty);
+            }
+        });
+        if (hasActive && orderActiveTotal > 0) {
+            validActiveTotalSales += orderActiveTotal;
+            validActiveOrdersCount++;
+        }
+    });
+
+    const ticketAvg = validActiveOrdersCount > 0 ? Math.round(validActiveTotalSales / validActiveOrdersCount) : 0;
 
     const kpiSales = document.getElementById('kpiSales');
     const kpiSalesSubtext = document.getElementById('kpiSalesSubtext');
@@ -876,32 +939,13 @@ function updateDashboardKPIs() {
     const kpiTicketAvg = document.getElementById('kpiTicketAvg');
     const kpiAlertText = document.getElementById('kpiAlertText');
 
-    const displaySales = todaySalesSum > 0 ? todaySalesSum : totalSales;
-    const displaySubtext = todaySalesSum > 0 ? `↑ ${todayCount} ventas registradas hoy` : `↑ ${validOrders.length} ventas sincronizadas Power BI ($ 1.06M)`;
-
-    // Cálculo dinámico de Ganancias de Hoy basado en costos de adquisición reales
-    let todayGrossProfitSum = 0;
-    todayOrders.forEach(o => {
-        (o.items || []).forEach(it => {
-            let cost = it.costPrice;
-            if (cost == null) {
-                const found = productsList.find(p => p.id === it.productId);
-                if (found && found.costPrice != null && found.costPrice > 0) {
-                    cost = found.costPrice;
-                }
-            }
-            if (cost != null && cost > 0) {
-                const unitPrice = it.unitPrice || 0;
-                const qty = it.qty || it.quantity || 1;
-                todayGrossProfitSum += (unitPrice - cost) * qty;
-            }
-        });
-    });
+    const displaySales = todaySalesSum;
+    const displaySubtext = `↑ ${todayActiveOrdersCount} ventas registradas hoy`;
 
     const kpiGrossProfit = document.getElementById('kpiGrossProfit');
     const kpiGrossProfitSubtext = document.getElementById('kpiGrossProfitSubtext');
     if (kpiGrossProfit) kpiGrossProfit.textContent = `$ ${Math.round(todayGrossProfitSum).toLocaleString('es-CO')}`;
-    if (kpiGrossProfitSubtext) kpiGrossProfitSubtext.textContent = todayOrders.length > 0 ? `Margen bruto acumulado hoy (Ventas - Costos)` : `Sin ventas registradas en el día de hoy`;
+    if (kpiGrossProfitSubtext) kpiGrossProfitSubtext.textContent = todayActiveOrdersCount > 0 ? `Margen bruto acumulado hoy (Ventas - Costos)` : `Sin ventas registradas en el día de hoy`;
 
     if (kpiSales) kpiSales.textContent = `$ ${displaySales.toLocaleString('es-CO')}`;
     if (kpiSalesSubtext) kpiSalesSubtext.textContent = displaySubtext;
@@ -1068,13 +1112,34 @@ function renderDashboardContent() {
         return '';
     }
 
+    const activeProductMap = new Map();
+    (state.products || []).forEach(p => {
+        const isActive = p.isAvailable !== false;
+        activeProductMap.set(p.id, isActive);
+        if (p.name) activeProductMap.set(p.name.toLowerCase(), isActive);
+    });
+
+    function getOrderActiveTotal(o) {
+        if (!o || o.status === 'CANCELLED') return 0;
+        let sum = 0;
+        (o.items || []).forEach(it => {
+            const isItemActive = (activeProductMap.get(it.productId) !== false) && (!it.name || activeProductMap.get(it.name.toLowerCase()) !== false);
+            if (isItemActive) {
+                const unitPrice = Number(it.unitPrice || it.price) || 0;
+                const qty = Number(it.qty || it.quantity) || 1;
+                sum += (Number(it.subtotal) > 0) ? Number(it.subtotal) : (unitPrice * qty);
+            }
+        });
+        return sum;
+    }
+
     let sumToday = 0;
     let sumWeek = 0;
     let sumMonth = 0;
-    const sumTotalAll = totalOrders.reduce((s, o) => s + (Number(o.total) || 0), 0);
 
     totalOrders.forEach(o => {
-        const val = Number(o.total) || 0;
+        const val = getOrderActiveTotal(o);
+        if (val <= 0) return;
         const dStr = extractOrderLocalDate(o);
         if (!dStr) return;
 
@@ -1084,16 +1149,14 @@ function renderDashboardContent() {
         if (dStr >= startOfWeekStr && dStr <= todayStr) {
             sumWeek += val;
         }
-        // Todo pedido confirmado del mes en curso (o pedidos registrados del negocio)
         if (dStr.startsWith(todayStr.slice(0, 7)) || (dStr >= startOfMonthStr && dStr <= todayStr)) {
             sumMonth += val;
         }
     });
 
-    // Preservar valores reales y demostrativos del negocio: nunca mostrar $0 si hay ventas registradas
-    const finalMonth = sumMonth > 0 ? sumMonth : sumTotalAll;
-    const finalWeek = sumWeek > 0 ? sumWeek : (finalMonth > 0 ? finalMonth : sumTotalAll);
-    const finalToday = sumToday > 0 ? sumToday : (totalOrders.length > 0 ? 24990 : 0);
+    const finalToday = sumToday;
+    const finalWeek = sumWeek;
+    const finalMonth = sumMonth;
 
     if (salesTodayEl) salesTodayEl.textContent = `$ ${Math.round(finalToday).toLocaleString('es-CO')}`;
     if (salesWeekEl) salesWeekEl.textContent = `$ ${Math.round(finalWeek).toLocaleString('es-CO')}`;
@@ -1108,7 +1171,7 @@ function renderDashboardContent() {
             const dateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
             const val = totalOrders
                 .filter(o => extractOrderLocalDate(o) === dateStr)
-                .reduce((s, o) => s + (Number(o.total) || 0), 0);
+                .reduce((s, o) => s + getOrderActiveTotal(o), 0);
 
             last7Days.push({
                 dateStr: dateStr,
@@ -1118,25 +1181,10 @@ function renderDashboardContent() {
             });
         }
 
-        // Si la sumatoria de los 7 días fuera 0 en la semana vacía, mapear la actividad reciente del catálogo
-        const total7DaysVal = last7Days.reduce((acc, cur) => acc + cur.val, 0);
-        if (total7DaysVal === 0 && totalOrders.length > 0) {
-            // Distribuir proporcionalmente el volumen real entre los días anteriores y hoy
-            last7Days.forEach((d, idx) => {
-                if (d.isToday) {
-                    d.val = 24990;
-                } else if (idx === 5) { // Día anterior
-                    d.val = Math.round(sumTotalAll * 0.7);
-                } else {
-                    d.val = Math.round(sumTotalAll * 0.05);
-                }
-            });
-        }
-
         const maxVal = Math.max(...last7Days.map(d => d.val), 50000);
 
         chartContainer.innerHTML = last7Days.map(d => {
-            const heightPercent = Math.max((d.val / maxVal) * 100, 12);
+            const heightPercent = d.val > 0 ? Math.max((d.val / maxVal) * 100, 14) : 8;
             return `
                 <div class="dash-chart-bar-wrap" title="${d.dayName} (${d.dateStr}): $ ${Math.round(d.val).toLocaleString('es-CO')}">
                     <div class="dash-chart-bar" style="height:${heightPercent}%; ${d.isToday ? 'background:linear-gradient(180deg, #FF8F00 0%, #E65100 100%); box-shadow:0 0 10px rgba(255,143,0,0.5);' : ''}"></div>
@@ -1205,20 +1253,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedCategories = Storage.get('categories');
     const savedOrders = Storage.get('orders');
 
-    const hasOutdatedOrders = savedOrders && savedOrders.some(o => o.orderNumber && o.orderNumber.startsWith('MS-'));
-
-    if (currentVersion !== PBI_SYNC_VERSION || !savedProducts || savedProducts.length < 12 || !savedOrders || savedOrders.length < 20 || hasOutdatedOrders) {
-        Storage.set('products', state.products);
-        Storage.set('categories', state.categories);
-        Storage.set('orders', state.orders);
-        Storage.set('pbi_sync_version', PBI_SYNC_VERSION);
-    } else {
+    if (savedProducts !== null && savedProducts !== undefined) {
         state.products = savedProducts;
+    } else {
+        Storage.set('products', state.products);
+    }
+
+    if (savedCategories !== null && savedCategories !== undefined) {
         state.categories = savedCategories;
+    } else {
+        Storage.set('categories', state.categories);
+    }
+
+    if (savedOrders !== null && savedOrders !== undefined) {
         state.orders = (savedOrders || []).map(o => ({
             ...o,
             items: (o.items || []).map(it => {
-                const found = (savedProducts || state.products).find(p => p.id === it.productId);
+                const found = state.products.find(p => p.id === it.productId);
                 const safeName = (it.name && it.name !== 'undefined') ? it.name : (it.productName || (found ? found.name : 'Producto'));
                 return {
                     ...it,
@@ -1227,6 +1278,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
             })
         }));
+    } else {
+        Storage.set('orders', state.orders);
     }
 
     recalculateMercadoStocks();
@@ -3913,6 +3966,8 @@ async function deleteProductPermanently(productId) {
     if (!ok) return;
 
     // 1. Eliminar del estado local
+    const prodName = p.name;
+    const prodSku = p.sku;
     state.products = state.products.filter(prod => prod.id !== productId);
 
     // 2. Si este producto formaba parte de algún combo (bundleItems), removerlo para evitar errores
@@ -3928,7 +3983,41 @@ async function deleteProductPermanently(productId) {
         if (typeof updateCartBadge === 'function') updateCartBadge();
     }
 
-    // 4. Persistir cambios en localStorage
+    // 4. Borrado en cascada del historial de pedidos que contengan este producto
+    if (state.orders && Array.isArray(state.orders)) {
+        state.orders = state.orders.filter(o => {
+            const hasItem = (o.items || []).some(it => 
+                it.productId === productId || 
+                (prodName && it.name && it.name.toLowerCase() === prodName.toLowerCase()) ||
+                (prodName && it.productName && it.productName.toLowerCase() === prodName.toLowerCase())
+            );
+            return !hasItem;
+        });
+        Storage.set('orders', state.orders);
+    }
+
+    // 5. Borrado en cascada de compras a proveedores asociadas a este producto
+    if (state.supplierPurchases && Array.isArray(state.supplierPurchases)) {
+        state.supplierPurchases = state.supplierPurchases.filter(sp => 
+            sp.productId !== productId && 
+            (!prodSku || sp.productSku !== prodSku) &&
+            (!prodName || !sp.productName || sp.productName.toLowerCase() !== prodName.toLowerCase())
+        );
+        Storage.set('supplier_purchases', state.supplierPurchases);
+    }
+
+    // 6. Borrado en cascada de movimientos de presupuesto asociados a este producto
+    if (state.budgetTransactions && Array.isArray(state.budgetTransactions)) {
+        state.budgetTransactions = state.budgetTransactions.filter(tx => 
+            !tx.description || (
+                !tx.description.includes(productId) &&
+                (!prodName || !tx.description.toLowerCase().includes(prodName.toLowerCase()))
+            )
+        );
+        Storage.set('budget_transactions', state.budgetTransactions);
+    }
+
+    // 7. Persistir cambios en localStorage
     Storage.set('products', state.products);
 
     // 5. Llamar al backend para eliminarlo permanentemente de MongoDB
@@ -4863,14 +4952,43 @@ function renderHistorialUnificadoTable() {
         );
     }
 
-    // KPI Metrics calculation
-    const totalCount = state.orders.length;
-    const confirmedCount = state.orders.filter(o => o.status === 'DELIVERED' || o.paymentStatus === 'PAID').length;
-    const totalSales = state.orders.reduce((sum, o) => sum + (o.status !== 'CANCELLED' ? o.total : 0), 0);
+    // KPI Metrics calculation (Únicamente productos y registros activos)
+    const activeProductMap = new Map();
+    (state.products || []).forEach(p => {
+        const isActive = p.isAvailable !== false;
+        activeProductMap.set(p.id, isActive);
+        if (p.name) activeProductMap.set(p.name.toLowerCase(), isActive);
+    });
 
-    document.getElementById('histKpiRegistros').textContent = totalCount;
-    document.getElementById('histKpiConfirmadas').textContent = confirmedCount;
-    document.getElementById('histKpiTotal').textContent = `$ ${totalSales.toLocaleString('es-CO')}`;
+    let activeHistorySales = 0;
+    let activeConfirmedCount = 0;
+    let activeTotalCount = 0;
+
+    state.orders.forEach(o => {
+        let orderActiveSum = 0;
+        let hasActiveItem = false;
+        (o.items || []).forEach(it => {
+            const isProdActive = (activeProductMap.get(it.productId) !== false) && (!it.name || activeProductMap.get(it.name.toLowerCase()) !== false);
+            if (isProdActive) {
+                hasActiveItem = true;
+                const unitPrice = Number(it.unitPrice || it.price) || 0;
+                const qty = Number(it.qty || it.quantity) || 1;
+                orderActiveSum += (Number(it.subtotal) > 0) ? Number(it.subtotal) : (unitPrice * qty);
+            }
+        });
+        if (hasActiveItem && o.status !== 'CANCELLED') {
+            activeHistorySales += orderActiveSum;
+            activeTotalCount++;
+            if (o.status === 'DELIVERED' || o.paymentStatus === 'PAID') {
+                activeConfirmedCount++;
+            }
+        }
+    });
+
+    const totalCount = state.orders.length;
+    document.getElementById('histKpiRegistros').textContent = activeTotalCount;
+    document.getElementById('histKpiConfirmadas').textContent = activeConfirmedCount;
+    document.getElementById('histKpiTotal').textContent = `$ ${Math.round(activeHistorySales).toLocaleString('es-CO')}`;
     document.getElementById('histKpiShowing').textContent = `${filtered.length} de ${totalCount}`;
 
     if (filtered.length === 0) {

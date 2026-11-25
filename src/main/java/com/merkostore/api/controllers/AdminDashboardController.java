@@ -252,11 +252,31 @@ public class AdminDashboardController {
 
     @DeleteMapping("/products/{productId}")
     public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable String productId) {
-        if (!productRepository.existsById(productId)) {
-            throw new ResourceNotFoundException("Producto no encontrado con ID: " + productId);
+        Product prod = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + productId));
+        String prodName = prod.getName();
+
+        // 1. Borrado en cascada en pedidos/historial asociados a este producto
+        List<Order> orders = orderRepository.findAll();
+        for (Order o : orders) {
+            if (o.getItems() != null && o.getItems().stream().anyMatch(it -> 
+                    productId.equals(it.getProductId()) || 
+                    (prodName != null && it.getProductName() != null && it.getProductName().equalsIgnoreCase(prodName)))) {
+                orderRepository.deleteById(o.getId());
+            }
         }
+
+        // 2. Borrado de transacciones financieras relacionadas
+        List<FinancialTransaction> txs = financialRepository.findByStoreIdOrderByDateDesc(prod.getStoreId() != null ? prod.getStoreId() : "default-store");
+        for (FinancialTransaction tx : txs) {
+            if (tx.getDescription() != null && (tx.getDescription().contains(productId) || (prodName != null && tx.getDescription().toLowerCase().contains(prodName.toLowerCase())))) {
+                financialRepository.deleteById(tx.getId());
+            }
+        }
+
+        // 3. Borrado definitivo del producto
         productRepository.deleteById(productId);
-        return ResponseEntity.ok(ApiResponse.ok("Producto eliminado definitivamente de la base de datos"));
+        return ResponseEntity.ok(ApiResponse.ok("Producto y su historial asociado eliminados definitivamente de la base de datos"));
     }
 
     @PatchMapping("/products/{productId}/toggle-status")

@@ -50,8 +50,7 @@ public class DataInitializer implements CommandLineRunner {
         public void run(String... args) throws Exception {
                 seedAdminUser();
                 seedStoreConfig();
-                seedCategoriesAndProducts(false);
-                seedSampleOrders(false);
+                // No sobreescribir ni resetear datos de productos ni pedidos del usuario
         }
 
         private void seedAdminUser() {
@@ -90,8 +89,10 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         public void seedCategoriesAndProducts(boolean force) {
-                boolean needsSeed = force || categoryRepository.count() == 0 || !productRepository.existsById("PRD-001") || productRepository.count() < 12;
-                if (needsSeed) {
+                if (!force) {
+                        return;
+                }
+                if (true) {
                         categoryRepository.deleteAll();
                         productRepository.deleteAll();
 
@@ -224,13 +225,10 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         public void seedSampleOrders(boolean force) {
-                boolean hasLegacyOrders = orderRepository.findAll().stream()
-                                .anyMatch(o -> o.getOrderNumber() != null && o.getOrderNumber().startsWith("MS-"));
-                boolean hasPbiOrder = orderRepository.findAll().stream()
-                                .anyMatch(o -> "PED-001".equals(o.getOrderNumber()));
-                boolean needsSeed = force || hasLegacyOrders || !hasPbiOrder || orderRepository.count() < 20;
-
-                if (needsSeed) {
+                if (!force) {
+                        return;
+                }
+                if (true) {
                         orderRepository.deleteAll();
 
                         // 8 Clientes de Cartagena (Dim_Cliente)

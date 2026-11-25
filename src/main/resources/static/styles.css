@@ -4655,20 +4655,22 @@ body.admin-fullscreen-active #viewStorefront {
         line-height: 1.2 !important;
     }
 
-    /* 9. ADMIN TABS (TOUCH-SCROLLABLE HORIZONTAL BAR - NO CLIPPING) */
+    /* 9. ADMIN TABS (RESPONSIVE WRAP - NO HORIZONTAL SCROLLBAR SLIDER) */
     .merko-pill-tabs {
         display: flex !important;
-        flex-wrap: nowrap !important;
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch !important;
+        flex-wrap: wrap !important;
+        overflow-x: visible !important;
         gap: 8px !important;
         padding-bottom: 8px !important;
         margin-bottom: 16px !important;
         scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
     }
 
     .merko-pill-tabs::-webkit-scrollbar {
         display: none !important;
+        width: 0 !important;
+        height: 0 !important;
     }
 
     .merko-pill-btn {
