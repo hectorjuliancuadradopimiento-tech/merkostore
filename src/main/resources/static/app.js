@@ -5532,15 +5532,7 @@ async function loadAdminBackendData() {
 }
 
 async function forceSyncWithDatabase() {
-    showToast('⏳ Sincronizando datos con la base de datos MongoDB y Power BI...', 'info', '🔄');
-    try {
-        const syncRes = await API.post('/api/v1/admin/dashboard/sync-pbi-data', {});
-        if (syncRes && syncRes.success) {
-            showToast('✅ Base de datos MongoDB sincronizada con éxito ($ 1.059.440 COP)', 'success', '🚀');
-        }
-    } catch (e) {
-        console.warn('Sync backend error (procediendo con sincronización frontend):', e);
-    }
+    showToast('⏳ Sincronizando datos con la base de datos MongoDB...', 'info', '🔄');
     await loadAdminBackendData();
     renderProducts();
     renderAdminProductsTable();

@@ -92,9 +92,7 @@ public class DataInitializer implements CommandLineRunner {
                 if (!force) {
                         return;
                 }
-                if (true) {
-                        categoryRepository.deleteAll();
-                        productRepository.deleteAll();
+                if (categoryRepository.count() == 0 && productRepository.count() == 0) {
 
                         Category cat1 = Category.builder().id("cat1").storeId("default-store")
                                         .name("📦 Combos Mercados").slug("combos-mercados").icon("📦").displayOrder(1)
@@ -228,8 +226,7 @@ public class DataInitializer implements CommandLineRunner {
                 if (!force) {
                         return;
                 }
-                if (true) {
-                        orderRepository.deleteAll();
+                if (orderRepository.count() == 0) {
 
                         // 8 Clientes de Cartagena (Dim_Cliente)
                         Order.CustomerInfo c1 = Order.CustomerInfo.builder().name("María Camila Gómez")

@@ -81,9 +81,8 @@ public class AdminDashboardController {
 
     @PostMapping("/dashboard/sync-pbi-data")
     public ResponseEntity<ApiResponse<Void>> syncPbiData() {
-        dataInitializer.seedCategoriesAndProducts(true);
-        dataInitializer.seedSampleOrders(true);
-        return ResponseEntity.ok(ApiResponse.ok("Datos sincronizados exitosamente con Power BI Star Schema"));
+        // Preservar siempre los productos y pedidos reales del usuario sin sobreescribir con datos de muestra
+        return ResponseEntity.ok(ApiResponse.ok("Datos sincronizados exitosamente"));
     }
 
     @GetMapping("/dashboard/metrics")
