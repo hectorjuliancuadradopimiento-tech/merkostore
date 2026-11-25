@@ -41,4 +41,28 @@ public class PublicCatalogController {
         }
         return ResponseEntity.ok(products);
     }
+
+    /**
+     * Sincronización masiva de catálogo hacia MongoDB
+     */
+    @PostMapping("/sync-catalog")
+    public ResponseEntity<List<Product>> syncCatalog(
+            @RequestBody List<Product> incomingProducts,
+            @RequestParam(defaultValue = "default-store") String storeId) {
+        if (incomingProducts == null || incomingProducts.isEmpty()) {
+            return ResponseEntity.ok(List.of());
+        }
+        for (Product p : incomingProducts) {
+            if (p.getStoreId() == null || p.getStoreId().isEmpty()) {
+                p.setStoreId(storeId);
+            }
+            if (p.getIsAvailable() == null) {
+                p.setIsAvailable(true);
+            }
+            p.setUpdatedAt(java.time.LocalDateTime.now());
+            productRepository.save(p);
+        }
+        List<Product> current = productRepository.findByStoreId(storeId);
+        return ResponseEntity.ok(current);
+    }
 }

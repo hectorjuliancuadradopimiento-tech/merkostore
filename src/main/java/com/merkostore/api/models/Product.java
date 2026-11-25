@@ -45,6 +45,20 @@ public class Product {
     private Boolean isFeatured;
     private List<String> tags;
 
+    // Campos extendidos para Combos/Mercados y Encuadre de Imagen
+    private String type; // DETAL | MERCADO
+    private String unitCalc;
+    private String discountPercent;
+    private List<Object> bundleItems;
+    private String imageFitPc;
+    private Double imageZoomPc;
+    private Integer imagePosX_Pc;
+    private Integer imagePosY_Pc;
+    private String imageFitMobile;
+    private Double imageZoomMobile;
+    private Integer imagePosX_Mobile;
+    private Integer imagePosY_Mobile;
+
     @LastModifiedDate
     private LocalDateTime updatedAt;
 }

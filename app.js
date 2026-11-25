@@ -4742,9 +4742,15 @@ function saveProductFromEditor() {
     }
 
     Storage.set('products', state.products);
+    Storage.set('admin_has_custom_catalog', true);
     recalculateMercadoStocks();
     renderProducts();
     renderAdminProductsTable();
+
+    // Sincronizar automáticamente el catálogo entero con MongoDB en la nube para que esté disponible en móviles
+    if (typeof syncAllToCloudMongoDB === 'function') {
+        syncAllToCloudMongoDB().catch(() => {});
+    }
     if (typeof renderIoProductInputs === 'function') {
         renderIoProductInputs(true);
     }
@@ -5719,19 +5725,52 @@ async function loadPublicBackendData() {
 
         const prodRes = await API.get('/api/v1/public/products');
         if (prodRes && prodRes.data && Array.isArray(prodRes.data) && prodRes.data.length > 0) {
-            const backendMap = new Map(prodRes.data.map(p => [p.id, p]));
-            state.products = state.products.map(localP => {
-                const remote = backendMap.get(localP.id);
-                if (remote) {
-                    return {
-                        ...localP,
-                        price: remote.price || localP.price,
-                        discountPrice: remote.discountPrice !== undefined ? remote.discountPrice : localP.discountPrice,
-                        stock: remote.stock !== undefined ? remote.stock : localP.stock
-                    };
-                }
-                return localP;
-            });
+            // Si el cliente entra desde un celular o navegador limpio (sin productos modificados por el admin localmente),
+            // debe cargar la lista real de la base de datos de MongoDB
+            const isLocalAdminModified = Storage.get('products') !== null && Storage.get('products') !== undefined && Storage.get('admin_has_custom_catalog');
+            
+            if (!isLocalAdminModified) {
+                // Visitante público o móvil: cargamos el catálogo oficial de MongoDB
+                state.products = prodRes.data.map(p => ({
+                    id: p.id,
+                    type: p.type || (p.id && String(p.id).startsWith('m-') ? 'MERCADO' : 'DETAL'),
+                    categoryId: p.categoryId,
+                    sku: p.sku,
+                    name: p.name,
+                    unitCalc: p.unitCalc || p.unit || 'UND',
+                    price: p.price || 0,
+                    costPrice: p.costPrice || 0,
+                    discountPrice: p.discountPrice || null,
+                    discountPercent: p.discountPercent || (p.discountPrice && p.price ? `-${Math.round((1 - p.discountPrice / p.price) * 100)}%` : null),
+                    stock: p.stock !== undefined ? p.stock : 10,
+                    imageUrl: p.imageUrl || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500',
+                    isAvailable: p.isAvailable !== false,
+                    bundleItems: p.bundleItems || [],
+                    imageFitPc: p.imageFitPc || 'cover',
+                    imageZoomPc: p.imageZoomPc !== undefined ? Number(p.imageZoomPc) : 1.0,
+                    imagePosX_Pc: p.imagePosX_Pc !== undefined ? Number(p.imagePosX_Pc) : 50,
+                    imagePosY_Pc: p.imagePosY_Pc !== undefined ? Number(p.imagePosY_Pc) : 50,
+                    imageFitMobile: p.imageFitMobile || p.imageFitPc || 'cover',
+                    imageZoomMobile: p.imageZoomMobile !== undefined ? Number(p.imageZoomMobile) : (p.imageZoomPc !== undefined ? Number(p.imageZoomPc) : 1.0),
+                    imagePosX_Mobile: p.imagePosX_Mobile !== undefined ? Number(p.imagePosX_Mobile) : (p.imagePosX_Pc !== undefined ? Number(p.imagePosX_Pc) : 50),
+                    imagePosY_Mobile: p.imagePosY_Mobile !== undefined ? Number(p.imagePosY_Mobile) : (p.imagePosY_Pc !== undefined ? Number(p.imagePosY_Pc) : 50)
+                }));
+            } else {
+                // Si el admin está en su PC, sincronizamos precios y stocks remotos pero preservamos sus creaciones locales
+                const backendMap = new Map(prodRes.data.map(p => [p.id, p]));
+                state.products = state.products.map(localP => {
+                    const remote = backendMap.get(localP.id);
+                    if (remote) {
+                        return {
+                            ...localP,
+                            price: remote.price || localP.price,
+                            discountPrice: remote.discountPrice !== undefined ? remote.discountPrice : localP.discountPrice,
+                            stock: remote.stock !== undefined ? remote.stock : localP.stock
+                        };
+                    }
+                    return localP;
+                });
+            }
             Storage.set('products', state.products);
             renderProducts();
             renderAdminProductsTable();
@@ -5874,6 +5913,49 @@ async function loadAdminBackendData() {
         updateDashboardKPIs();
     }
 }
+
+async function syncAllToCloudMongoDB() {
+    showToast('⏳ Sincronizando catálogo con la base de datos MongoDB...', 'info', '☁️');
+    try {
+        const payload = (state.products || []).map(p => ({
+            id: p.id,
+            storeId: 'default-store',
+            categoryId: p.categoryId,
+            sku: p.sku,
+            name: p.name,
+            description: p.description || '',
+            costPrice: p.costPrice || 0,
+            price: p.price || 0,
+            discountPrice: p.discountPrice || null,
+            unit: p.unitCalc || p.unit || 'UND',
+            unitCalc: p.unitCalc || p.unit || 'UND',
+            type: p.type || 'DETAL',
+            stock: p.stock !== undefined ? p.stock : 10,
+            imageUrl: p.imageUrl,
+            isAvailable: p.isAvailable !== false,
+            bundleItems: p.bundleItems || [],
+            imageFitPc: p.imageFitPc || 'cover',
+            imageZoomPc: p.imageZoomPc !== undefined ? p.imageZoomPc : 1.0,
+            imagePosX_Pc: p.imagePosX_Pc !== undefined ? p.imagePosX_Pc : 50,
+            imagePosY_Pc: p.imagePosY_Pc !== undefined ? p.imagePosY_Pc : 50,
+            imageFitMobile: p.imageFitMobile || p.imageFitPc || 'cover',
+            imageZoomMobile: p.imageZoomMobile !== undefined ? p.imageZoomMobile : (p.imageZoomPc !== undefined ? p.imageZoomPc : 1.0),
+            imagePosX_Mobile: p.imagePosX_Mobile !== undefined ? p.imagePosX_Mobile : (p.imagePosX_Pc !== undefined ? p.imagePosX_Pc : 50),
+            imagePosY_Mobile: p.imagePosY_Mobile !== undefined ? p.imagePosY_Mobile : (p.imagePosY_Pc !== undefined ? p.imagePosY_Pc : 50)
+        }));
+
+        const res = await API.post('/api/v1/public/sync-catalog', payload);
+        if (res && res.data) {
+            showToast('✅ ¡Catálogo sincronizado con éxito en MongoDB! Ahora se verá idéntico en tu celular.', 'success', '🚀');
+        } else {
+            showToast('✅ Catálogo guardado en la base de datos.', 'success', '☁️');
+        }
+    } catch (err) {
+        console.warn('Error al sincronizar con MongoDB:', err);
+        showToast('⚠️ No se pudo conectar con el servidor MongoDB en este momento.', 'warning', '⚠️');
+    }
+}
+window.syncAllToCloudMongoDB = syncAllToCloudMongoDB;
 
 async function forceSyncWithDatabase() {
     showToast('⏳ Sincronizando datos con la base de datos MongoDB...', 'info', '🔄');
