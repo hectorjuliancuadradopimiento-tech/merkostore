@@ -173,7 +173,11 @@ public class AdminDashboardController {
                             .deliveryFee(new BigDecimal("3000"))
                             .minimumOrder(new BigDecimal("10000"))
                             .isStoreOpen(true)
-                            .enabledPaymentMethods(List.of("WHATSAPP", "CASH", "NEQUI"))
+                            .enabledPaymentMethods(List.of("WHATSAPP", "CASH", "NEQUI", "DAVIPLATA", "BANCOLOMBIA"))
+                            .nequiAccount("3001234567")
+                            .daviplataAccount("3001234567")
+                            .bancolombiaAccount("123-456789-01")
+                            .accountHolder("MERKOSTORE S.A.S")
                             .build();
                     return storeConfigRepository.save(defaultConfig);
                 });

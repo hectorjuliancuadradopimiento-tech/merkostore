@@ -1026,14 +1026,18 @@
                             </div>
                         </div>
 
-                        <div style="font-size:1rem; font-weight:900; color:var(--brand-primary); margin-top:16px; margin-bottom:8px;">💳 C. Cuentas de Transferencia (Nequi y Bancolombia)</div>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                        <div style="font-size:1rem; font-weight:900; color:var(--brand-primary); margin-top:16px; margin-bottom:8px;">💳 C. Cuentas Oficiales de Transferencia (Nequi, Daviplata y Bancolombia)</div>
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px;">
                             <div class="merko-form-group">
-                                <label>NÚMERO CUENTA NEQUI</label>
+                                <label>🟣 NÚMERO CUENTA NEQUI</label>
                                 <input type="text" id="cfgNequiAccount" value="3001234567" placeholder="Ej: 3001234567">
                             </div>
                             <div class="merko-form-group">
-                                <label>NÚMERO CUENTA BANCOLOMBIA</label>
+                                <label>🔴 NÚMERO CUENTA DAVIPLATA</label>
+                                <input type="text" id="cfgDaviplataAccount" value="3001234567" placeholder="Ej: 3001234567">
+                            </div>
+                            <div class="merko-form-group">
+                                <label>🟡 NÚMERO CUENTA BANCOLOMBIA</label>
                                 <input type="text" id="cfgBancolombiaAccount" value="123-456789-01" placeholder="Ej: 123-456789-01 (Ahorros)">
                             </div>
                         </div>
@@ -1610,7 +1614,7 @@
                                 <span class="option-title">📲 Pago por Transferencia / WhatsApp</span>
                                 <span class="option-badge-recommended">RECOMENDADO</span>
                             </div>
-                            <div class="option-subtext">Transfiere por Nequi o Bancolombia y valida tu pedido en 1 minuto.</div>
+                            <div class="option-subtext">Transfiere por Nequi, Daviplata o Bancolombia y valida tu pedido en 1 minuto.</div>
                         </div>
                     </label>
 
@@ -1629,7 +1633,7 @@
                     </label>
                 </div>
 
-                <!-- BLOQUE DE CUENTAS DE TRANSFERENCIA (NEQUI / BANCOLOMBIA) -->
+                <!-- BLOQUE DE CUENTAS DE TRANSFERENCIA (NEQUI / DAVIPLATA / BANCOLOMBIA) -->
                 <div id="transferAccountsBox" class="transfer-accounts-box" style="margin-top:14px; background:linear-gradient(135deg, #18181b, #111113); border:1.5px solid rgba(230,81,0,0.35); border-radius:14px; padding:16px; box-shadow:0 6px 20px rgba(0,0,0,0.25);">
                     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">
                         <span style="font-size:0.85rem; font-weight:900; color:#FF8F00; display:flex; align-items:center; gap:6px;">
@@ -1638,7 +1642,7 @@
                         <span id="dispHolderName" style="font-size:0.75rem; color:#a1a1aa; font-weight:700;">Titular: MERKOSTORE S.A.S</span>
                     </div>
 
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px; margin-bottom:12px;">
                         <!-- Nequi Card -->
                         <div class="account-item-card" style="background:#201026; border:1px solid #c026d3; border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">
                             <div>
@@ -1648,6 +1652,19 @@
                                 <div id="dispNequiNumber" style="font-size:0.95rem; font-weight:900; color:#ffffff; letter-spacing:0.5px; margin-top:2px;">3001234567</div>
                             </div>
                             <button type="button" class="btn-copy-account" onclick="copyAccount('dispNequiNumber', 'Nequi')" title="Copiar número Nequi">
+                                📋 Copiar
+                            </button>
+                        </div>
+
+                        <!-- Daviplata Card -->
+                        <div class="account-item-card" style="background:#261014; border:1px solid #ef4444; border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <div style="font-size:0.75rem; font-weight:800; color:#f87171; display:flex; align-items:center; gap:4px;">
+                                    <span>🔴</span> DAVIPLATA
+                                </div>
+                                <div id="dispDaviplataNumber" style="font-size:0.95rem; font-weight:900; color:#ffffff; letter-spacing:0.5px; margin-top:2px;">3001234567</div>
+                            </div>
+                            <button type="button" class="btn-copy-account" onclick="copyAccount('dispDaviplataNumber', 'Daviplata')" title="Copiar número Daviplata">
                                 📋 Copiar
                             </button>
                         </div>
@@ -1670,7 +1687,7 @@
                     <div style="background:rgba(230,81,0,0.08); border-left:3px solid #FF8F00; border-radius:6px; padding:10px 12px; font-size:0.78rem; color:#e4e4e7; line-height:1.45;">
                         <strong style="color:#FF8F00;">📌 Instrucciones para validar tu solicitud:</strong>
                         <ol style="margin:4px 0 0 16px; padding:0;">
-                            <li>Copia el número y transfiere el total exacto desde tu app de Nequi o Bancolombia.</li>
+                            <li>Copia el número y transfiere el total exacto desde tu app de Nequi, Daviplata o Bancolombia.</li>
                             <li>Toma captura de pantalla al comprobante exitoso de transferencia.</li>
                             <li>Al hacer clic abajo en <strong>"Confirmar Pedido por WhatsApp"</strong>, adjunta tu comprobante en el chat para que el pedido sea validado y despachado de inmediato.</li>
                         </ol>

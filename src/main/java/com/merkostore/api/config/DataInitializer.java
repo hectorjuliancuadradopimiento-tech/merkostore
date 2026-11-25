@@ -82,6 +82,10 @@ public class DataInitializer implements CommandLineRunner {
                                         .isStoreOpen(true)
                                         .enabledPaymentMethods(List.of("WHATSAPP", "CASH", "NEQUI", "DAVIPLATA",
                                                         "BANCOLOMBIA"))
+                                        .nequiAccount("3001234567")
+                                        .daviplataAccount("3001234567")
+                                        .bancolombiaAccount("123-456789-01")
+                                        .accountHolder("MERKOSTORE S.A.S")
                                         .build();
                         storeConfigRepository.save(config);
                         System.out.println("✅ Configuración de tienda inicial sembrada.");

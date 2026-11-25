@@ -26,5 +26,9 @@ public class StoreConfig {
     private BigDecimal deliveryFee;
     private BigDecimal minimumOrder;
     private Boolean isStoreOpen;
-    private List<String> enabledPaymentMethods; // WHATSAPP, CASH, NEQUI, PSE
+    private List<String> enabledPaymentMethods; // WHATSAPP, CASH, NEQUI, DAVIPLATA, BANCOLOMBIA
+    private String nequiAccount;
+    private String daviplataAccount;
+    private String bancolombiaAccount;
+    private String accountHolder;
 }

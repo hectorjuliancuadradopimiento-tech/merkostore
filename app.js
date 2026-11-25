@@ -125,6 +125,7 @@ const state = {
         deliveryFee: 3000,
         minimumOrder: 10000,
         nequiAccount: '3001234567',
+        daviplataAccount: '3001234567',
         bancolombiaAccount: '123-456789-01',
         accountHolder: 'MERKOSTORE S.A.S',
         isStoreOpen: true
@@ -2253,7 +2254,7 @@ async function processWhatsAppCheckout() {
 
             const typeLabel = state.storeConfig.fulfillmentType === 'DELIVERY' ? '🚚 Domicilio a casa' : '🏬 Recogida en local';
             const paymentLabels = {
-                'TRANSFER_WHATSAPP': '📲 Transferencia Nequi / Bancolombia (Adjunto comprobante)',
+                'TRANSFER_WHATSAPP': '📲 Transferencia Nequi / Daviplata / Bancolombia (Adjunto comprobante)',
                 'CASH': `💵 Efectivo Contra Entrega${cashVal > 0 ? ` (Paga con: $ ${cashVal.toLocaleString('es-CO')} - Cambio: $ ${(cashVal - total).toLocaleString('es-CO')})` : ' (Cantidad exacta)'}`,
                 'WHATSAPP': '📲 Transferencia por WhatsApp Directo'
             };
@@ -5305,6 +5306,8 @@ async function saveStoreConfig() {
     if (addrInput) state.storeConfig.address = addrInput.value;
     const nequiInput = document.getElementById('cfgNequiAccount');
     if (nequiInput) state.storeConfig.nequiAccount = nequiInput.value;
+    const daviplataInput = document.getElementById('cfgDaviplataAccount');
+    if (daviplataInput) state.storeConfig.daviplataAccount = daviplataInput.value;
     const bancoInput = document.getElementById('cfgBancolombiaAccount');
     if (bancoInput) state.storeConfig.bancolombiaAccount = bancoInput.value;
     const holderInput = document.getElementById('cfgAccountHolder');
@@ -5320,6 +5323,10 @@ async function saveStoreConfig() {
             deliveryFee: state.storeConfig.deliveryFee,
             minimumOrder: state.storeConfig.minimumOrder,
             address: state.storeConfig.address,
+            nequiAccount: state.storeConfig.nequiAccount,
+            daviplataAccount: state.storeConfig.daviplataAccount,
+            bancolombiaAccount: state.storeConfig.bancolombiaAccount,
+            accountHolder: state.storeConfig.accountHolder,
             isStoreOpen: true
         });
         syncStoreConfigUI();
@@ -5344,6 +5351,9 @@ function syncStoreConfigUI() {
     const dispNequi = document.getElementById('dispNequiNumber');
     if (dispNequi) dispNequi.textContent = state.storeConfig.nequiAccount || '3001234567';
 
+    const dispDaviplata = document.getElementById('dispDaviplataNumber');
+    if (dispDaviplata) dispDaviplata.textContent = state.storeConfig.daviplataAccount || '3001234567';
+
     const dispBanco = document.getElementById('dispBancolombiaNumber');
     if (dispBanco) dispBanco.textContent = state.storeConfig.bancolombiaAccount || '123-456789-01';
 
@@ -5352,6 +5362,9 @@ function syncStoreConfigUI() {
 
     const cfgNequi = document.getElementById('cfgNequiAccount');
     if (cfgNequi && state.storeConfig.nequiAccount) cfgNequi.value = state.storeConfig.nequiAccount;
+
+    const cfgDaviplata = document.getElementById('cfgDaviplataAccount');
+    if (cfgDaviplata && state.storeConfig.daviplataAccount) cfgDaviplata.value = state.storeConfig.daviplataAccount;
 
     const cfgBanco = document.getElementById('cfgBancolombiaAccount');
     if (cfgBanco && state.storeConfig.bancolombiaAccount) cfgBanco.value = state.storeConfig.bancolombiaAccount;
@@ -5430,14 +5443,20 @@ async function loadPublicBackendData() {
             const cfgRes = await API.get('/api/v1/admin/store-config').catch(() => null);
             if (cfgRes && cfgRes.data) {
                 state.storeConfig = {
+                    ...state.storeConfig,
                     storeName: 'MERKOSTORE',
-                    whatsappPhone: cfgRes.data.whatsappPhone || '573001234567',
-                    address: cfgRes.data.address || 'Calle 45 # 23 - 10 Barrio El Prado',
+                    whatsappPhone: cfgRes.data.whatsappPhone || state.storeConfig.whatsappPhone || '573001234567',
+                    address: cfgRes.data.address || state.storeConfig.address || 'Calle 45 # 23 - 10 Barrio El Prado',
                     fulfillmentType: 'DELIVERY',
-                    deliveryFee: cfgRes.data.deliveryFee || 3000,
-                    minimumOrder: cfgRes.data.minimumOrder || 10000,
+                    deliveryFee: cfgRes.data.deliveryFee !== undefined ? cfgRes.data.deliveryFee : (state.storeConfig.deliveryFee || 3000),
+                    minimumOrder: cfgRes.data.minimumOrder !== undefined ? cfgRes.data.minimumOrder : (state.storeConfig.minimumOrder || 10000),
+                    nequiAccount: cfgRes.data.nequiAccount || state.storeConfig.nequiAccount || '3001234567',
+                    daviplataAccount: cfgRes.data.daviplataAccount || state.storeConfig.daviplataAccount || '3001234567',
+                    bancolombiaAccount: cfgRes.data.bancolombiaAccount || state.storeConfig.bancolombiaAccount || '123-456789-01',
+                    accountHolder: cfgRes.data.accountHolder || state.storeConfig.accountHolder || 'MERKOSTORE S.A.S',
                     isStoreOpen: cfgRes.data.isStoreOpen !== false
                 };
+                Storage.set('storeConfig', state.storeConfig);
                 syncStoreConfigUI();
             }
         }
