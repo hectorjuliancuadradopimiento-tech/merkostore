@@ -994,8 +994,8 @@ function renderDashboardContent() {
                         <div style="font-weight:800; font-size:0.88rem; color:#ffffff;">⚠️ Stock Crítico: ${p.name}</div>
                         <div style="font-size:0.78rem; color:#ef4444;">Quedan solo ${p.stock || 0} unidades en inventario.</div>
                     </div>
-                    <button class="btn-merko-outline" style="padding:5px 12px; font-size:0.75rem;" onclick="quickEditStockFromDashboard('${p.id}')">
-                        ✏️ Reponer Stock
+                    <button class="btn-merko-primary" style="padding:6px 14px; font-size:0.78rem; display:inline-flex; align-items:center; gap:6px; background:linear-gradient(135deg, #FF8F00, #E65100); border:none;" onclick="quickEditStockFromDashboard('${p.id}')" title="Atender producto y reponer stock">
+                        ✏️ Atender
                     </button>
                 </div>`;
         });
@@ -1037,34 +1037,77 @@ function renderDashboardContent() {
         }
     }
 
-    // 5. Sales Summary & 7-Day Chart (Right Panel 2)
+    // 5. Sales Summary & 7-Day Chart (Right Panel 2) - SIGUE HORARIO LOCAL REAL (UTC-5 / COLOMBIA)
     const salesTodayEl = document.getElementById('dashSalesToday');
     const salesWeekEl = document.getElementById('dashSalesWeek');
     const salesMonthEl = document.getElementById('dashSalesMonth');
     const chartContainer = document.getElementById('dash7DaysChart');
 
-    const totalOrders = state.orders.filter(o => o.status !== 'CANCELLED');
-    const todayStr = new Date().toISOString().slice(0, 10);
-    
-    const sumToday = totalOrders.filter(o => (o.createdAt && o.createdAt.startsWith(todayStr)) || o.dateOnly === todayStr).reduce((s, o) => s + (Number(o.total) || 0), 0);
-    const sumTotal = totalOrders.reduce((s, o) => s + (Number(o.total) || 0), 0);
+    const totalOrders = (state.orders || []).filter(o => o.status !== 'CANCELLED');
 
-    if (salesTodayEl) salesTodayEl.textContent = `$ ${sumToday.toLocaleString('es-CO')}`;
-    if (salesWeekEl) salesWeekEl.textContent = `$ ${sumTotal.toLocaleString('es-CO')}`;
-    if (salesMonthEl) salesMonthEl.textContent = `$ ${sumTotal.toLocaleString('es-CO')}`;
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 
-    // 7 Days Chart
+    // Inicio de la semana actual (Lunes a las 00:00:00)
+    const dayOfWeek = (now.getDay() + 6) % 7; // 0 = Lunes, 6 = Domingo
+    const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek, 0, 0, 0);
+    const startOfWeekStr = `${startOfWeek.getFullYear()}-${pad(startOfWeek.getMonth() + 1)}-${pad(startOfWeek.getDate())}`;
+
+    // Inicio del mes actual (Día 1 del mes a las 00:00:00)
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+    const startOfMonthStr = `${startOfMonth.getFullYear()}-${pad(startOfMonth.getMonth() + 1)}-${pad(startOfMonth.getDate())}`;
+
+    function extractOrderLocalDate(o) {
+        if (!o) return '';
+        if (o.dateOnly) return o.dateOnly;
+        if (o.createdAt) {
+            const s = String(o.createdAt).trim();
+            if (s.length >= 10) return s.slice(0, 10);
+        }
+        return '';
+    }
+
+    let sumToday = 0;
+    let sumWeek = 0;
+    let sumMonth = 0;
+
+    totalOrders.forEach(o => {
+        const val = Number(o.total) || 0;
+        const dStr = extractOrderLocalDate(o);
+        if (!dStr) return;
+
+        if (dStr === todayStr) {
+            sumToday += val;
+        }
+        if (dStr >= startOfWeekStr && dStr <= todayStr) {
+            sumWeek += val;
+        }
+        if (dStr >= startOfMonthStr && dStr <= todayStr) {
+            sumMonth += val;
+        }
+    });
+
+    if (salesTodayEl) salesTodayEl.textContent = `$ ${Math.round(sumToday).toLocaleString('es-CO')}`;
+    if (salesWeekEl) salesWeekEl.textContent = `$ ${Math.round(sumWeek).toLocaleString('es-CO')}`;
+    if (salesMonthEl) salesMonthEl.textContent = `$ ${Math.round(sumMonth).toLocaleString('es-CO')}`;
+
+    // 7 Days Chart con cálculo exacto por día calendario local
     if (chartContainer) {
-        const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+        const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
         const last7Days = [];
         for (let i = 6; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            const dateStr = d.toISOString().slice(0, 10);
-            const val = totalOrders.filter(o => (o.createdAt && o.createdAt.startsWith(dateStr)) || o.dateOnly === dateStr).reduce((s, o) => s + (Number(o.total) || 0), 0);
+            const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+            const dateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+            const val = totalOrders
+                .filter(o => extractOrderLocalDate(o) === dateStr)
+                .reduce((s, o) => s + (Number(o.total) || 0), 0);
+
             last7Days.push({
-                dayName: days[d.getDay()],
-                val: val
+                dateStr: dateStr,
+                dayName: dayNames[d.getDay()],
+                val: val,
+                isToday: i === 0
             });
         }
 
@@ -1073,9 +1116,9 @@ function renderDashboardContent() {
         chartContainer.innerHTML = last7Days.map(d => {
             const heightPercent = Math.max((d.val / maxVal) * 100, 12);
             return `
-                <div class="dash-chart-bar-wrap">
-                    <div class="dash-chart-bar" style="height:${heightPercent}%;" title="${d.dayName}: $ ${d.val.toLocaleString('es-CO')}"></div>
-                    <span class="dash-chart-label">${d.dayName}</span>
+                <div class="dash-chart-bar-wrap" title="${d.dayName} (${d.dateStr}): $ ${Math.round(d.val).toLocaleString('es-CO')}">
+                    <div class="dash-chart-bar" style="height:${heightPercent}%; ${d.isToday ? 'background:linear-gradient(180deg, #FF8F00 0%, #E65100 100%); box-shadow:0 0 10px rgba(255,143,0,0.5);' : ''}"></div>
+                    <span class="dash-chart-label" style="${d.isToday ? 'color:#FF8F00; font-weight:900;' : ''}">${d.dayName}</span>
                 </div>
             `;
         }).join('');
@@ -1103,10 +1146,24 @@ function quickEditStockFromDashboard(productId) {
     const prod = state.products.find(p => p.id === productId);
     if (!prod) return;
 
-    switchAdminSubTab('productEditor');
-    if (typeof editProductInEditor === 'function') {
-        editProductInEditor(productId);
+    switchAdminSubTab('products');
+    if (typeof editProduct === 'function') {
+        editProduct(productId);
     }
+
+    setTimeout(() => {
+        const editorCard = document.getElementById('productEditorCard') || document.getElementById('editorSubtabTitle') || document.getElementById('subtabProducts');
+        if (editorCard) {
+            editorCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        const stockInput = document.getElementById('editorStock');
+        if (stockInput) {
+            stockInput.focus();
+            stockInput.select();
+        }
+    }, 150);
+
+    showToast(`✏️ Atendiendo "${prod.name}". Actualiza el stock o costo en el formulario.`, 'info', '✏️');
 }
 
 // INITIALIZATION
@@ -2020,6 +2077,10 @@ async function processWhatsAppCheckout() {
 
             state.orders.unshift(mappedOrder);
             Storage.set('orders', state.orders);
+            // Retornar costo de adquisición al presupuesto inmediatamente al vender
+            if (typeof recordSalesCostRecovery === 'function') {
+                recordSalesCostRecovery(mappedOrder);
+            }
             renderHistorialUnificadoTable();
             updateDashboardKPIs();
 
@@ -2818,8 +2879,16 @@ function recordSalesCostRecovery(order) {
         let itemCost = it.costPrice;
         if (itemCost == null) {
             const p = (state.products || []).find(prod => prod.id === it.productId);
-            if (p && p.costPrice != null && p.costPrice > 0) {
-                itemCost = p.costPrice;
+            if (p) {
+                if (p.type === 'MERCADO' && Array.isArray(p.bundleItems)) {
+                    // Suma de costo de adquisición de componentes del mercado/combo
+                    itemCost = p.bundleItems.reduce((acc, bi) => {
+                        const comp = (state.products || []).find(c => c.id === bi.productId);
+                        return acc + ((comp?.costPrice || 0) * (bi.quantity || 1));
+                    }, 0);
+                } else if (p.costPrice != null && p.costPrice > 0) {
+                    itemCost = p.costPrice;
+                }
             }
         }
         if (itemCost != null && itemCost > 0) {
@@ -2836,15 +2905,22 @@ function recordSalesCostRecovery(order) {
         state.budget.totalRecoveredCosts += totalRecoverableCost;
         order.costRecoveryRecorded = true;
 
+        const orderTotal = Number(order.total) || totalRecoverableCost;
+        const profit = Math.max(0, orderTotal - totalRecoverableCost);
+
+        const pad = n => String(n).padStart(2, '0');
+        const now = new Date();
+        const nowFormatted = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
         const newTx = {
             id: 'tx-rec-' + Date.now(),
             type: 'SALES_COST_RECOVERY',
             amount: totalRecoverableCost,
-            description: `Recuperación de costo de adquisición por venta de pedido ${order.orderNumber || order.id}`,
+            description: `Retorno de costo de adquisición al fondo de reposición por venta ${order.orderNumber || order.id} (Ganancia retenida: $ ${Math.round(profit).toLocaleString('es-CO')})`,
             referenceId: order.orderNumber || order.id,
             balanceAfter: state.budget.currentBalance,
-            registeredBy: 'Sistema Merkostore (Venta Confirmada)',
-            createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
+            registeredBy: 'Sistema Merkostore (Venta a Cliente)',
+            createdAt: nowFormatted
         };
 
         if (!state.budgetTransactions) state.budgetTransactions = [];
