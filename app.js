@@ -3836,7 +3836,7 @@ function renderMercadoItemsChecklist() {
     container.innerHTML = detalProducts.map(p => `
         <div style="display:flex; align-items:center; justify-space-between; background:#18181b; padding:8px 12px; border-radius:8px;">
             <label style="display:flex; align-items:center; gap:8px; font-size:0.82rem; color:#ffffff; cursor:pointer;">
-                <input type="checkbox" class="mercado-bundle-check" data-id="${p.id}" checked>
+                <input type="checkbox" class="mercado-bundle-check" data-id="${p.id}">
                 <span>${p.name} (Stock detal: ${p.stock})</span>
             </label>
             <div style="display:flex; align-items:center; gap:6px;">
@@ -3907,6 +3907,9 @@ function resetProductEditorForm(userCancelled = false) {
     const warnBox = document.getElementById('editorBudgetWarning');
     if (warnBox) warnBox.style.display = 'none';
 
+    document.querySelectorAll('.mercado-bundle-check').forEach(chk => { chk.checked = false; });
+    document.querySelectorAll('.mercado-bundle-qty').forEach(qtyInp => { qtyInp.value = '1'; });
+
     toggleMercadoCompositionForm();
     state.currentProductFraming = {
         pc: { fit: 'cover', zoom: 1.0, posX: 50, posY: 50 },
@@ -3955,12 +3958,21 @@ function editProduct(productId) {
 
     toggleMercadoCompositionForm();
 
-    if (p.type === 'MERCADO' && p.bundleItems) {
-        p.bundleItems.forEach(b => {
-            const chk = document.querySelector(`.mercado-bundle-check[data-id="${b.productId}"]`);
-            const qtyInp = document.querySelector(`.mercado-bundle-qty[data-id="${b.productId}"]`);
-            if (chk) chk.checked = true;
-            if (qtyInp) qtyInp.value = b.quantity;
+    if (p.type === 'MERCADO') {
+        const bundleList = Array.isArray(p.bundleItems) ? p.bundleItems : [];
+        const bundleMap = {};
+        bundleList.forEach(b => {
+            bundleMap[b.productId] = b.quantity || 1;
+        });
+
+        document.querySelectorAll('.mercado-bundle-check').forEach(chk => {
+            const id = chk.getAttribute('data-id');
+            const hasItem = bundleMap[id] !== undefined;
+            chk.checked = hasItem;
+            const qtyInp = document.querySelector(`.mercado-bundle-qty[data-id="${id}"]`);
+            if (qtyInp) {
+                qtyInp.value = hasItem ? bundleMap[id] : 1;
+            }
         });
     }
 
