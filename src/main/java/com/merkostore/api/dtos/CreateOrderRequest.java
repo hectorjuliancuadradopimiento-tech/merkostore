@@ -10,6 +10,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -49,6 +50,10 @@ public class CreateOrderRequest {
         @NotNull(message = "La cantidad es obligatoria")
         @Min(value = 1, message = "La cantidad mínima debe ser 1")
         private Integer quantity;
+
+        private String name;
+        private BigDecimal unitPrice;
+        private BigDecimal costPrice;
     }
 
     @Data

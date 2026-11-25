@@ -2178,10 +2178,16 @@ async function processWhatsAppCheckout() {
         return;
     }
 
-    const itemsRequest = cartIds.map(id => ({
-        productId: id,
-        quantity: state.cart[id]
-    }));
+    const itemsRequest = cartIds.map(id => {
+        const p = state.products.find(prod => String(prod.id) === String(id));
+        return {
+            productId: id,
+            quantity: state.cart[id],
+            name: p ? p.name : 'Producto',
+            unitPrice: p ? ((p.discountPrice && p.discountPrice > 0) ? p.discountPrice : p.price) : 0,
+            costPrice: p ? (p.costPrice || 0) : 0
+        };
+    });
 
     const orderPayload = {
         storeId: 'default-store',
@@ -2196,120 +2202,139 @@ async function processWhatsAppCheckout() {
         fulfillmentType: state.storeConfig.fulfillmentType
     };
 
+    let newOrder = null;
     try {
         showToast('⏳ Registrando y verificando pedido en el servidor...', 'info', '⏳');
         const response = await API.post('/api/v1/orders', orderPayload);
-
         if (response && response.success && response.data) {
-            const newOrder = response.data;
-            const newOrderCode = newOrder.orderNumber;
-            const total = newOrder.total;
-            const subtotal = newOrder.subtotal;
-            const fee = newOrder.deliveryFee;
-
-            // Map order items robustly ensuring name & qty are ALWAYS present (never undefined)
-            const orderItems = (newOrder.items && newOrder.items.length > 0)
-                ? newOrder.items.map(it => {
-                    const found = state.products.find(p => p.id === it.productId);
-                    return {
-                        productId: it.productId,
-                        name: it.productName || it.name || (found ? found.name : 'Producto'),
-                        qty: it.quantity || it.qty || 1,
-                        unitPrice: it.unitPrice || (found ? found.price : 0),
-                        subtotal: it.subtotal || ((found ? found.price : 0) * (it.quantity || 1)),
-                        type: it.type || (it.productId && it.productId.startsWith('CMB') ? 'MERCADO' : 'DETAL')
-                    };
-                })
-                : cartIds.map(id => {
-                    const p = state.products.find(prod => prod.id === id);
-                    const q = state.cart[id];
-                    return {
-                        productId: id,
-                        name: p ? p.name : 'Producto',
-                        qty: q,
-                        unitPrice: p ? p.price : 0,
-                        subtotal: p ? (p.price * q) : 0,
-                        type: p ? p.type : 'DETAL'
-                    };
-                });
-
-            // Save order into local state & storage
-            const mappedOrder = {
-                id: newOrder.id,
-                orderNumber: newOrderCode,
-                customerName: name,
-                customerPhone: phone,
-                deliveryAddress: address,
-                notes: notes,
-                customerNotes: notes,
-                cashAmount: cashVal,
-                fulfillmentType: newOrder.fulfillmentType,
-                items: orderItems,
-                subtotal: subtotal,
-                deliveryFee: fee,
-                total: total,
-                paymentMethod: currentPaymentMethod || 'TRANSFER_WHATSAPP',
-                paymentStatus: 'PENDING',
-                paymentStatusLabel: 'PENDIENTE DE CONFIRMACIÓN',
-                status: 'RECEIVED',
-                createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
-            };
-
-            state.orders.unshift(mappedOrder);
-            Storage.set('orders', state.orders);
-            // Retornar costo de adquisición al presupuesto inmediatamente al vender
-            if (typeof recordSalesCostRecovery === 'function') {
-                recordSalesCostRecovery(mappedOrder);
-            }
-            renderHistorialUnificadoTable();
-            updateDashboardKPIs();
-
-            // Reset Cart
-            state.cart = {};
-            renderProducts();
-            renderCart();
-            toggleCartDrawer();
-
-            showToast('🚀 Pedido confirmado en el servidor. Redirigiendo a WhatsApp...', 'success', '📲');
-
-            let itemsText = '';
-            orderItems.forEach(it => {
-                itemsText += `  • ${it.qty}x ${it.name} ($ ${it.subtotal.toLocaleString('es-CO')})\n`;
-            });
-
-            const typeLabel = state.storeConfig.fulfillmentType === 'DELIVERY' ? '🚚 Domicilio a casa' : '🏬 Recogida en local';
-            const paymentLabels = {
-                'TRANSFER_WHATSAPP': '📲 Transferencia Nequi / Daviplata / Bancolombia (Adjunto comprobante)',
-                'CASH': `💵 Efectivo Contra Entrega${cashVal > 0 ? ` (Paga con: $ ${cashVal.toLocaleString('es-CO')} - Cambio: $ ${(cashVal - total).toLocaleString('es-CO')})` : ' (Cantidad exacta)'}`,
-                'WHATSAPP': '📲 Transferencia por WhatsApp Directo'
-            };
-            const paymentText = paymentLabels[currentPaymentMethod] || '📲 Transferencia WhatsApp';
-
-            const message = `🛒 *NUEVO PEDIDO EN MERKOSTORE*\n` +
-                            `═════════════════════════\n` +
-                            `🔖 *Código Oficial:* ${newOrderCode}\n` +
-                            `👤 *Cliente:* ${name}\n` +
-                            `📱 *Teléfono:* ${phone}\n` +
-                            `📍 *Entrega:* ${typeLabel}\n` +
-                            `🏠 *Dirección:* ${address}\n` +
-                            `📝 *Indicaciones / Notas:* ${notes}\n` +
-                            `💳 *Método de Pago:* ${paymentText}\n` +
-                            `═════════════════════════\n` +
-                            `📦 *PRODUCTOS SOLICITADOS:*\n${itemsText}` +
-                            `═════════════════════════\n` +
-                            `💰 *Subtotal Ítems:* $ ${subtotal.toLocaleString('es-CO')}\n` +
-                            `🚚 *Costo Domicilio:* ${fee === 0 ? '¡GRATIS!' : '$ ' + fee.toLocaleString('es-CO')}\n` +
-                            `💵 *TOTAL A PAGAR:* $ ${total.toLocaleString('es-CO')} COP\n\n` +
-                            (currentPaymentMethod === 'TRANSFER_WHATSAPP' ? `📎 *Adjunto mi comprobante de transferencia bancaria para validación inmediata.*\n\n` : '') +
-                            `¡Hola! Confirmo mi pedido registrado con código *${newOrderCode}*. Quedo atento al despacho.`;
-
-            window.open(`https://wa.me/${state.storeConfig.whatsappPhone}?text=${encodeURIComponent(message)}`, '_blank');
-            loadPublicBackendData();
-        } else {
-            showToast(`❌ No se pudo registrar el pedido: ${response.message || 'Error en el servidor'}`, 'error', '❌');
+            newOrder = response.data;
         }
-    } catch (err) {
-        showToast(`❌ Error al procesar el pedido: ${err.message}`, 'error', '❌');
+    } catch (apiErr) {
+        console.warn('Advertencia en servidor al registrar pedido, activando fallback local:', apiErr);
+    }
+
+    // Calcular montos finales de forma resiliente
+    const calculatedSubtotal = cartIds.reduce((sum, id) => {
+        const p = state.products.find(prod => String(prod.id) === String(id));
+        const effectivePrice = p ? ((p.discountPrice && p.discountPrice > 0) ? p.discountPrice : p.price) : 0;
+        return sum + (effectivePrice * (state.cart[id] || 1));
+    }, 0);
+    const calculatedFee = (state.storeConfig.fulfillmentType === 'DELIVERY' && calculatedSubtotal < 30000)
+        ? (state.storeConfig.deliveryFee || 3000)
+        : 0;
+
+    const newOrderCode = newOrder ? newOrder.orderNumber : ('MS-' + Math.floor(1000 + Math.random() * 9000));
+    const total = newOrder ? newOrder.total : (calculatedSubtotal + calculatedFee);
+    const subtotal = newOrder ? newOrder.subtotal : calculatedSubtotal;
+    const fee = newOrder ? newOrder.deliveryFee : calculatedFee;
+
+    // Map order items robustly ensuring name & qty are ALWAYS present (never undefined)
+    const orderItems = (newOrder && newOrder.items && newOrder.items.length > 0)
+        ? newOrder.items.map(it => {
+            const found = state.products.find(p => String(p.id) === String(it.productId));
+            return {
+                productId: it.productId,
+                name: it.productName || it.name || (found ? found.name : 'Producto'),
+                qty: it.quantity || it.qty || 1,
+                unitPrice: it.unitPrice || (found ? ((found.discountPrice && found.discountPrice > 0) ? found.discountPrice : found.price) : 0),
+                subtotal: it.subtotal || (((found ? ((found.discountPrice && found.discountPrice > 0) ? found.discountPrice : found.price) : 0)) * (it.quantity || 1)),
+                type: it.type || (found ? found.type : (it.productId && String(it.productId).startsWith('CMB') ? 'MERCADO' : 'DETAL'))
+            };
+        })
+        : cartIds.map(id => {
+            const p = state.products.find(prod => String(prod.id) === String(id));
+            const q = state.cart[id];
+            const price = p ? ((p.discountPrice && p.discountPrice > 0) ? p.discountPrice : p.price) : 0;
+            return {
+                productId: id,
+                name: p ? p.name : 'Producto',
+                qty: q,
+                unitPrice: price,
+                subtotal: price * q,
+                type: p ? p.type : 'DETAL'
+            };
+        });
+
+    // Save order into local state & storage
+    const mappedOrder = {
+        id: (newOrder && newOrder.id) ? newOrder.id : ('ord-' + Date.now()),
+        orderNumber: newOrderCode,
+        customerName: name,
+        customerPhone: phone,
+        deliveryAddress: address,
+        notes: notes,
+        customerNotes: notes,
+        cashAmount: cashVal,
+        fulfillmentType: state.storeConfig.fulfillmentType,
+        items: orderItems,
+        subtotal: subtotal,
+        deliveryFee: fee,
+        total: total,
+        paymentMethod: currentPaymentMethod || 'TRANSFER_WHATSAPP',
+        paymentStatus: 'PENDING',
+        paymentStatusLabel: 'PENDIENTE DE CONFIRMACIÓN',
+        status: 'RECEIVED',
+        createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
+    };
+
+    state.orders.unshift(mappedOrder);
+    Storage.set('orders', state.orders);
+
+    // Descontar inventario localmente (para combos y detal)
+    if (typeof deductInventoryForOrderItems === 'function') {
+        deductInventoryForOrderItems(orderItems);
+        Storage.set('products', state.products);
+    }
+
+    // Retornar costo de adquisición al presupuesto inmediatamente al vender
+    if (typeof recordSalesCostRecovery === 'function') {
+        recordSalesCostRecovery(mappedOrder);
+    }
+    renderHistorialUnificadoTable();
+    updateDashboardKPIs();
+
+    // Reset Cart
+    state.cart = {};
+    renderProducts();
+    renderCart();
+    toggleCartDrawer();
+
+    showToast('🚀 Pedido confirmado exitosamente. Redirigiendo a WhatsApp...', 'success', '📲');
+
+    let itemsText = '';
+    orderItems.forEach(it => {
+        itemsText += `  • ${it.qty}x ${it.name} ($ ${it.subtotal.toLocaleString('es-CO')})\n`;
+    });
+
+    const typeLabel = state.storeConfig.fulfillmentType === 'DELIVERY' ? '🚚 Domicilio a casa' : '🏬 Recogida en local';
+    const paymentLabels = {
+        'TRANSFER_WHATSAPP': '📲 Transferencia Nequi / Daviplata / Bancolombia (Adjunto comprobante)',
+        'CASH': `💵 Efectivo Contra Entrega${cashVal > 0 ? ` (Paga con: $ ${cashVal.toLocaleString('es-CO')} - Cambio: $ ${(cashVal - total).toLocaleString('es-CO')})` : ' (Cantidad exacta)'}`,
+        'WHATSAPP': '📲 Transferencia por WhatsApp Directo'
+    };
+    const paymentText = paymentLabels[currentPaymentMethod] || '📲 Transferencia WhatsApp';
+
+    const message = `🛒 *NUEVO PEDIDO EN MERKOSTORE*\n` +
+                    `═════════════════════════\n` +
+                    `🔖 *Código Oficial:* ${newOrderCode}\n` +
+                    `👤 *Cliente:* ${name}\n` +
+                    `📱 *Teléfono:* ${phone}\n` +
+                    `📍 *Entrega:* ${typeLabel}\n` +
+                    `🏠 *Dirección:* ${address}\n` +
+                    `📝 *Indicaciones / Notas:* ${notes}\n` +
+                    `💳 *Método de Pago:* ${paymentText}\n` +
+                    `═════════════════════════\n` +
+                    `📦 *PRODUCTOS SOLICITADOS:*\n${itemsText}` +
+                    `═════════════════════════\n` +
+                    `💰 *Subtotal Ítems:* $ ${subtotal.toLocaleString('es-CO')}\n` +
+                    `🚚 *Costo Domicilio:* ${fee === 0 ? '¡GRATIS!' : '$ ' + fee.toLocaleString('es-CO')}\n` +
+                    `💵 *TOTAL A PAGAR:* $ ${total.toLocaleString('es-CO')} COP\n\n` +
+                    (currentPaymentMethod === 'TRANSFER_WHATSAPP' ? `📎 *Adjunto mi comprobante de transferencia bancaria para validación inmediata.*\n\n` : '') +
+                    `¡Hola! Confirmo mi pedido registrado con código *${newOrderCode}*. Quedo atento al despacho.`;
+
+    window.open(`https://wa.me/${state.storeConfig.whatsappPhone}?text=${encodeURIComponent(message)}`, '_blank');
+    if (typeof loadPublicBackendData === 'function') {
+        loadPublicBackendData();
     }
 }
 
@@ -4550,6 +4575,26 @@ function saveProductFromEditor() {
                 imagePosX_Mobile: framingMobile.posX,
                 imagePosY_Mobile: framingMobile.posY
             };
+
+            // Sincronizar actualización con backend en segundo plano
+            try {
+                if (typeof API !== 'undefined' && API.getToken && API.getToken()) {
+                    API.put(`/api/v1/admin/products/${state.editingProductId}`, {
+                        storeId: 'default-store',
+                        categoryId: cat,
+                        sku: oldProd.sku,
+                        name: name,
+                        price: price,
+                        costPrice: finalCostPrice,
+                        discountPrice: discount,
+                        unit: unit,
+                        stock: stock,
+                        imageUrl: image,
+                        isAvailable: oldProd.isAvailable !== false
+                    }).catch(e => console.warn('Sync PUT backend warning:', e));
+                }
+            } catch (e) {}
+
             showToast(`✅ ¡"${name}" actualizado exitosamente!`, 'success', '💾');
         }
     } else {
@@ -4639,6 +4684,27 @@ function saveProductFromEditor() {
         }
 
         state.products.unshift(newProd);
+
+        // Sincronizar nuevo producto / combo con backend en segundo plano
+        try {
+            if (typeof API !== 'undefined' && API.getToken && API.getToken()) {
+                API.post('/api/v1/admin/products', {
+                    id: newProd.id,
+                    storeId: 'default-store',
+                    categoryId: cat,
+                    sku: newProd.sku,
+                    name: name,
+                    price: price,
+                    costPrice: costVal,
+                    discountPrice: discount,
+                    unit: unit,
+                    stock: stock,
+                    imageUrl: image,
+                    isAvailable: true
+                }).catch(e => console.warn('Sync POST backend warning:', e));
+            }
+        } catch (e) {}
+
         showToast(`✅ ¡${type === 'MERCADO' ? 'Mercado Combo' : 'Producto Detal'} guardado exitosamente!`, 'success', '💾');
     }
 

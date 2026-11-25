@@ -218,27 +218,35 @@ public class AdminDashboardController {
 
     @PutMapping("/products/{productId}")
     public ResponseEntity<ApiResponse<Product>> updateProduct(@PathVariable String productId, @Valid @RequestBody Product updatedData) {
-        return productRepository.findById(productId)
-                .map(product -> {
-                    product.setName(updatedData.getName());
-                    product.setDescription(updatedData.getDescription());
-                    product.setCategoryId(updatedData.getCategoryId());
-                    product.setSku(updatedData.getSku());
-                    product.setCostPrice(updatedData.getCostPrice());
-                    product.setPrice(updatedData.getPrice());
-                    product.setDiscountPrice(updatedData.getDiscountPrice());
-                    product.setUnit(updatedData.getUnit());
-                    product.setStock(updatedData.getStock());
-                    product.setMinStockAlert(updatedData.getMinStockAlert());
-                    product.setImageUrl(updatedData.getImageUrl());
-                    if (updatedData.getIsAvailable() != null) product.setIsAvailable(updatedData.getIsAvailable());
-                    if (updatedData.getIsFeatured() != null) product.setIsFeatured(updatedData.getIsFeatured());
-                    product.setUpdatedAt(LocalDateTime.now());
+        Product product = productRepository.findById(productId).orElse(null);
+        if (product == null) {
+            updatedData.setId(productId);
+            if (updatedData.getStoreId() == null || updatedData.getStoreId().isEmpty()) {
+                updatedData.setStoreId("default-store");
+            }
+            if (updatedData.getIsAvailable() == null) updatedData.setIsAvailable(true);
+            updatedData.setUpdatedAt(LocalDateTime.now());
+            Product saved = productRepository.save(updatedData);
+            return ResponseEntity.ok(ApiResponse.ok("Producto registrado exitosamente", saved));
+        }
 
-                    Product saved = productRepository.save(product);
-                    return ResponseEntity.ok(ApiResponse.ok("Producto actualizado exitosamente", saved));
-                })
-                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + productId));
+        product.setName(updatedData.getName());
+        product.setDescription(updatedData.getDescription());
+        product.setCategoryId(updatedData.getCategoryId());
+        product.setSku(updatedData.getSku());
+        product.setCostPrice(updatedData.getCostPrice());
+        product.setPrice(updatedData.getPrice());
+        product.setDiscountPrice(updatedData.getDiscountPrice());
+        product.setUnit(updatedData.getUnit());
+        product.setStock(updatedData.getStock());
+        product.setMinStockAlert(updatedData.getMinStockAlert());
+        product.setImageUrl(updatedData.getImageUrl());
+        if (updatedData.getIsAvailable() != null) product.setIsAvailable(updatedData.getIsAvailable());
+        if (updatedData.getIsFeatured() != null) product.setIsFeatured(updatedData.getIsFeatured());
+        product.setUpdatedAt(LocalDateTime.now());
+
+        Product saved = productRepository.save(product);
+        return ResponseEntity.ok(ApiResponse.ok("Producto actualizado exitosamente", saved));
     }
 
     @PatchMapping("/products/{productId}/toggle-availability")

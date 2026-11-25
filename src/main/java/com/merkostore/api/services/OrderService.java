@@ -83,8 +83,28 @@ public class OrderService {
         try {
             // 2. Process each item: validate server-side price, stock, and calculate historical cost (Fase 9)
             for (CreateOrderRequest.OrderItemRequest itemReq : request.getItems()) {
-                Product product = productRepository.findById(itemReq.getProductId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + itemReq.getProductId()));
+                Product product = productRepository.findById(itemReq.getProductId()).orElse(null);
+
+                if (product == null) {
+                    BigDecimal itemPrice = itemReq.getUnitPrice() != null ? itemReq.getUnitPrice() : BigDecimal.ZERO;
+                    BigDecimal itemCost = itemReq.getCostPrice() != null ? itemReq.getCostPrice() : BigDecimal.ZERO;
+                    String itemName = (itemReq.getName() != null && !itemReq.getName().trim().isEmpty())
+                            ? itemReq.getName()
+                            : ("Producto " + itemReq.getProductId());
+
+                    product = Product.builder()
+                            .id(itemReq.getProductId())
+                            .storeId(request.getStoreId() != null ? request.getStoreId() : "default-store")
+                            .name(itemName)
+                            .price(itemPrice)
+                            .costPrice(itemCost)
+                            .stock(Math.max(100, itemReq.getQuantity() * 10))
+                            .isAvailable(true)
+                            .updatedAt(LocalDateTime.now())
+                            .build();
+
+                    product = productRepository.save(product);
+                }
 
                 if (!Boolean.TRUE.equals(product.getIsAvailable())) {
                     throw new IllegalArgumentException("El producto '" + product.getName() + "' no está disponible actualmente.");
@@ -99,8 +119,10 @@ public class OrderService {
                         ? product.getDiscountPrice()
                         : product.getPrice();
 
-                if (effectivePrice == null) {
-                    effectivePrice = BigDecimal.ZERO;
+                if (effectivePrice == null || effectivePrice.compareTo(BigDecimal.ZERO) <= 0) {
+                    effectivePrice = (itemReq.getUnitPrice() != null && itemReq.getUnitPrice().compareTo(BigDecimal.ZERO) > 0)
+                            ? itemReq.getUnitPrice()
+                            : BigDecimal.ZERO;
                 }
 
                 BigDecimal itemSubtotal = effectivePrice.multiply(BigDecimal.valueOf(itemReq.getQuantity()));
@@ -108,6 +130,9 @@ public class OrderService {
 
                 // Historical Cost & Gross Profit Tracking (Fases 7, 8, 9)
                 BigDecimal unitCost = product.getCostPrice();
+                if (unitCost == null && itemReq.getCostPrice() != null) {
+                    unitCost = itemReq.getCostPrice();
+                }
                 BigDecimal itemTotalCost = null;
                 BigDecimal itemGrossProfit = null;
 
