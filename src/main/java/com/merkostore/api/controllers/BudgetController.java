@@ -115,4 +115,11 @@ public class BudgetController {
         List<SupplierPurchase> purchases = budgetService.getPurchasesHistory(storeId);
         return ResponseEntity.ok(ApiResponse.ok("Historial de compras a proveedores", purchases));
     }
+
+    @PostMapping("/reset")
+    public ResponseEntity<ApiResponse<StoreBudget>> resetBudget(
+            @RequestParam(defaultValue = "default-store") String storeId) {
+        StoreBudget budget = budgetService.resetBudgetToZero(storeId);
+        return ResponseEntity.ok(ApiResponse.ok("Presupuesto reiniciado a $0 y registros limpiados", budget));
+    }
 }

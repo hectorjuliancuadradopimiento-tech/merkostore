@@ -56,7 +56,6 @@
                 </div>
                 <div class="brand-name-group">
                     <span class="brand-title" id="navStoreName">MERKOSTORE</span>
-                    <span class="brand-sub">TU TIENDA DE BARRIO • FRESCO Y CERCANO</span>
                 </div>
             </div>
 
@@ -136,7 +135,6 @@
                             </div>
                             <div>
                                 <div class="footer-brand-title" style="margin-bottom:2px;">MERKOSTORE</div>
-                                <div class="footer-slogan" style="font-size:0.75rem;">TU TIENDA DE BARRIO • FRESCO Y CERCANO</div>
                             </div>
                         </div>
                         <div class="footer-brand-desc">
@@ -255,9 +253,6 @@
                             <div style="font-size:0.85rem; color:var(--admin-text-muted);">Bienvenido al Panel de Control Ejecutivo de Merkostore</div>
                         </div>
                         <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                            <button class="btn-merko-primary" onclick="forceSyncWithDatabase()" title="Sincronizar base de datos con Power BI y recalcular métricas">
-                                🔄 Sincronizar DB & Power BI
-                            </button>
                             <button class="btn-merko-outline" onclick="refreshDashboardData()">
                                 ⚡ Actualizar Vista
                             </button>
@@ -1168,7 +1163,7 @@
                             </div>
                             <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
                                 <button class="btn-merko-primary" onclick="ejecutarOptimizacionLinealIO()" style="display:inline-flex; align-items:center; gap:8px;">
-                                    🚀 Ejecutar Solver en Vivo (Simplex)
+                                    🚀 Optimizar
                                 </button>
                                 <button class="btn-merko-outline" onclick="limpiarResultadosIO()" style="display:inline-flex; align-items:center; gap:8px; border-color:rgba(239,68,68,0.4); color:#fca5a5;">
                                     🗑️ Limpiar Resultados
@@ -1225,7 +1220,7 @@
                                 <div style="font-size:0.75rem; color:#10b981; text-transform:uppercase; font-weight:900;">Función Objetivo Óptima (Z*)</div>
                                 <div style="font-size:2rem; font-weight:900; color:#fff; margin-top:4px;" id="ioValorZOptimo">$ 0 COP</div>
                                 <div style="font-size:0.75rem; color:#cbd5e1; margin-top:4px;" id="ioValorZSubtext">
-                                    Configura el tiempo disponible y presiona "Ejecutar Solver en Vivo" para optimizar.
+                                    Configura el tiempo disponible y presiona "🚀 Optimizar" para calcular.
                                 </div>
                             </div>
                             <div class="admin-card-glass" style="border-left:4px solid #f59e0b; display:flex; justify-content:space-between; align-items:center;">
@@ -1260,7 +1255,7 @@
                                 <tbody id="ioDecisionTableBody">
                                     <tr>
                                         <td colspan="6" style="text-align:center; padding:36px; color:var(--admin-text-muted);">
-                                            ⚡ Configura el tiempo disponible del administrador y presiona <strong>"🚀 Ejecutar Solver en Vivo (Simplex)"</strong> para calcular la mezcla óptima.
+                                            ⚡ Configura el tiempo disponible del administrador y presiona <strong>"🚀 Optimizar"</strong> para calcular la mezcla ideal.
                                         </td>
                                     </tr>
                                 </tbody>
@@ -1270,7 +1265,7 @@
                         <!-- Bottlenecks & Resource Usage -->
                         <div class="admin-card-glass">
                             <h3 style="font-size:0.95rem; font-weight:900; color:#FF8F00; margin-bottom:14px;">
-                                ⚙️ 3. Diagnóstico de Recursos, Holguras y Cuellos de Botella
+                                ⚙️ 3. Estado del Inventario: Disponibilidad y Productos Limitantes
                             </h3>
                             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;" id="ioResourceDiagnosticsGrid">
                                 <!-- Dynamic Diagnostic Cards rendered by ejecutarOptimizacionLinealIO() -->

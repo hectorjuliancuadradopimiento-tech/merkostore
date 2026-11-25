@@ -58,6 +58,25 @@ public class BudgetService {
         });
     }
 
+    public synchronized StoreBudget resetBudgetToZero(String storeId) {
+        String sId = (storeId != null && !storeId.trim().isEmpty()) ? storeId.trim() : "default-store";
+        StoreBudget budget = getOrCreateBudget(sId);
+        budget.setCurrentBalance(BigDecimal.ZERO);
+        budget.setInitialBudget(BigDecimal.ZERO);
+        budget.setTotalPurchases(BigDecimal.ZERO);
+        budget.setTotalRecoveredCosts(BigDecimal.ZERO);
+        budget.setTotalManualInjections(BigDecimal.ZERO);
+        budget.setIsInitialized(false);
+        budget.setUpdatedAt(LocalDateTime.now());
+        StoreBudget saved = storeBudgetRepository.save(budget);
+
+        List<FinancialTransaction> txs = financialTransactionRepository.findByStoreIdOrderByDateDesc(sId);
+        if (txs != null && !txs.isEmpty()) {
+            financialTransactionRepository.deleteAll(txs);
+        }
+        return saved;
+    }
+
     public synchronized StoreBudget initializeBudget(String storeId, BigDecimal initialAmount, String createdBy) {
         if (initialAmount == null || initialAmount.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("El valor del presupuesto inicial no puede ser negativo");

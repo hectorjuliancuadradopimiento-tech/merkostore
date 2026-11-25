@@ -133,25 +133,14 @@ const state = {
 
     // Business Budget & Inventory Replacement State
     budget: {
-        initialBudget: 1000000,
-        currentBalance: 1000000,
+        initialBudget: 0,
+        currentBalance: 0,
         totalPurchases: 0,
         totalRecoveredCosts: 0,
         totalManualInjections: 0,
         isInitialized: false
     },
-    budgetTransactions: [
-        {
-            id: 'tx-init-1',
-            type: 'INITIAL_BUDGET',
-            amount: 1000000,
-            description: 'Fondo inicial para reposición de mercancía',
-            referenceId: 'INIT-2026',
-            balanceAfter: 1000000,
-            registeredBy: 'Administrador (Propietario)',
-            createdAt: '2026-11-20 08:00'
-        }
-    ],
+    budgetTransactions: [],
     supplierPurchases: [],
     
     // Cart: { productId: quantity }
@@ -1242,11 +1231,30 @@ function quickEditStockFromDashboard(productId) {
 
 // INITIALIZATION
 document.addEventListener('DOMContentLoaded', () => {
-    // 0. Restore Store Budget & Transactions from Storage
-    const savedBudget = Storage.get('store_budget');
-    if (savedBudget) state.budget = savedBudget;
-    const savedTransactions = Storage.get('budget_transactions');
-    if (savedTransactions) state.budgetTransactions = savedTransactions;
+    // 0. One-time clean reset for user requested $0 COP budget and 0 test movements
+    const BUDGET_RESET_V1 = 'v6_clean_zero_budget_reset';
+    if (!Storage.get(BUDGET_RESET_V1)) {
+        state.budget = {
+            initialBudget: 0,
+            currentBalance: 0,
+            totalPurchases: 0,
+            totalRecoveredCosts: 0,
+            totalManualInjections: 0,
+            isInitialized: false
+        };
+        state.budgetTransactions = [];
+        Storage.set('store_budget', state.budget);
+        Storage.set('budget_transactions', []);
+        Storage.set(BUDGET_RESET_V1, true);
+        if (typeof API !== 'undefined' && API.post) {
+            API.post('/api/v1/admin/budget/reset', { storeId: 'STORE-001' }).catch(() => {});
+        }
+    } else {
+        const savedBudget = Storage.get('store_budget');
+        if (savedBudget) state.budget = savedBudget;
+        const savedTransactions = Storage.get('budget_transactions');
+        if (savedTransactions) state.budgetTransactions = savedTransactions;
+    }
     const savedPurchases = Storage.get('supplier_purchases');
     if (savedPurchases) state.supplierPurchases = savedPurchases;
 
@@ -2498,7 +2506,7 @@ function limpiarResultadosIO(showToastNotice = true) {
     if (lblZ) lblZ.textContent = '$ 0 COP';
 
     const lblSubtext = document.getElementById('ioValorZSubtext');
-    if (lblSubtext) lblSubtext.textContent = 'Configura el tiempo disponible del administrador y presiona "🚀 Ejecutar Solver en Vivo" para optimizar.';
+    if (lblSubtext) lblSubtext.textContent = 'Configura el tiempo disponible del administrador y presiona "🚀 Optimizar" para calcular.';
 
     const btnSync = document.getElementById('btnSyncIoCatalog');
     if (btnSync) {
@@ -2512,7 +2520,7 @@ function limpiarResultadosIO(showToastNotice = true) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="6" style="text-align:center; padding:36px; color:var(--admin-text-muted);">
-                    ⚡ Configura el tiempo disponible del administrador y presiona <strong>"🚀 Ejecutar Solver en Vivo (Simplex)"</strong> para calcular la mezcla óptima.
+                    ⚡ Configura el tiempo disponible del administrador y presiona <strong>"🚀 Optimizar"</strong> para calcular la mezcla ideal.
                 </td>
             </tr>
         `;
@@ -2522,7 +2530,7 @@ function limpiarResultadosIO(showToastNotice = true) {
     if (grid) {
         grid.innerHTML = `
             <div style="grid-column: 1 / -1; text-align:center; padding:24px; color:var(--admin-text-muted); font-size:0.85rem;">
-                📊 Los diagnósticos de recursos, holguras y cuellos de botella aparecerán aquí una vez ejecutado el solucionador.
+                📊 El estado de tus productos (disponibles vs. agotados para armar combos) y tu tiempo de trabajo aparecerán aquí una vez optimices.
             </div>
         `;
     }
@@ -2794,7 +2802,7 @@ function renderDynamicIoDiagnosticsGrid(sol, combos, detalProducts, bTiempo) {
         const badgeColor = isBottleneck ? '#ef4444' : '#10b981';
         const badgeBg = isBottleneck ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)';
         const badgeBorder = isBottleneck ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)';
-        const badgeText = isBottleneck ? '🔥 Agotado / Cuello' : '✅ Holgura';
+        const badgeText = isBottleneck ? '🔥 Agotado para Combos' : '✅ Stock Disponible';
 
         cardsHTML += `
             <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:14px;">
@@ -2806,10 +2814,11 @@ function renderDynamicIoDiagnosticsGrid(sol, combos, detalProducts, bTiempo) {
                         ${badgeText}
                     </span>
                 </div>
-                <div style="font-size:0.75rem; color:#cbd5e1; display:flex; justify-content:space-between; margin-bottom:4px;">
-                    <span>Bodega Total: <strong>${p.b_stock}</strong></span>
+                <div style="font-size:0.75rem; color:#cbd5e1; display:flex; justify-content:space-between; margin-bottom:4px; flex-wrap:wrap; gap:6px;">
+                    <span>Bodega: <strong>${p.b_stock}</strong></span>
                     <span>En Combos: <strong style="color:#3b82f6;">${usedInCombos}</strong></span>
                     <span>Venta Detal: <strong style="color:#f59e0b;">${retailQty}</strong></span>
+                    <span>Sobrante: <strong style="color:${isBottleneck ? '#ef4444' : '#10b981'};">${slack}</strong></span>
                 </div>
             </div>
         `;
@@ -2823,15 +2832,15 @@ function renderDynamicIoDiagnosticsGrid(sol, combos, detalProducts, bTiempo) {
     cardsHTML += `
         <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:14px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <strong style="color:#ffffff; font-size:0.85rem;">⏱️ Tiempo Administrador</strong>
+                <strong style="color:#ffffff; font-size:0.85rem;">⏱️ Tiempo del Administrador</strong>
                 <span style="font-size:0.68rem; font-weight:800; color:${isTimeBottleneck ? '#ef4444' : '#10b981'}; background:${isTimeBottleneck ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)'}; border:1px solid ${isTimeBottleneck ? 'rgba(239,68,68,0.3)' : 'rgba(16,185,129,0.3)'}; padding:2px 6px; border-radius:4px;">
-                    ${isTimeBottleneck ? '🔥 Límite Alcanzado' : '✅ Tiempo Libre'}
+                    ${isTimeBottleneck ? '⏰ Tiempo Límite' : '✅ Tiempo Disponible'}
                 </span>
             </div>
-            <div style="font-size:0.75rem; color:#cbd5e1; display:flex; justify-content:space-between;">
+            <div style="font-size:0.75rem; color:#cbd5e1; display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;">
                 <span>Disponible: <strong>${bTiempo} min</strong></span>
                 <span>Usado: <strong style="color:#10b981;">${timeUsed} min</strong></span>
-                <span>Holgura: <strong>${timeSlack} min</strong></span>
+                <span>Tiempo Libre: <strong style="color:${isTimeBottleneck ? '#ef4444' : '#10b981'};">${timeSlack} min</strong></span>
             </div>
         </div>
     `;
@@ -2983,7 +2992,7 @@ function closeIoFormulacionModal() {
 
 function aplicarSolucionIOAInventario() {
     if (!ultimaSolucionIO) {
-        showToast('⚠️ Primero debes presionar "Ejecutar Solver en Vivo" para calcular la solución óptima.', 'warning', '⚠️');
+        showToast('⚠️ Primero debes presionar "🚀 Optimizar" para calcular la solución más rentable.', 'warning', '⚠️');
         return;
     }
 
@@ -3040,12 +3049,12 @@ async function loadBudgetData() {
         if (budgetRes.status === 'fulfilled' && budgetRes.value?.data) {
             const b = budgetRes.value.data;
             state.budget = {
-                initialBudget: Number(b.initialBudget) || 1000000,
-                currentBalance: (b.currentBalance !== undefined && b.currentBalance !== null) ? Number(b.currentBalance) : 1000000,
+                initialBudget: Number(b.initialBudget) || 0,
+                currentBalance: (b.currentBalance !== undefined && b.currentBalance !== null) ? Number(b.currentBalance) : 0,
                 totalPurchases: Number(b.totalPurchases) || 0,
                 totalRecoveredCosts: Number(b.totalRecoveredCosts) || 0,
                 totalManualInjections: Number(b.totalManualInjections) || 0,
-                isInitialized: true
+                isInitialized: b.isInitialized !== undefined ? b.isInitialized : (Number(b.initialBudget) > 0)
             };
             Storage.set('store_budget', state.budget);
         } else {
@@ -3053,17 +3062,18 @@ async function loadBudgetData() {
             if (saved) {
                 state.budget = saved;
             } else {
-                state.budget = { initialBudget: 1000000, currentBalance: 1000000, totalPurchases: 0, totalRecoveredCosts: 0, totalManualInjections: 0, isInitialized: true };
+                state.budget = { initialBudget: 0, currentBalance: 0, totalPurchases: 0, totalRecoveredCosts: 0, totalManualInjections: 0, isInitialized: false };
                 Storage.set('store_budget', state.budget);
             }
         }
 
-        if (txRes.status === 'fulfilled' && Array.isArray(txRes.value?.data) && txRes.value.data.length > 0) {
+        if (txRes.status === 'fulfilled' && Array.isArray(txRes.value?.data)) {
             state.budgetTransactions = txRes.value.data;
             Storage.set('budget_transactions', state.budgetTransactions);
         } else {
             const savedTx = Storage.get('budget_transactions');
             if (savedTx) state.budgetTransactions = savedTx;
+            else state.budgetTransactions = [];
         }
 
         if (purchasesRes.status === 'fulfilled' && Array.isArray(purchasesRes.value?.data) && purchasesRes.value.data.length > 0) {
@@ -3081,10 +3091,11 @@ async function loadBudgetData() {
         if (saved) {
             state.budget = saved;
         } else {
-            state.budget = { initialBudget: 1000000, currentBalance: 1000000, totalPurchases: 0, totalRecoveredCosts: 0, totalManualInjections: 0, isInitialized: true };
+            state.budget = { initialBudget: 0, currentBalance: 0, totalPurchases: 0, totalRecoveredCosts: 0, totalManualInjections: 0, isInitialized: false };
         }
         const savedTx = Storage.get('budget_transactions');
         if (savedTx) state.budgetTransactions = savedTx;
+        else state.budgetTransactions = [];
         const savedPurchases = Storage.get('supplier_purchases');
         if (savedPurchases) state.supplierPurchases = savedPurchases;
         renderBudgetSubtab();
@@ -3094,12 +3105,12 @@ async function loadBudgetData() {
 function renderBudgetSubtab() {
     if (!state.budget) {
         state.budget = {
-            initialBudget: 1000000,
-            currentBalance: 1000000,
+            initialBudget: 0,
+            currentBalance: 0,
             totalPurchases: 0,
             totalRecoveredCosts: 0,
             totalManualInjections: 0,
-            isInitialized: true
+            isInitialized: false
         };
     }
 
@@ -3230,7 +3241,7 @@ function openEditBudgetModal() {
     if (inputVal) {
         const cur = (state.budget && state.budget.currentBalance !== undefined && state.budget.currentBalance !== null) 
             ? Math.max(0, state.budget.currentBalance) 
-            : 1000000;
+            : 0;
         inputVal.value = cur;
     }
     const inputNotes = document.getElementById('editBudgetNotes');
