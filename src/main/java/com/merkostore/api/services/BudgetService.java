@@ -63,7 +63,18 @@ public class BudgetService {
         StoreBudget budget = getOrCreateBudget(sId);
         budget.setCurrentBalance(BigDecimal.ZERO);
         budget.setInitialBudget(BigDecimal.ZERO);
-        budget.setTotalPurchases(BigDecimal.ZERO);
+
+        // Preservar siempre el total acumulado de compras según los registros reales existentes
+        List<SupplierPurchase> purchases = supplierPurchaseRepository.findByStoreIdOrderByDateDesc(sId);
+        BigDecimal sumPurchases = BigDecimal.ZERO;
+        if (purchases != null) {
+            for (SupplierPurchase sp : purchases) {
+                if (sp.getTotalCost() != null) {
+                    sumPurchases = sumPurchases.add(sp.getTotalCost());
+                }
+            }
+        }
+        budget.setTotalPurchases(sumPurchases);
         budget.setTotalRecoveredCosts(BigDecimal.ZERO);
         budget.setTotalManualInjections(BigDecimal.ZERO);
         budget.setIsInitialized(false);

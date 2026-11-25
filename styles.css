@@ -4878,5 +4878,16 @@ body.admin-fullscreen-active #viewStorefront {
     }
 }
 
+/* Ocultar Asistente de IA (MerkoBot) en el Panel de Administración */
+body.admin-fullscreen-active #floatingChatbotBtn,
+body.admin-fullscreen-active .floating-chatbot-btn,
+body.admin-fullscreen-active #chatbotWidgetContainer,
+body.admin-fullscreen-active .chatbot-widget-container {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+
 
 

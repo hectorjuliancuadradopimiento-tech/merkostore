@@ -1526,6 +1526,20 @@ function switchView(view) {
     if (floatingCartFab) floatingCartFab.style.display = (isStorefront && totalCartItems > 0) ? 'flex' : 'none';
     if (floatingWhatsappBtn) floatingWhatsappBtn.style.display = isStorefront ? '' : 'none';
 
+    // El asistente de IA no debe aparecer en el panel admin
+    const floatingChatbotBtn = document.getElementById('floatingChatbotBtn');
+    const chatbotWidgetContainer = document.getElementById('chatbotWidgetContainer');
+    if (floatingChatbotBtn) floatingChatbotBtn.style.display = isStorefront ? '' : 'none';
+    if (chatbotWidgetContainer) {
+        if (!isStorefront) {
+            chatbotWidgetContainer.classList.remove('open');
+            chatbotWidgetContainer.style.display = 'none';
+            if (typeof chatState !== 'undefined') chatState.isOpen = false;
+        } else {
+            chatbotWidgetContainer.style.display = '';
+        }
+    }
+
     if (isAdmin) {
         document.body.classList.add('admin-fullscreen-active');
     } else {
@@ -3102,16 +3116,42 @@ async function loadBudgetData() {
     }
 }
 
+function getCalculatedTotalPurchases() {
+    const list = state.supplierPurchases || [];
+    if (!Array.isArray(list) || list.length === 0) {
+        return Number(state.budget?.totalPurchases) || 0;
+    }
+    return list.reduce((acc, p) => {
+        const assocProd = (state.products || []).find(prod => 
+            prod.id === p.productId || 
+            prod.sku === p.productSku || 
+            (prod.name && p.productName && prod.name.toLowerCase() === p.productName.toLowerCase())
+        );
+        // Si el producto está inactivo, sus registros en el historial están inactivos y no suman a las métricas activas
+        if (assocProd && assocProd.isAvailable === false) {
+            return acc;
+        }
+        const cost = (p.totalCost !== undefined && p.totalCost !== null) 
+            ? Number(p.totalCost) 
+            : ((Number(p.quantity) || 0) * (Number(p.purchaseUnitCost) || 0));
+        return acc + (isNaN(cost) ? 0 : cost);
+    }, 0);
+}
+
 function renderBudgetSubtab() {
+    const purchasesCalculated = getCalculatedTotalPurchases();
+
     if (!state.budget) {
         state.budget = {
             initialBudget: 0,
             currentBalance: 0,
-            totalPurchases: 0,
+            totalPurchases: purchasesCalculated,
             totalRecoveredCosts: 0,
             totalManualInjections: 0,
             isInitialized: false
         };
+    } else {
+        state.budget.totalPurchases = purchasesCalculated;
     }
 
     // 1. Render KPIs
@@ -3121,7 +3161,7 @@ function renderBudgetSubtab() {
     const elInjected = document.getElementById('budgetTotalInjected');
 
     if (elBalance) elBalance.textContent = `$ ${Math.round(state.budget.currentBalance || 0).toLocaleString('es-CO')}`;
-    if (elPurchases) elPurchases.textContent = `$ ${Math.round(state.budget.totalPurchases || 0).toLocaleString('es-CO')}`;
+    if (elPurchases) elPurchases.textContent = `$ ${Math.round(purchasesCalculated).toLocaleString('es-CO')}`;
     if (elRecovered) elRecovered.textContent = `$ ${Math.round(state.budget.totalRecoveredCosts || 0).toLocaleString('es-CO')}`;
     if (elInjected) elInjected.textContent = `$ ${Math.round(state.budget.totalManualInjections || 0).toLocaleString('es-CO')}`;
 
@@ -3279,10 +3319,13 @@ async function handleEditBudgetSubmit(event) {
         console.warn('Fallback local para ajuste de presupuesto');
     }
 
+    const purchasesCalculated = getCalculatedTotalPurchases();
+
     if (!state.budget) {
-        state.budget = { initialBudget: amount, currentBalance: amount, totalPurchases: 0, totalRecoveredCosts: 0, totalManualInjections: 0, isInitialized: true };
+        state.budget = { initialBudget: amount, currentBalance: amount, totalPurchases: purchasesCalculated, totalRecoveredCosts: 0, totalManualInjections: 0, isInitialized: true };
     } else {
         state.budget.currentBalance = amount;
+        state.budget.totalPurchases = purchasesCalculated;
         state.budget.isInitialized = true;
     }
 
@@ -3336,7 +3379,7 @@ function recordSalesCostRecovery(order) {
 
     if (totalRecoverableCost > 0) {
         if (!state.budget) {
-            state.budget = { initialBudget: 1000000, currentBalance: 1000000, totalPurchases: 0, totalRecoveredCosts: 0, totalManualInjections: 0, isInitialized: true };
+            state.budget = { initialBudget: 0, currentBalance: 0, totalPurchases: getCalculatedTotalPurchases(), totalRecoveredCosts: 0, totalManualInjections: 0, isInitialized: false };
         }
         state.budget.currentBalance += totalRecoverableCost;
         state.budget.totalRecoveredCosts += totalRecoverableCost;
@@ -5662,6 +5705,7 @@ const chatState = {
 };
 
 function toggleChatbotDrawer() {
+    if (state.currentView === 'admin') return;
     const container = document.getElementById('chatbotWidgetContainer');
     if (!container) return;
 
