@@ -440,13 +440,13 @@
                                     </div>
                                 </div>
 
-                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-                                    <div class="merko-form-group">
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;" id="editorPricesGrid">
+                                    <div class="merko-form-group" id="editorCostPriceGroup">
                                         <label>Precio de Adquisición ($ COP) *</label>
                                         <input type="number" id="editorCostPrice" value="" placeholder="Ej: 32000" oninput="updateLivePreview()">
                                         <small style="display:block; font-size:0.72rem; color:var(--admin-text-muted); margin-top:4px;">Valor que paga el administrador al proveedor por adquirir una unidad de este producto.</small>
                                     </div>
-                                    <div class="merko-form-group">
+                                    <div class="merko-form-group" id="editorPriceGroup">
                                         <label>Precio Venta ($ COP) *</label>
                                         <input type="number" id="editorPrice" value="" placeholder="Ej: 48000" oninput="updateLivePreview()">
                                         <small style="display:block; font-size:0.72rem; color:var(--admin-text-muted); margin-top:4px;">Precio oficial al detal o combo al cliente.</small>

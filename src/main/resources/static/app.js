@@ -3790,17 +3790,37 @@ function getCategoryName(catId) {
 }
 
 function toggleMercadoCompositionForm() {
-    const type = document.getElementById('editorType').value;
+    const type = document.getElementById('editorType')?.value || 'DETAL';
     const container = document.getElementById('mercadoItemsContainer');
     const lblStock = document.getElementById('lblEditorStock');
+    const subStock = document.getElementById('subEditorStock');
+    const costGroup = document.getElementById('editorCostPriceGroup');
+    const pricesGrid = document.getElementById('editorPricesGrid');
+    const stockInput = document.getElementById('editorStock');
+    const warnBox = document.getElementById('editorBudgetWarning');
 
     if (type === 'MERCADO') {
-        container.style.display = 'block';
-        lblStock.textContent = 'Inventario (Calculado Automáticamente)';
+        if (container) container.style.display = 'block';
+        if (lblStock) lblStock.textContent = 'Inventario (Calculado Automáticamente)';
+        if (subStock) subStock.textContent = 'Se calcula a partir de los productos en bodega que componen el mercado.';
+        if (costGroup) costGroup.style.display = 'none';
+        if (pricesGrid) pricesGrid.style.gridTemplateColumns = '1fr';
+        if (stockInput) {
+            stockInput.readOnly = true;
+            stockInput.placeholder = 'Automático según componentes';
+        }
+        if (warnBox) warnBox.style.display = 'none';
         renderMercadoItemsChecklist();
     } else {
-        container.style.display = 'none';
-        lblStock.textContent = 'Cantidad en Inventario *';
+        if (container) container.style.display = 'none';
+        if (lblStock) lblStock.textContent = 'Inventario Inicial *';
+        if (subStock) subStock.textContent = 'Existencias físicas disponibles en bodega.';
+        if (costGroup) costGroup.style.display = 'block';
+        if (pricesGrid) pricesGrid.style.gridTemplateColumns = '1fr 1fr';
+        if (stockInput) {
+            stockInput.readOnly = false;
+            stockInput.placeholder = 'Ej: 25';
+        }
     }
 }
 
@@ -4307,7 +4327,7 @@ function updateLivePreview() {
         ? Number(state.budget.currentBalance)
         : 0;
 
-    if (deltaUnits > 0 && liveCost > 0) {
+    if (type !== 'MERCADO' && deltaUnits > 0 && liveCost > 0) {
         const requiredCost = deltaUnits * liveCost;
         if (availableBudget < requiredCost) {
             if (warnBox) {
@@ -4334,27 +4354,30 @@ function saveProductFromEditor() {
     const stock = parseInt(document.getElementById('editorStock').value) || 0;
     const image = document.getElementById('editorImage').value.trim() || 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=500';
     const costInput = document.getElementById('editorCostPrice')?.value.trim();
-    const costVal = (costInput !== '' && costInput !== undefined && costInput !== null) ? parseFloat(costInput) : null;
+    let costVal = (costInput !== '' && costInput !== undefined && costInput !== null) ? parseFloat(costInput) : null;
 
     if (!name || isNaN(price)) {
         showToast('⚠️ Por favor completa los campos obligatorios (Nombre y Precio Venta).', 'warning', '⚠️');
         return;
     }
 
-    // Regla de negocio: Precio de adquisición obligatorio, numérico y no negativo para productos nuevos
-    if (!state.editingProductId) {
-        if (costVal === null || isNaN(costVal) || costVal < 0) {
-            showToast('⚠️ El Precio de Adquisición es obligatorio para nuevos productos y no puede ser negativo.', 'warning', '⚠️');
-            return;
-        }
-    } else {
-        if (costVal !== null && (isNaN(costVal) || costVal < 0)) {
-            showToast('⚠️ El Precio de Adquisición debe ser un valor numérico no negativo.', 'warning', '⚠️');
-            return;
+    // Regla de negocio: Precio de adquisición solo aplica y es obligatorio para productos DETAL
+    if (type !== 'MERCADO') {
+        if (!state.editingProductId) {
+            if (costVal === null || isNaN(costVal) || costVal < 0) {
+                showToast('⚠️ El Precio de Adquisición es obligatorio para nuevos productos detal y no puede ser negativo.', 'warning', '⚠️');
+                return;
+            }
+        } else {
+            if (costVal !== null && (isNaN(costVal) || costVal < 0)) {
+                showToast('⚠️ El Precio de Adquisición debe ser un valor numérico no negativo.', 'warning', '⚠️');
+                return;
+            }
         }
     }
 
     let bundleItems = [];
+    let calculatedBundleCost = 0;
     if (type === 'MERCADO') {
         const checks = document.querySelectorAll('.mercado-bundle-check:checked');
         checks.forEach(chk => {
@@ -4362,7 +4385,19 @@ function saveProductFromEditor() {
             const qtyInput = document.querySelector(`.mercado-bundle-qty[data-id="${pId}"]`);
             const qty = parseInt(qtyInput?.value || 1);
             bundleItems.push({ productId: pId, quantity: qty });
+
+            const comp = (state.products || []).find(prod => prod.id === pId);
+            const compCost = Number(comp?.costPrice) || 0;
+            calculatedBundleCost += compCost * qty;
         });
+
+        if (bundleItems.length === 0) {
+            showToast('⚠️ Debes seleccionar al menos un producto detal para armar este mercado.', 'warning', '📦');
+            return;
+        }
+
+        // El costo de adquisición del mercado se deriva automáticamente de los productos detal ya adquiridos
+        costVal = calculatedBundleCost;
     }
 
     let pct = null;
@@ -4381,8 +4416,8 @@ function saveProductFromEditor() {
             const deltaStock = stock - oldStock;
             let finalCostPrice = (costVal !== null) ? costVal : oldProd.costPrice;
 
-            // Si se incrementó el stock físico y tiene costo de adquisición, registrar compra automática con costo ponderado
-            if (deltaStock > 0 && costVal && costVal > 0) {
+            // Si se incrementó el stock físico y tiene costo de adquisición, registrar compra automática con costo ponderado (solo para productos DETAL)
+            if (type !== 'MERCADO' && deltaStock > 0 && costVal && costVal > 0) {
                 const totalCost = deltaStock * costVal;
                 const availableBudget = (state.budget && state.budget.currentBalance !== undefined && state.budget.currentBalance !== null)
                     ? Number(state.budget.currentBalance)
@@ -4498,8 +4533,8 @@ function saveProductFromEditor() {
             imagePosY_Mobile: framingMobile.posY
         };
 
-        // Si se crea con inventario inicial > 0 y costo de adquisición > 0, registrar compra automática y descontar de presupuesto
-        if (stock > 0 && costVal && costVal > 0) {
+        // Si se crea con inventario inicial > 0 y costo de adquisición > 0, registrar compra automática y descontar de presupuesto (solo para productos DETAL)
+        if (type !== 'MERCADO' && stock > 0 && costVal && costVal > 0) {
             const totalCost = stock * costVal;
             const availableBudget = (state.budget && state.budget.currentBalance !== undefined && state.budget.currentBalance !== null)
                 ? Number(state.budget.currentBalance)
